@@ -1,0 +1,10 @@
+{"role": "Buyer", "text": "Hi — I’m reaching out because the headphones arrived with a crack in the left earcup.", "ts": 1770360000.1}
+{"role": "Seller", "text": "Sorry to hear that. Can you share a photo of the damage?", "ts": 1770360006.45}
+{"role": "Buyer", "text": "Yes. I’d like a full refund including shipping. This is really disappointing.", "ts": 1770360014.02}
+{"role": "Seller", "text": "I can offer a partial refund, but returns after 14 days are normally not accepted.", "ts": 1770360021.88}
+{"role": "Buyer", "text": "That’s unfair — it arrived broken. If we can’t resolve this I may file a chargeback.", "ts": 1770360032.2}
+{"role": "Mediator", "text": "Let’s slow down. Seller, can you confirm whether the item was insured in shipping? Buyer, would a replacement or a refund both be acceptable options?", "ts": 1770360045.11}
+{"role": "Seller", "text": "It was insured. I can do a replacement shipped today, or a full refund if the buyer returns it.", "ts": 1770360060.77}
+{"role": "Buyer", "text": "If you cover return shipping, I’m okay with returning it for a full refund.", "ts": 1770360074.93}
+{"role": "Mediator", "text": "Great — agreement: Buyer returns item with prepaid label; Seller issues full refund upon scan acceptance.", "ts": 1770360088.31}
+{"type": "room_ended", "code": "W-0ccbbe1015a94f5488c070420d3bce95-00000-010", "ts": 1770360100.0}

@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="grid">
+    <div class="card">
+      <h2>File</h2>
+      <div><b>Name:</b> {{ doc.filename }}</div>
+      <div><b>Turns:</b> {{ doc.turns|length }}</div>
+      <div><b>Uploaded:</b> {{ doc.created_at }}</div>
+    </div>
+
+    <div class="card">
+      <h2>Language / Country (placeholder)</h2>
+      <div><b>Language:</b> {{ doc.lang_country.language }}</div>
+      <div><b>Country guess:</b> {{ doc.lang_country.country_guess }}</div>
+      <div><b>Confidence:</b> {{ doc.lang_country.confidence }}</div>
+      <p class="muted">Swap this with Bin’s classifier later.</p>
+    </div>
+
+    <div class="card">
+      <h2>Failure likelihood (placeholder)</h2>
+      <div class="riskline">
+        <span class="pill">{{ doc.risk.label }}</span>
+        <span class="muted">risk={{ doc.risk.risk }}</span>
+      </div>
+      <div class="muted">Signals: neg={{ doc.risk.signals.neg_hits }}, threats={{ doc.risk.signals.threat_hits }}</div>
+      <p class="muted">Replace with a real model when ready.</p>
+    </div>
+  </section>
+
+  <section class="grid">
+    <div class="card">
+      <h2>Emotions per turn (placeholder)</h2>
+      <canvas id="emoChart" height="120"></canvas>
+      <p class="muted">Simple lexicon heuristic now; replace with classifier later.</p>
+    </div>
+
+    <div class="card">
+      <h2>Step through the dialogue</h2>
+
+      <div class="viewer">
+        <div class="viewer-top">
+          <button class="btn secondary" id="prevBtn">Prev</button>
+          <button class="btn secondary" id="nextBtn">Next</button>
+
+          <div class="jump">
+            <label for="jumpTo">Turn</label>
+            <input id="jumpTo" type="number" min="0" step="1" />
+            <button class="btn secondary" id="jumpBtn">Go</button>
+          </div>
+        </div>
+
+        <div class="turnbox">
+          <div class="turnmeta">
+            <span id="turnIdx" class="pill">#0</span>
+            <span id="turnSpeaker" class="pill soft">Speaker</span>
+            <span id="turnTs" class="muted"></span>
+          </div>
+          <div id="turnText" class="turntext"></div>
+
+          <div class="actions">
+            <button class="btn" id="translateBtn">Translate (placeholder)</button>
+            <select id="translateLang" class="select">
+              <option value="en">to English</option>
+              <option value="zh">to Chinese</option>
+              <option value="es">to Spanish</option>
+            </select>
+          </div>
+
+          <div id="translationBox" class="translation hidden"></div>
+
+          <div class="intervene">
+            <div class="intervene-head">
+              <b>Advisor intervention</b>
+              <span id="interveneBadge" class="pill hidden">Intervene</span>
+            </div>
+            <ul id="interveneReasons" class="reasons"></ul>
+            <div id="interveneSuggestion" class="muted"></div>
+          </div>
+        </div>
+      </div>
+
+      <p class="muted">
+        Intended future behavior: highlight turns where the system recommends the mediator / advisor should intervene,
+        and suggest what to do (reframe, ask questions, propose options, etc.).
+      </p>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Implementation notes (matches your March plan)</h2>
+    <ul>
+      <li><b>Offline mode:</b> keep everything local (fast, consistent, no secrets). Plug in local models later.</li>
+      <li><b>On-the-fly model calls:</b> easy updates, but needs keys, latency handling, and caching.</li>
+      <li>This skeleton keeps the UI/flow stable so you can swap in better models without rewriting the frontend.</li>
+    </ul>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    window.DOC_ID = "{{ doc.doc_id }}";
+  </script>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+{% endblock %}

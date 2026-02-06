@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="card">
+    <h1>Upload a negotiation transcript</h1>
+    <p class="muted">
+      Supported: <code>.jsonl</code>, <code>.json</code>, <code>.txt</code>, <code>.csv</code>.
+      Parsing is best-effort; you can standardize later.
+    </p>
+
+    <form class="upload" method="post" action="{{ url_for('upload_post') }}" enctype="multipart/form-data">
+      <input type="file" name="file" accept=".jsonl,.json,.txt,.csv" required />
+      <button class="btn" type="submit">Upload & Analyze</button>
+    </form>
+
+    <hr/>
+
+    <details>
+      <summary>Example formats</summary>
+      <pre class="codeblock">Buyer: I want a refund.
+Seller: No, it's past the return date.
+Mediator: Let's focus on what would make this fair.</pre>
+
+      <pre class="codeblock">{"role":"Buyer","text":"I want a refund","ts": 1770359879.35}
+{"role":"Seller","text":"No, it is past the return date","ts": 1770359882.10}</pre>
+    </details>
+  </section>
+{% endblock %}
