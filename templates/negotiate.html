@@ -107,6 +107,7 @@ nav{display:flex;align-items:center;padding:10px 20px;border-bottom:1px solid va
 .maps-grid{display:grid;grid-template-columns:1fr;gap:8px;padding:8px;}
 .world-map-wrap{background:#0a1520;position:relative;padding:4px;border:1px solid #132236;border-radius:6px;}
 .map-title{font-family:var(--mono);font-size:0.52rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:2px 4px 4px 4px;}
+.map-scale-note{font-family:var(--mono);font-size:0.5rem;color:#8da2bf;padding:0 4px 4px 4px;}
 #buyer-map,#seller-map{width:100%;height:140px;}
 .country-row{display:flex;gap:6px;padding:8px 10px;}
 .ctry{flex:1;background:var(--surface);border-radius:6px;padding:7px 8px;}
@@ -218,10 +219,12 @@ nav{display:flex;align-items:center;padding:10px 20px;border-bottom:1px solid va
           <div class="maps-grid">
             <div class="world-map-wrap">
               <div class="map-title">Buyer probability map</div>
+              <div class="map-scale-note">Darker blue = higher buyer probability</div>
               <div id="buyer-map"></div>
             </div>
             <div class="world-map-wrap">
               <div class="map-title">Seller probability map</div>
+              <div class="map-scale-note">Darker red = higher seller probability</div>
               <div id="seller-map"></div>
             </div>
           </div>
@@ -424,20 +427,21 @@ function topCountry(dist){
   return Object.entries(dist).sort((a,b)=>b[1]-a[1])[0];
 }
 
-function roleShade(prob, role){
-  const p = Math.max(0, Math.min(1, prob || 0));
-  const base = role === 'buyer' ? [79,145,255] : [244,63,94];
-  const dark = [22,34,52];
-  const rgb = base.map((c,i)=>Math.round(dark[i]*(1-p)+c*p));
-  return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
-}
-
-function buildRoleFills(dist, role){
-  const fills = {};
+function buildRoleValues(dist, map){
+  const raw = {};
   Object.keys(BASE_COUNTRY_WEIGHTS).forEach(code=>{
-    fills[code] = roleShade(dist[code] || 0, role);
+    raw[code] = Math.max(0, Math.min(1, dist[code] || 0));
   });
-  return fills;
+  if (!map || !map.regions) return raw;
+
+  const values = {};
+  const regionCodes = Object.keys(map.regions);
+  Object.entries(raw).forEach(([code, prob])=>{
+    const variants = [code, code.toUpperCase(), code.toLowerCase()];
+    const matched = variants.find(v => regionCodes.includes(v));
+    if (matched) values[matched] = prob;
+  });
+  return values;
 }
 
 function renderRoleMap(which, selector, role, dist, topCode, topProb){
@@ -461,9 +465,18 @@ function renderRoleMap(which, selector, role, dist, topCode, topProb){
     markers,
     markerStyle:{initial:{r:6, strokeWidth:2}},
     regionStyle:{initial:{fill:'#1a2d45',stroke:'#253a55',strokeWidth:0.6}},
-    series:{regions:[{attribute:'fill', values:buildRoleFills(dist, role)}]}
+    series:{regions:[{
+      values:{},
+      scale: role === 'buyer' ? ['#dbeafe', '#1d4ed8'] : ['#fecdd3', '#be123c'],
+      normalizeFunction:'linear'
+    }]}
   });
+  const values = buildRoleValues(dist, S[key]);
+  if (S[key]?.series?.regions?.[0]) {
+    S[key].series.regions[0].setValues(values);
+  }
 }
+
 
 function renderCountry(){
   if (!S.countryTimeline.length) return;
