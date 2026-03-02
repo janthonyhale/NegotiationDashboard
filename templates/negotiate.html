@@ -427,6 +427,28 @@ function topCountry(dist){
   return Object.entries(dist).sort((a,b)=>b[1]-a[1])[0];
 }
 
+
+function shadeColorForProb(prob, role){
+  const p = Math.max(0, Math.min(1, prob || 0));
+  const low = role === 'buyer' ? [219,234,254] : [254,205,211];
+  const high = role === 'buyer' ? [30,64,175] : [190,24,93];
+  const rgb = low.map((c,i)=>Math.round(c*(1-p)+high[i]*p));
+  return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+}
+
+function applyRoleColors(selector, dist, role){
+  const root = document.querySelector(selector);
+  if (!root) return;
+  for (const [code, prob] of Object.entries(dist || {})){
+    const color = shadeColorForProb(prob, role);
+    const targets = root.querySelectorAll(`[data-code="${code}"]`);
+    targets.forEach(el => {
+      el.setAttribute('fill', color);
+      el.style.fill = color;
+    });
+  }
+}
+
 function buildRoleValues(dist, map){
   const raw = {};
   Object.keys(BASE_COUNTRY_WEIGHTS).forEach(code=>{
@@ -475,6 +497,7 @@ function renderRoleMap(which, selector, role, dist, topCode, topProb){
   if (S[key]?.series?.regions?.[0]) {
     S[key].series.regions[0].setValues(values);
   }
+  applyRoleColors(selector, dist, role);
 }
 
 
