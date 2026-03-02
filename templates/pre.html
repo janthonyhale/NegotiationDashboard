@@ -80,6 +80,7 @@ input[type=range]{width:100%;height:4px;border-radius:2px;background:var(--borde
         <div id="seller-sliders"></div>
       </div>
       <button class="update-btn" onclick="updateWeights()">↺ Recompute Solution Space</button>
+      <div style="font-size:0.65rem;color:var(--muted);margin-top:7px;font-family:var(--mono)">Auto-update is on while dragging sliders.</div>
       <div style="display:flex;justify-content:center;margin-top:10px"><div class="spin" id="wspin"></div></div>
     </div>
   </div>
@@ -125,6 +126,7 @@ const ISSUES = [
 
 let D = null;
 let BW = {}, SW = {};
+let pendingUpdate = null;
 
 function init() {
   const raw = sessionStorage.getItem('nd');
@@ -162,6 +164,15 @@ function updateVal(role, key, val) {
   // Save updated weights to session
   D.buyer_weights = BW; D.seller_weights = SW;
   sessionStorage.setItem('nd', JSON.stringify(D));
+  scheduleUpdateWeights();
+}
+
+function scheduleUpdateWeights(){
+  if (pendingUpdate) clearTimeout(pendingUpdate);
+  pendingUpdate = setTimeout(() => {
+    pendingUpdate = null;
+    updateWeights();
+  }, 180);
 }
 
 async function updateWeights() {

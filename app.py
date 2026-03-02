@@ -260,7 +260,7 @@ def make_pareto_plot(outcomes, pareto, final_outcome=None, title='Solution Space
     # Final agreement
     if final_outcome:
         ax.scatter([final_outcome['buyer_util']],[final_outcome['seller_util']],
-                   color='#f59e0b',s=250,zorder=6,marker='★',
+                   color='#f59e0b',s=250,zorder=6,marker='*',
                    label=f"Agreement (B:{final_outcome['buyer_util']:.0f}, S:{final_outcome['seller_util']:.0f})")
     ax.set_xlabel('Buyer Utility', color=TEXT, fontsize=9)
     ax.set_ylabel('Seller Utility', color=TEXT, fontsize=9)
@@ -385,6 +385,38 @@ def api_step():
     emo_img = make_emotion_plot(turns_so_far, dim)
     return jsonify({'risk':risk,'advisor':adv,'emotion_img':emo_img,'current_turn':cur})
 
+@app.route('/api/post_summary', methods=['POST'])
+def api_post_summary():
+    data = request.json or {}
+    turns = data.get('turns', [])
+    bw    = data.get('buyer_weights', DEFAULT_BUYER_WEIGHTS)
+    sw    = data.get('seller_weights', DEFAULT_SELLER_WEIGHTS)
+    dim   = data.get('emotion_dim', 'joy')
+    final_outcome = data.get('final_outcome')
+
+    turns_enriched = enrich(turns) if turns and 'emotions' not in turns[0] else turns
+    risk = estimate_risk(turns_enriched)
+    emo_img = make_emotion_plot(turns_enriched, dim) if turns_enriched else ''
+    outcomes = generate_all_outcomes(bw, sw)
+    pareto = compute_pareto(outcomes)
+
+    match = None
+    if final_outcome:
+        match = next((o for o in outcomes if
+                      o['refund_label']   == final_outcome.get('refund_label') and
+                      o['buyer_review']   == final_outcome.get('buyer_review') and
+                      o['seller_review']  == final_outcome.get('seller_review') and
+                      o['seller_apology'] == final_outcome.get('seller_apology') and
+                      o['buyer_apology']  == final_outcome.get('buyer_apology')), None)
+
+    post_img = make_pareto_plot(outcomes, pareto, match, title='Post-Negotiation: Solution Space')
+    return jsonify({
+        'risk': risk,
+        'emotion_img': emo_img,
+        'post_img': post_img,
+        'final_outcome': match,
+    })
+
 @app.route('/api/export_pdf', methods=['POST'])
 def api_export_pdf():
     data         = request.json
@@ -398,12 +430,18 @@ def api_export_pdf():
     sw           = data.get('seller_weights', DEFAULT_SELLER_WEIGHTS)
 
     # Generate post-negotiation pareto if not provided
+    outcomes = generate_all_outcomes(bw, sw)
+    if final_outcome and ('buyer_util' not in final_outcome or 'seller_util' not in final_outcome):
+        final_outcome = next((o for o in outcomes if
+                              o['refund_label']   == final_outcome.get('refund_label') and
+                              o['buyer_review']   == final_outcome.get('buyer_review') and
+                              o['seller_review']  == final_outcome.get('seller_review') and
+                              o['seller_apology'] == final_outcome.get('seller_apology') and
+                              o['buyer_apology']  == final_outcome.get('buyer_apology')), final_outcome)
+
     if not post_b64:
-        outcomes = generate_all_outcomes(bw, sw)
         pareto   = compute_pareto(outcomes)
-        fo_dict  = None
-        if final_outcome:
-            fo_dict = final_outcome
+        fo_dict  = final_outcome if final_outcome else None
         post_b64 = make_pareto_plot(outcomes, pareto, fo_dict, title='Post-Negotiation Solution Space')
 
     # Generate all-emotions chart
@@ -456,6 +494,8 @@ def api_export_pdf():
 
     # Final agreement
     if final_outcome:
+        bu = final_outcome.get('buyer_util')
+        su = final_outcome.get('seller_util')
         story.append(Paragraph('Final Agreed Outcome', h2_s))
         fa_items = [
             ['Refund', final_outcome.get('refund_label','—')],
@@ -463,8 +503,8 @@ def api_export_pdf():
             ['Seller Review Removed','Yes' if final_outcome.get('seller_review') else 'No'],
             ['Seller Apologizes',    'Yes' if final_outcome.get('seller_apology') else 'No'],
             ['Buyer Apologizes',     'Yes' if final_outcome.get('buyer_apology') else 'No'],
-            ['Buyer Utility',        f"{final_outcome.get('buyer_util','—'):.0f}/100"],
-            ['Seller Utility',       f"{final_outcome.get('seller_util','—'):.0f}/100"],
+            ['Buyer Utility',        (f"{bu:.0f}/100" if isinstance(bu, (int, float)) else '—')],
+            ['Seller Utility',       (f"{su:.0f}/100" if isinstance(su, (int, float)) else '—')],
         ]
         fat = Table([['Issue','Value']] + fa_items, colWidths=[2.8*inch, 3.6*inch])
         fat.setStyle(TableStyle([

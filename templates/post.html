@@ -166,12 +166,10 @@ async function init() {
   S.filename = D.filename;
   S.preImg   = D.pareto_img;
 
-  // Show pre-img immediately
   document.getElementById('pre-img').src = 'data:image/png;base64,' + S.preImg;
   document.getElementById('pre-img').style.display = 'block';
   document.getElementById('pre-ph').style.display = 'none';
 
-  // Render transcript
   document.getElementById('tx-body').innerHTML = S.turns.map(t=>{
     const role = t.speaker.toLowerCase();
     return `<div class="tx-turn">
@@ -180,69 +178,38 @@ async function init() {
     </div>`;
   }).join('');
 
-  // Detect final KODIS outcome from last turns
-  const finalOutcome = detectOutcome(S.turns);
-  S.finalOutcome = finalOutcome;
+  const detected = detectOutcome(S.turns);
 
-  // Compute post summary
   try {
-    const res = await fetch('/api/export_pdf', {
+    const res = await fetch('/api/post_summary', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
-        turns: S.turns, bw: S.bw, sw: S.sw,
-        filename: S.filename, pre_img: S.preImg,
-        final_outcome: finalOutcome,
-        generate_only: true  // signal we just want images back
+        turns: S.turns,
+        buyer_weights: S.bw,
+        seller_weights: S.sw,
+        final_outcome: detected,
+        emotion_dim: 'joy'
       })
     });
-    // This endpoint generates the PDF directly, so instead let's call summary
-  } catch(e){}
+    if (!res.ok) throw new Error('Failed to compute summary');
+    const data = await res.json();
+    S.emoImg = data.emotion_img;
+    S.postImg = data.post_img;
+    S.finalOutcome = data.final_outcome || detected;
 
-  // Generate post pareto image via update_weights (reuse endpoint)
-  const wres = await fetch('/api/update_weights',{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({buyer_weights:S.bw,seller_weights:S.sw})
-  });
-  const wdata = await wres.json();
-  // Find final outcome on pareto
-  let post_img_b64;
-  if (finalOutcome) {
-    // Find matching outcome
-    const match = wdata.outcomes.find(o =>
-      o.refund_label === finalOutcome.refund_label &&
-      o.buyer_review === finalOutcome.buyer_review &&
-      o.seller_review === finalOutcome.seller_review &&
-      o.seller_apology === finalOutcome.seller_apology &&
-      o.buyer_apology === finalOutcome.buyer_apology
-    );
-    S.finalOutcome = match || finalOutcome;
+    showContent(data.risk, S.finalOutcome);
+    document.getElementById('btn-pdf').disabled = false;
+  } catch (e) {
+    document.getElementById('loading-box').innerHTML = `<p style="color:#fda4af">Unable to compute summary: ${esc(e.message)}</p>`;
   }
-  // Get post-pareto via step endpoint (hack: pass all turns, get emotion img too)
-  const sres = await fetch('/api/step',{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({idx:S.turns.length-1,turns:S.turns,emotion_dim:'joy',buyer_weights:S.bw,seller_weights:S.sw})
-  });
-  const sdata = await sres.json();
-  S.emoImg = sdata.emotion_img;
-
-  // Make pareto using the backend update_weights (already have data client-side, but need image with marker)
-  // Re-request from update_weights but we need the marker - let's generate final img by calling step endpoint
-  // Actually, let's use the pre_img for now and note the final solution separately
-  S.postImg = D.pareto_img; // fallback - will be improved below
-
-  // Show post pareto with the final outcome marked: we'll call update_weights and mark it manually
-  showContent(sdata.risk, finalOutcome, wdata);
-  document.getElementById('btn-pdf').disabled = false;
 }
 
 function detectOutcome(turns) {
-  // Heuristic: scan last 4 turns for agreement indicators
   const lastTurns = turns.slice(-4).map(t=>t.text.toLowerCase()).join(' ');
   const outcome = {
     refund_label: 'None', refund: 0,
     buyer_review: 0, seller_review: 0,
     seller_apology: 0, buyer_apology: 0,
-    buyer_util: 0, seller_util: 0,
   };
   if (/full refund/.test(lastTurns))          { outcome.refund_label='Full'; outcome.refund=1.0; }
   else if (/half|50%|partial/.test(lastTurns)){ outcome.refund_label='Half'; outcome.refund=0.5; }
@@ -254,16 +221,14 @@ function detectOutcome(turns) {
   }
   if (/seller.*apolog|sincerely.*apolog|formally.*apolog/.test(lastTurns)) outcome.seller_apology=1;
   if (/buyer.*apolog/.test(lastTurns)) outcome.buyer_apology=1;
-  // Check if there's an actual agreement
   const agreed = /agreed|deal|accept|settled|resolved|terms|finalize/.test(lastTurns);
   return agreed ? outcome : null;
 }
 
-function showContent(risk, finalOutcome, wdata) {
+function showContent(risk, finalOutcome) {
   document.getElementById('loading-box').style.display='none';
   document.getElementById('content').style.display='block';
 
-  // Stats
   const lc = risk.label.toLowerCase();
   const c  = lc==='low'?'teal':lc==='medium'?'amber':'red';
   document.getElementById('st-turns').textContent = S.turns.length;
@@ -273,7 +238,6 @@ function showContent(risk, finalOutcome, wdata) {
   document.getElementById('st-risk-lbl').className   = 'stat-v '+c;
   document.getElementById('st-sigs').textContent  = risk.negative_signals;
 
-  // Outcome section
   const oEl = document.getElementById('outcome-section');
   if (finalOutcome) {
     const issues = [
@@ -284,25 +248,16 @@ function showContent(risk, finalOutcome, wdata) {
       ['Buyer Apologizes', finalOutcome.buyer_apology ? 'Yes' : 'No'],
     ];
     const chips = issues.map(([k,v])=>`<span class="issue-chip">${k}: ${v}</span>`).join('');
-    oEl.innerHTML=`<div class="outcome-card">
-      <div class="outcome-icon">🤝</div>
-      <div>
-        <div class="outcome-label">Detected Agreement</div>
-        <div class="outcome-issues">${chips}</div>
-      </div>
-    </div>`;
+    oEl.innerHTML=`<div class="outcome-card"><div class="outcome-icon">🤝</div><div><div class="outcome-label">Detected Agreement</div><div class="outcome-issues">${chips}</div></div></div>`;
     document.getElementById('agree-badge').textContent = ' — Agreement marked';
   } else {
     oEl.innerHTML=`<div class="no-outcome">No clear final agreement detected in the transcript. The Pareto frontier is shown without an agreement marker.</div>`;
   }
 
-  // Pareto post plot: use wdata.pareto_img (without marker) as base
-  // For now display the pre-img and note; real marker requires backend call
-  document.getElementById('post-img').src  = 'data:image/png;base64,' + S.preImg;
+  document.getElementById('post-img').src  = 'data:image/png;base64,' + S.postImg;
   document.getElementById('post-img').style.display = 'block';
   document.getElementById('post-ph').style.display  = 'none';
 
-  // Emotion
   document.getElementById('emo-img').src  = 'data:image/png;base64,' + S.emoImg;
   document.getElementById('emo-img').style.display = 'block';
   document.getElementById('emo-ph').style.display  = 'none';
@@ -317,7 +272,7 @@ async function exportPDF() {
       body: JSON.stringify({
         turns: S.turns, filename: S.filename,
         buyer_weights: S.bw, seller_weights: S.sw,
-        pre_img: S.preImg, emotion_img: S.emoImg,
+        pre_img: S.preImg, emotion_img: S.emoImg, post_img: S.postImg,
         final_outcome: S.finalOutcome,
       })
     });
@@ -325,7 +280,11 @@ async function exportPDF() {
     const blob = await res.blob();
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
-    a.href=url; a.download='negotiation_report.pdf'; a.click();
+    a.href = url;
+    a.download = 'negotiation_report.pdf';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
     URL.revokeObjectURL(url);
     toast('PDF downloaded!',false);
   } catch(e){ toast('Error: '+e.message,true); }
