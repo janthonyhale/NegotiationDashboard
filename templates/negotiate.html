@@ -104,8 +104,10 @@ nav{display:flex;align-items:center;padding:10px 20px;border-bottom:1px solid va
 .map-card{background:var(--card);border:1px solid var(--border);border-radius:9px;overflow:hidden;margin-bottom:12px;}
 .map-card-head{padding:7px 11px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
 .map-card-label{font-family:var(--mono);font-size:0.56rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);}
-.world-map-wrap{background:#0a1520;position:relative;padding:6px;}
-#world-map{width:100%;height:230px;}
+.maps-grid{display:grid;grid-template-columns:1fr;gap:8px;padding:8px;}
+.world-map-wrap{background:#0a1520;position:relative;padding:4px;border:1px solid #132236;border-radius:6px;}
+.map-title{font-family:var(--mono);font-size:0.52rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:2px 4px 4px 4px;}
+#buyer-map,#seller-map{width:100%;height:140px;}
 .country-row{display:flex;gap:6px;padding:8px 10px;}
 .ctry{flex:1;background:var(--surface);border-radius:6px;padding:7px 8px;}
 .ctry.buyer{border-left:2px solid var(--accent);}
@@ -213,8 +215,15 @@ nav{display:flex;align-items:center;padding:10px 20px;border-bottom:1px solid va
             <span class="map-card-label">Predicted Origins</span>
             <span style="font-size:0.58rem;font-family:var(--mono);color:var(--teal)">English</span>
           </div>
-          <div class="world-map-wrap">
-            <div id="world-map"></div>
+          <div class="maps-grid">
+            <div class="world-map-wrap">
+              <div class="map-title">Buyer probability map</div>
+              <div id="buyer-map"></div>
+            </div>
+            <div class="world-map-wrap">
+              <div class="map-title">Seller probability map</div>
+              <div id="seller-map"></div>
+            </div>
           </div>
           <div class="country-row">
             <div class="ctry buyer">
@@ -261,7 +270,7 @@ const COUNTRY_META = {
   BR:{name:'Brazil', flag:'🇧🇷', coords:[-14,-52]},
 };
 const BASE_COUNTRY_WEIGHTS = {US:0.50, CN:0.20, IN:0.12, DE:0.08, GB:0.06, BR:0.04};
-let S = { turns:[], currentIdx:-1, dim:'joy', country:null, bw:{}, sw:{}, countryTimeline:[], map:null };
+let S = { turns:[], currentIdx:-1, dim:'joy', country:null, bw:{}, sw:{}, countryTimeline:[], mapBuyer:null, mapSeller:null };
 
 function init() {
   const raw = sessionStorage.getItem('nd');
@@ -415,13 +424,45 @@ function topCountry(dist){
   return Object.entries(dist).sort((a,b)=>b[1]-a[1])[0];
 }
 
-function mixColor(b,s){
-  const blue=[79,145,255], red=[244,63,94], dark=[18,28,42];
-  const t=Math.min(1,(b||0)+(s||0));
-  if (t===0) return '#1a2d45';
-  const role=[blue[0]*(b||0)+red[0]*(s||0), blue[1]*(b||0)+red[1]*(s||0), blue[2]*(b||0)+red[2]*(s||0)];
-  const rgb=role.map((c,i)=>Math.round(dark[i]*(1-t)+c*t));
+function roleShade(prob, role){
+  const p = Math.max(0, Math.min(1, prob || 0));
+  const base = role === 'buyer' ? [79,145,255] : [244,63,94];
+  const dark = [22,34,52];
+  const rgb = base.map((c,i)=>Math.round(dark[i]*(1-p)+c*p));
   return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+}
+
+function buildRoleFills(dist, role){
+  const fills = {};
+  Object.keys(BASE_COUNTRY_WEIGHTS).forEach(code=>{
+    fills[code] = roleShade(dist[code] || 0, role);
+  });
+  return fills;
+}
+
+function renderRoleMap(which, selector, role, dist, topCode, topProb){
+  const top = COUNTRY_META[topCode];
+  const markers = [];
+  if (top?.coords){
+    markers.push({
+      name: `${role === 'buyer' ? 'Buyer' : 'Seller'} top: ${top.name} (${Math.round(topProb*100)}%)`,
+      coords:[top.coords[0], top.coords[1]],
+      style:{fill: role === 'buyer' ? '#4f91ff' : '#f43f5e', stroke: role === 'buyer' ? '#dbeafe' : '#fecdd3'}
+    });
+  }
+
+  const key = which === 'buyer' ? 'mapBuyer' : 'mapSeller';
+  if (S[key]) S[key].destroy();
+  S[key] = new jsVectorMap({
+    selector,
+    map:'world',
+    zoomButtons:false,
+    backgroundColor:'#0a1520',
+    markers,
+    markerStyle:{initial:{r:6, strokeWidth:2}},
+    regionStyle:{initial:{fill:'#1a2d45',stroke:'#253a55',strokeWidth:0.6}},
+    series:{regions:[{attribute:'fill', values:buildRoleFills(dist, role)}]}
+  });
 }
 
 function renderCountry(){
@@ -436,26 +477,8 @@ function renderCountry(){
   document.getElementById('ctry-seller').textContent = `${sc.flag} ${sc.name}`;
   document.getElementById('ctry-seller-conf').textContent = `${Math.round(sellerProb*100)}% conf.`;
 
-  const fills={};
-  Object.keys(BASE_COUNTRY_WEIGHTS).forEach(code=>{
-    fills[code]=mixColor(snap.buyer[code]||0, snap.seller[code]||0);
-  });
-
-  const markers=[];
-  if (bc?.coords) markers.push({name:`Buyer top: ${bc.name} (${Math.round(buyerProb*100)}%)`, coords:[bc.coords[0], bc.coords[1]], style:{fill:'#4f91ff', stroke:'#dbeafe'}});
-  if (sc?.coords) markers.push({name:`Seller top: ${sc.name} (${Math.round(sellerProb*100)}%)`, coords:[sc.coords[0], sc.coords[1]], style:{fill:'#f43f5e', stroke:'#fecdd3'}});
-
-  if (S.map) S.map.destroy();
-  S.map = new jsVectorMap({
-    selector:'#world-map',
-    map:'world',
-    zoomButtons:false,
-    backgroundColor:'#0a1520',
-    markers,
-    markerStyle:{initial:{r:6, strokeWidth:2}},
-    regionStyle:{initial:{fill:'#1a2d45',stroke:'#253a55',strokeWidth:0.6}},
-    series:{regions:[{attribute:'fill', values:fills}]}
-  });
+  renderRoleMap('buyer', '#buyer-map', 'buyer', snap.buyer, buyerCode, buyerProb);
+  renderRoleMap('seller', '#seller-map', 'seller', snap.seller, sellerCode, sellerProb);
 }
 
 async function switchEmo(dim, btn) {
