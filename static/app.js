@@ -1,187 +1,230 @@
-async function fetchDoc(docId){
-  const res = await fetch(`/api/doc/${docId}`);
-  if(!res.ok) throw new Error("Doc not found");
-  return await res.json();
-}
+let DOC = null;
+let CUR = 0;
+let chart = null;
 
-function clamp(n, lo, hi){ return Math.max(lo, Math.min(hi, n)); }
+function $(id){ return document.getElementById(id); }
+function clamp(n,a,b){ return Math.max(a, Math.min(b,n)); }
 
-function drawEmotionChart(canvas, emotionSeries){
-  // Minimal chart without external libs (simple line-ish rendering).
-  const ctx = canvas.getContext("2d");
-  const W = canvas.width = canvas.clientWidth;
-  const H = canvas.height = canvas.clientHeight;
+function renderTranscript(){
+  const el = $("transcript");
+  el.innerHTML = "";
+  if(!DOC) return;
 
-  ctx.clearRect(0,0,W,H);
+  // Only render up to current (no future utterances)
+  const shown = DOC.turns.filter(t => t.idx <= CUR);
 
-  // axes
-  ctx.globalAlpha = 0.6;
-  ctx.strokeStyle = "#9fb6ff";
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(40, 10);
-  ctx.lineTo(40, H-30);
-  ctx.lineTo(W-10, H-30);
-  ctx.stroke();
-  ctx.globalAlpha = 1;
-
-  const seriesNames = ["anger","sadness","joy","fear"];
-  const maxY = Math.max(1, ...emotionSeries.flatMap(d => seriesNames.map(k => d[k] || 0)));
-  const N = Math.max(1, emotionSeries.length);
-
-  function x(i){
-    const left=50, right=W-15;
-    return left + (right-left) * (i/(N-1 || 1));
-  }
-  function y(v){
-    const top=15, bot=H-40;
-    return bot - (bot-top) * (v/maxY);
+  for(const t of shown){
+    const row = document.createElement("div");
+    const sp = (t.speaker || "Unknown");
+    row.className = "turn " + (t.idx === CUR ? "current" : "");
+    row.innerHTML = `
+      <div class="meta">
+        <span class="speaker ${sp.toLowerCase()}">${sp}</span>
+        <span class="muted small">#${t.idx}</span>
+      </div>
+      <div class="text"></div>
+    `;
+    row.querySelector(".text").textContent = (t.text || "");
+    el.appendChild(row);
   }
 
-  // legend
-  ctx.font = "12px system-ui";
-  ctx.fillStyle = "rgba(232,238,252,.9)";
-  ctx.fillText("anger  sadness  joy  fear (placeholder)", 50, H-10);
+  const cur = DOC.turns[CUR];
+  $("turnMeta").textContent = cur ? `${cur.speaker || "Unknown"} · turn ${CUR+1}/${DOC.turns.length}` : "—";
 
-  // draw each series in a different alpha; keep default strokeStyle but vary alpha
-  seriesNames.forEach((name, idx) => {
-    ctx.beginPath();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "rgba(122,162,255,1)";
-    ctx.globalAlpha = 0.25 + idx * 0.18;
-
-    emotionSeries.forEach((d, i) => {
-      const xv = x(i);
-      const yv = y(d[name] || 0);
-      if(i === 0) ctx.moveTo(xv, yv);
-      else ctx.lineTo(xv, yv);
-    });
-    ctx.stroke();
-    ctx.globalAlpha = 1;
-  });
+  // keep current in view
+  const current = el.querySelector(".turn.current");
+  if(current) current.scrollIntoView({block:"nearest"});
 }
 
-async function translate(text, target_lang){
-  const res = await fetch("/api/translate", {
-    method:"POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({text, target_lang})
-  });
-  return await res.json();
+function emotionForIdx(idx){
+  if(!DOC) return null;
+  return DOC.emotion.find(e => e.idx === idx) || null;
 }
 
-function renderTurn(state){
-  const t = state.turns[state.idx];
-  const iv = state.interventions[state.idx];
+function renderEmoNow(){
+  const el = $("emoNow");
+  el.innerHTML = "";
+  const e = emotionForIdx(CUR);
+  if(!e) return;
+  const keys = ["anger","sadness","joy","fear","valence"];
+  for(const k of keys){
+    const box = document.createElement("div");
+    box.className = "emoBox";
+    box.innerHTML = `<div class="muted small">${k}</div><div class="big">${e[k]}</div>`;
+    el.appendChild(box);
+  }
+}
 
-  document.getElementById("turnIdx").textContent = `#${t.idx}`;
-  document.getElementById("turnSpeaker").textContent = t.speaker || "Unknown";
-  document.getElementById("turnTs").textContent = t.ts ? `ts=${t.ts}` : "";
-  document.getElementById("turnText").textContent = t.text || "";
+function renderRisk(){
+  if(!DOC) return;
+  $("riskLabel").textContent = DOC.risk.label;
+  $("riskScore").textContent = `risk=${DOC.risk.risk}`;
+  $("riskSignals").textContent = `neg_hits=${DOC.risk.signals.neg_hits}, threat_hits=${DOC.risk.signals.threat_hits}`;
+}
 
-  // Intervention UI
-  const badge = document.getElementById("interveneBadge");
-  const reasons = document.getElementById("interveneReasons");
-  const suggestion = document.getElementById("interveneSuggestion");
+function renderAdvisor(){
+  if(!DOC) return;
+  const inter = (DOC.interventions || []).find(x => x.idx === CUR);
+  const badge = $("interveneBadge");
+  const short = $("interveneShort");
+  const reasons = $("interveneReasons");
+  const sugg = $("interveneSuggestion");
+  const oddsText = $("oddsText");
+  const oddsSuccess = $("oddsSuccess");
+  const oddsWalk = $("oddsWalk");
 
   reasons.innerHTML = "";
-  suggestion.textContent = "";
+  if(!inter){
+    badge.classList.add("hidden");
+    short.textContent = "—";
+    sugg.textContent = "";
+    oddsText.textContent = "—";
+    oddsSuccess.style.width = "0%";
+    oddsWalk.style.width = "0%";
+    return;
+  }
 
-  if(iv && iv.should_intervene){
+  if(inter.should_intervene){
     badge.classList.remove("hidden");
-    (iv.reason || []).forEach(r => {
-      const li = document.createElement("li");
-      li.textContent = r;
-      reasons.appendChild(li);
-    });
-    suggestion.textContent = iv.suggestion || "";
+    badge.textContent = "Intervene";
   } else {
     badge.classList.add("hidden");
   }
 
-  // Reset translation box
-  const box = document.getElementById("translationBox");
-  box.classList.add("hidden");
-  box.textContent = "";
+  short.textContent = inter.recommended_action || "—";
+  for(const r of (inter.reason || [])){
+    const li = document.createElement("li");
+    li.textContent = r;
+    reasons.appendChild(li);
+  }
+  sugg.textContent = inter.suggestion || "";
+
+  const s = Math.round((inter.success_odds || 0) * 100);
+  const w = Math.round((inter.walkaway_odds || 0) * 100);
+  oddsSuccess.style.width = `${s}%`;
+  oddsWalk.style.width = `${w}%`;
+  oddsText.textContent = `Success: ${s}% · Walkaway: ${w}%`;
 }
 
-function wireControls(state){
-  const prevBtn = document.getElementById("prevBtn");
-  const nextBtn = document.getElementById("nextBtn");
-  const jumpTo = document.getElementById("jumpTo");
-  const jumpBtn = document.getElementById("jumpBtn");
-  const translateBtn = document.getElementById("translateBtn");
-  const translateLang = document.getElementById("translateLang");
-  const translationBox = document.getElementById("translationBox");
+function renderCountryPrediction(){
+  if(!DOC) return;
+  $("langVal").textContent = `${DOC.lang_country.language} (${DOC.lang_country.confidence})`;
+  $("buyerCountryVal").textContent = `${DOC.lang_country.buyer_country} (${DOC.lang_country.buyer_country_confidence})`;
+  $("sellerCountryVal").textContent = `${DOC.lang_country.seller_country} (${DOC.lang_country.seller_country_confidence})`;
 
-  prevBtn.addEventListener("click", () => {
-    state.idx = clamp(state.idx - 1, 0, state.turns.length - 1);
-    renderTurn(state);
-  });
+  const map = $("countryMap");
+  const buyer = DOC.lang_country.buyer_country;
+  const seller = DOC.lang_country.seller_country;
+  const cent = DOC.country_centroids || {};
 
-  nextBtn.addEventListener("click", () => {
-    state.idx = clamp(state.idx + 1, 0, state.turns.length - 1);
-    renderTurn(state);
-  });
+  function project(lon, lat){
+    const x = (lon + 180) * (300/360);
+    const y = (90 - lat) * (150/180);
+    return {x, y};
+  }
 
-  jumpBtn.addEventListener("click", () => {
-    const v = parseInt(jumpTo.value, 10);
-    if(Number.isFinite(v)){
-      state.idx = clamp(v, 0, state.turns.length - 1);
-      renderTurn(state);
-    }
-  });
+  const pts = [];
+  if(cent[buyer]) pts.push({code: buyer, ...project(...cent[buyer]), cls:"buyerDot"});
+  if(cent[seller]) pts.push({code: seller, ...project(...cent[seller]), cls:"sellerDot"});
 
-  translateBtn.addEventListener("click", async () => {
-    const t = state.turns[state.idx];
-    const lang = translateLang.value || "en";
-    translateBtn.disabled = true;
-    translateBtn.textContent = "Translating…";
-    try{
-      const out = await translate(t.text || "", lang);
-      translationBox.textContent = out.translated_text || "(no output)";
-      translationBox.classList.remove("hidden");
-    } finally {
-      translateBtn.disabled = false;
-      translateBtn.textContent = "Translate (placeholder)";
-    }
-  });
+  map.innerHTML = `
+    <svg viewBox="0 0 300 150" class="miniMap" aria-label="country map">
+      <rect x="0" y="0" width="300" height="150" rx="10" ry="10" class="mapBg"></rect>
+      <path class="land" d="M25,65 C55,40 80,40 100,60 C120,80 95,95 70,92 C50,90 35,82 25,65 Z"></path>
+      <path class="land" d="M120,55 C145,35 175,35 190,55 C205,75 190,95 160,95 C135,90 125,75 120,55 Z"></path>
+      <path class="land" d="M200,60 C225,45 255,50 270,70 C280,90 260,105 235,100 C220,95 205,80 200,60 Z"></path>
+      ${pts.map(p => `<circle cx="${p.x}" cy="${p.y}" r="6" class="${p.cls}"><title>${p.code}</title></circle>`).join("")}
+    </svg>
+  `;
+}
 
-  // keyboard shortcuts
-  window.addEventListener("keydown", (e) => {
-    if(e.key === "ArrowLeft"){
-      state.idx = clamp(state.idx - 1, 0, state.turns.length - 1);
-      renderTurn(state);
-    }
-    if(e.key === "ArrowRight"){
-      state.idx = clamp(state.idx + 1, 0, state.turns.length - 1);
-      renderTurn(state);
-    }
+function buildEmotionChart(){
+  if(!DOC) return;
+  const sel = $("emoSelect");
+  sel.innerHTML = "";
+  for(const k of DOC.supported_emotions || ["anger","sadness","joy","fear","valence"]){
+    const opt = document.createElement("option");
+    opt.value = k;
+    opt.textContent = k;
+    sel.appendChild(opt);
+  }
+
+  const ctx = $("emoChart").getContext("2d");
+
+  function seriesFor(key){
+    const xs = DOC.turns.map(t => t.idx);
+    const buyer = xs.map(i => {
+      const e = emotionForIdx(i);
+      const sp = (e && (e.speaker||"")).toLowerCase();
+      if(sp !== "buyer") return null;
+      return e[key];
+    });
+    const seller = xs.map(i => {
+      const e = emotionForIdx(i);
+      const sp = (e && (e.speaker||"")).toLowerCase();
+      if(sp !== "seller") return null;
+      return e[key];
+    });
+    return {xs, buyer, seller};
+  }
+
+  function render(key){
+    const d = seriesFor(key);
+    if(chart) chart.destroy();
+    chart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: d.xs,
+        datasets: [
+          { label: "Buyer", data: d.buyer, spanGaps: false, tension: 0.25 },
+          { label: "Seller", data: d.seller, spanGaps: false, tension: 0.25 },
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: true } },
+        scales: {
+          x: { title: { display: true, text: "Turn" } },
+          y: { title: { display: true, text: "Score" } }
+        }
+      }
+    });
+  }
+
+  sel.addEventListener("change", () => render(sel.value));
+  render(sel.value);
+}
+
+function renderAll(){
+  renderTranscript();
+  renderEmoNow();
+  renderRisk();
+  renderAdvisor();
+}
+
+function step(delta){
+  if(!DOC) return;
+  CUR = clamp(CUR + delta, 0, DOC.turns.length - 1);
+  renderAll();
+}
+
+async function init(){
+  const res = await fetch(`/api/doc/${window.DOC_ID}`);
+  DOC = await res.json();
+
+  CUR = 0;
+  renderCountryPrediction();
+  buildEmotionChart();
+  renderAll();
+
+  $("prevBtn")?.addEventListener("click", () => step(-1));
+  $("nextBtn")?.addEventListener("click", () => step(1));
+  $("jumpBtn")?.addEventListener("click", () => {
+    const v = parseInt(($("jumpTo").value || "0"), 10);
+    CUR = clamp(v, 0, DOC.turns.length - 1);
+    renderAll();
   });
 }
 
-(async function init(){
-  const docId = window.DOC_ID;
-  const doc = await fetchDoc(docId);
-
-  const state = {
-    idx: 0,
-    turns: doc.turns || [],
-    emotion: doc.emotion || [],
-    interventions: doc.interventions || []
-  };
-
-  // set jump max hint
-  document.getElementById("jumpTo").value = "0";
-
-  // chart
-  const canvas = document.getElementById("emoChart");
-  drawEmotionChart(canvas, state.emotion);
-
-  // viewer
-  wireControls(state);
-  renderTurn(state);
-
-  // redraw chart on resize
-  window.addEventListener("resize", () => drawEmotionChart(canvas, state.emotion));
-})();
+document.addEventListener("DOMContentLoaded", init);

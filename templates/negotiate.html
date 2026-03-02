@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NegotiationLens — Negotiation</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07090f;--surface:#0c1018;--card:#0e1521;--border:#1a2333;--teal:#22d3a5;--accent:#4f91ff;--red:#f43f5e;--amber:#f59e0b;--purple:#a78bfa;--muted:#4b607a;--text:#e2e8f0;--text2:#94a3b8;--serif:'Instrument Serif',serif;--sans:'Instrument Sans',sans-serif;--mono:'JetBrains Mono',monospace;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--sans);}
+body{display:flex;flex-direction:column;}
+
+nav{display:flex;align-items:center;padding:10px 20px;border-bottom:1px solid var(--border);flex-shrink:0;gap:10px;}
+.logo{font-family:var(--serif);font-size:1.1rem;letter-spacing:-0.5px;white-space:nowrap;}.logo span{color:var(--teal);}
+.steps{display:flex;}
+.step{padding:4px 13px;font-size:0.58rem;font-family:var(--mono);color:var(--muted);border:1px solid var(--border);border-right:none;background:var(--surface);}
+.step:first-child{border-radius:5px 0 0 5px;}.step:last-child{border-right:1px solid var(--border);border-radius:0 5px 5px 0;}
+.step.active{color:var(--teal);border-color:var(--teal);background:rgba(34,211,165,0.06);}
+.step.done{color:var(--accent);border-color:rgba(79,145,255,0.25);}
+.nav-r{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.pill{font-family:var(--mono);font-size:0.62rem;padding:3px 10px;border-radius:4px;border:1px solid var(--border);color:var(--text2);background:var(--surface);}
+.btn{padding:5px 14px;border-radius:5px;font-family:var(--sans);font-size:0.73rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--text);transition:all 0.15s;}
+.btn:hover:not(:disabled){background:var(--accent);border-color:var(--accent);color:#07090f;}
+.btn:disabled{opacity:0.3;cursor:not-allowed;}
+.btn.primary{background:var(--teal);border-color:var(--teal);color:#07090f;}
+.btn.primary:hover{opacity:0.85;}
+.spin{width:14px;height:14px;border-radius:50%;border:2px solid var(--border);border-top-color:var(--teal);animation:spin 0.7s linear infinite;display:none;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* === 3-col layout === */
+.main{display:grid;grid-template-columns:240px 1fr 300px;flex:1;overflow:hidden;}
+.col{display:flex;flex-direction:column;border-right:1px solid var(--border);overflow:hidden;}
+.col:last-child{border-right:none;}
+.col-hd{padding:8px 13px;border-bottom:1px solid var(--border);font-size:0.57rem;font-family:var(--mono);letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:7px;flex-shrink:0;}
+.dot{width:5px;height:5px;border-radius:50%;}
+.col-body{flex:1;overflow-y:auto;padding:10px 12px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.col-body::-webkit-scrollbar{width:3px;}
+.col-body::-webkit-scrollbar-thumb{background:var(--border);}
+.col-foot{padding:8px 12px;border-top:1px solid var(--border);flex-shrink:0;}
+
+/* === LEFT: Transcript scroll list === */
+.turn{padding:8px 10px;border-radius:7px;margin-bottom:6px;border:1px solid var(--border);font-size:0.73rem;line-height:1.5;transition:all 0.2s;cursor:default;}
+.turn.buyer  {background:rgba(79,145,255,0.04);border-color:rgba(79,145,255,0.12);}
+.turn.seller {background:rgba(244,63,94,0.04); border-color:rgba(244,63,94,0.12);}
+.turn.mediator{background:rgba(34,211,165,0.04);border-color:rgba(34,211,165,0.12);}
+.turn.current{box-shadow:0 0 0 2px var(--teal);border-color:var(--teal);}
+.turn.future{opacity:0.18;pointer-events:none;}
+.turn-meta{display:flex;justify-content:space-between;margin-bottom:3px;}
+.turn-role{font-family:var(--mono);font-size:0.57rem;font-weight:500;letter-spacing:0.5px;}
+.turn-role.buyer{color:var(--accent);}.turn-role.seller{color:var(--red);}.turn-role.mediator{color:var(--teal);}
+.turn-idx{font-family:var(--mono);font-size:0.55rem;color:var(--muted);}
+.turn-preview{color:var(--text2);font-size:0.7rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* === CENTER: Dialogue stage === */
+.dialogue-stage{flex:1;overflow-y:auto;padding:18px 20px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.dialogue-stage::-webkit-scrollbar{width:3px;}
+.dialogue-stage::-webkit-scrollbar-thumb{background:var(--border);}
+.placeholder-msg{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px;color:var(--muted);text-align:center;}
+.placeholder-msg .ph-icon{font-size:3rem;opacity:0.3;}
+.placeholder-msg p{font-size:0.82rem;line-height:1.7;}
+
+/* Dialogue bubbles */
+.bubble-wrap{margin-bottom:20px;display:flex;flex-direction:column;}
+.bubble-wrap.buyer{align-items:flex-start;}
+.bubble-wrap.seller{align-items:flex-end;}
+.bubble-label{font-family:var(--mono);font-size:0.58rem;letter-spacing:0.8px;margin-bottom:5px;padding:0 4px;}
+.bubble-label.buyer{color:var(--accent);}
+.bubble-label.seller{color:var(--red);}
+.bubble{max-width:82%;padding:14px 18px;border-radius:14px;font-size:0.88rem;line-height:1.65;position:relative;}
+.bubble.buyer{background:rgba(79,145,255,0.1);border:1px solid rgba(79,145,255,0.2);border-bottom-left-radius:4px;}
+.bubble.seller{background:rgba(244,63,94,0.08);border:1px solid rgba(244,63,94,0.18);border-bottom-right-radius:4px;}
+.bubble.current.buyer{border-color:rgba(79,145,255,0.5);box-shadow:0 2px 20px rgba(79,145,255,0.1);}
+.bubble.current.seller{border-color:rgba(244,63,94,0.4);box-shadow:0 2px 20px rgba(244,63,94,0.08);}
+.bubble-emos{display:flex;flex-wrap:wrap;gap:4px;margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06);}
+.emo-chip{font-size:0.58rem;font-family:var(--mono);padding:2px 7px;border-radius:4px;background:var(--surface);border:1px solid var(--border);color:var(--muted);}
+.emo-chip.hot{border-color:var(--amber);color:var(--amber);}
+.emo-chip.pos{border-color:var(--teal);color:var(--teal);}
+
+/* === EMOTION CHART below dialogue === */
+.center-bottom{flex-shrink:0;border-top:1px solid var(--border);}
+.emo-chart-wrap{padding:10px 14px;}
+.emo-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.emo-title{font-family:var(--mono);font-size:0.57rem;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);}
+.emo-toggle{display:flex;gap:4px;flex-wrap:wrap;}
+.emo-btn{font-size:0.6rem;font-family:var(--mono);padding:2px 8px;border-radius:4px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);transition:all 0.15s;}
+.emo-btn.active{color:#07090f;border-color:transparent;}
+.emo-btn[data-emo="joy"].active{background:var(--teal);border-color:var(--teal);}
+.emo-btn[data-emo="anger"].active{background:var(--red);border-color:var(--red);}
+.emo-btn[data-emo="fear"].active{background:var(--purple);border-color:var(--purple);}
+.emo-btn[data-emo="surprise"].active{background:var(--amber);border-color:var(--amber);}
+.emo-btn[data-emo="compassion"].active{background:var(--accent);border-color:var(--accent);}
+.emo-btn[data-emo="neutral"].active{background:#6b7280;border-color:#6b7280;}
+#emo-img{width:100%;display:block;}
+#emo-ph{padding:24px;text-align:center;color:var(--muted);font-size:0.72rem;}
+
+/* === RIGHT SIDEBAR === */
+.sidebar-body{flex:1;overflow-y:auto;padding:10px 12px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.sec-label{font-size:0.55rem;font-family:var(--mono);letter-spacing:1.6px;text-transform:uppercase;color:var(--muted);padding-bottom:5px;border-bottom:1px solid var(--border);margin-bottom:8px;}
+
+/* World map */
+.map-card{background:var(--card);border:1px solid var(--border);border-radius:9px;overflow:hidden;margin-bottom:12px;}
+.map-card-head{padding:7px 11px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.map-card-label{font-family:var(--mono);font-size:0.56rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);}
+.world-map-wrap{background:#0a1520;position:relative;}
+.world-map-wrap svg{width:100%;display:block;}
+.country-row{display:flex;gap:6px;padding:8px 10px;}
+.ctry{flex:1;background:var(--surface);border-radius:6px;padding:7px 8px;}
+.ctry.buyer{border-left:2px solid var(--accent);}
+.ctry.seller{border-left:2px solid var(--red);}
+.ctry-role{font-family:var(--mono);font-size:0.52rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);}
+.ctry-name{font-size:0.82rem;font-weight:600;margin-top:2px;}
+.ctry-conf{font-family:var(--mono);font-size:0.58rem;color:var(--muted);margin-top:1px;}
+
+/* Risk */
+.risk-card{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:10px 12px;margin-bottom:10px;}
+.risk-row{display:flex;align-items:baseline;gap:8px;margin-bottom:5px;}
+.risk-pct{font-family:var(--serif);font-size:2rem;line-height:1;}
+.risk-badge{font-family:var(--mono);font-size:0.62rem;padding:2px 8px;border-radius:4px;}
+.risk-badge.low{background:rgba(34,211,165,0.1);border:1px solid var(--teal);color:var(--teal);}
+.risk-badge.medium{background:rgba(245,158,11,0.1);border:1px solid var(--amber);color:var(--amber);}
+.risk-badge.high{background:rgba(244,63,94,0.1);border:1px solid var(--red);color:var(--red);}
+.risk-bar-wrap{height:3px;background:var(--border);border-radius:2px;margin:7px 0;}
+.risk-bar{height:100%;border-radius:2px;transition:width 0.4s;}
+.sigs{display:flex;gap:14px;font-size:0.6rem;font-family:var(--mono);color:var(--muted);}
+.sigs span{color:var(--text2);}
+
+/* Advisor */
+.adv-card{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:10px 12px;margin-bottom:10px;}
+.adv-card.alert{border-color:rgba(245,158,11,0.4);background:rgba(245,158,11,0.03);}
+.adv-top{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.adv-badge{font-family:var(--mono);font-size:0.6rem;font-weight:600;padding:2px 9px;border-radius:4px;}
+.adv-badge.intervene{background:rgba(245,158,11,0.15);border:1px solid var(--amber);color:var(--amber);}
+.adv-badge.observe{background:rgba(34,211,165,0.08);border:1px solid rgba(34,211,165,0.35);color:var(--teal);}
+.odds-labels{display:flex;justify-content:space-between;font-size:0.57rem;font-family:var(--mono);color:var(--muted);margin-bottom:3px;}
+.odds-bar{display:flex;height:5px;border-radius:3px;overflow:hidden;margin-bottom:7px;}
+.odds-s{background:var(--teal);transition:flex 0.4s;}
+.odds-w{background:var(--red);transition:flex 0.4s;}
+.reason{font-size:0.62rem;font-family:var(--mono);color:var(--amber);padding:1px 0;}
+.reason::before{content:'⚠ ';}
+.suggestion{font-size:0.7rem;color:var(--text2);line-height:1.55;padding:6px 9px;background:var(--surface);border-radius:5px;border-left:2px solid var(--accent);font-style:italic;margin-top:6px;}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Negotiation<span>Lens</span></div>
+  <div class="steps">
+    <div class="step done">01 Upload</div><div class="step done">02 Pre-Analysis</div>
+    <div class="step active">03 Negotiate</div><div class="step">04 Summary</div>
+  </div>
+  <div class="nav-r">
+    <div class="spin" id="spin"></div>
+    <span class="pill" id="turn-pill">Turn 0 / 0</span>
+    <button class="btn" id="btn-prev" disabled onclick="step(-1)">← Prev</button>
+    <button class="btn" id="btn-next" disabled onclick="step(1)">Next →</button>
+    <button class="btn primary" onclick="location.href='/post'">Summary →</button>
+  </div>
+</nav>
+
+<div class="main">
+
+  <!-- COL 1: Transcript list -->
+  <div class="col">
+    <div class="col-hd"><div class="dot" style="background:var(--accent)"></div>All Turns</div>
+    <div class="col-body" id="tx-list"></div>
+  </div>
+
+  <!-- COL 2: Dialogue stage + emotion chart -->
+  <div class="col" style="border-right:1px solid var(--border)">
+    <div class="col-hd"><div class="dot" style="background:var(--teal)"></div>Dialogue &nbsp;<span style="color:var(--muted);font-size:0.55rem" id="center-hint">Press Next to begin</span></div>
+
+    <!-- Dialogue bubbles -->
+    <div class="dialogue-stage" id="dialogue">
+      <div class="placeholder-msg" id="dial-placeholder">
+        <div class="ph-icon">💬</div>
+        <p>Step through turns to see the<br>dialogue unfold here</p>
+      </div>
+    </div>
+
+    <!-- Emotion chart pinned at bottom -->
+    <div class="center-bottom">
+      <div class="emo-chart-wrap">
+        <div class="emo-header">
+          <div class="emo-title">Emotion over time</div>
+          <div class="emo-toggle">
+            <button class="emo-btn active" data-emo="joy" onclick="switchEmo('joy',this)">Joy</button>
+            <button class="emo-btn" data-emo="anger" onclick="switchEmo('anger',this)">Anger</button>
+            <button class="emo-btn" data-emo="fear" onclick="switchEmo('fear',this)">Fear</button>
+            <button class="emo-btn" data-emo="surprise" onclick="switchEmo('surprise',this)">Surprise</button>
+            <button class="emo-btn" data-emo="compassion" onclick="switchEmo('compassion',this)">Compassion</button>
+            <button class="emo-btn" data-emo="neutral" onclick="switchEmo('neutral',this)">Neutral</button>
+          </div>
+        </div>
+        <div id="emo-ph" style="padding:20px;text-align:center;color:var(--muted);font-size:0.7rem">Step through turns to see emotion trajectory</div>
+        <img id="emo-img" src="" style="display:none">
+      </div>
+    </div>
+  </div>
+
+  <!-- COL 3: Intelligence sidebar -->
+  <div class="col" style="border-right:none">
+    <div class="col-hd"><div class="dot" style="background:var(--amber)"></div>Live Intelligence</div>
+    <div class="sidebar-body">
+
+      <!-- World Map + Countries -->
+      <div style="margin-bottom:12px">
+        <div class="sec-label">Country of Origin</div>
+        <div class="map-card">
+          <div class="map-card-head">
+            <span class="map-card-label">Predicted Origins</span>
+            <span style="font-size:0.58rem;font-family:var(--mono);color:var(--teal)">English</span>
+          </div>
+          <div class="world-map-wrap">
+            <!-- Leaflet-style SVG world map with actual country polygons approximated -->
+            <svg id="world-svg" viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg" style="background:#0a1520">
+              <defs>
+                <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                  <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#111f30" stroke-width="0.5"/>
+                </pattern>
+              </defs>
+              <rect width="800" height="400" fill="url(#grid)"/>
+              <!-- Equator & prime meridian -->
+              <line x1="0" y1="200" x2="800" y2="200" stroke="#1a2840" stroke-width="0.8" stroke-dasharray="4,4"/>
+              <line x1="400" y1="0" x2="400" y2="400" stroke="#1a2840" stroke-width="0.8" stroke-dasharray="4,4"/>
+
+              <!-- North America -->
+              <path d="M 45,60 L 190,45 L 230,75 L 245,110 L 225,150 L 200,185 L 170,200 L 145,195 L 120,180 L 85,165 L 55,145 L 40,115 Z" fill="#1a2d45" stroke="#253a55" stroke-width="1"/>
+              <!-- Central America -->
+              <path d="M 145,195 L 165,200 L 170,220 L 155,225 L 140,215 Z" fill="#1a2d45" stroke="#253a55" stroke-width="0.7"/>
+              <!-- Caribbean roughly -->
+              <rect x="175" y="192" width="18" height="8" rx="3" fill="#1a2d45" stroke="#253a55" stroke-width="0.6"/>
+              <!-- South America -->
+              <path d="M 155,225 L 220,215 L 255,235 L 275,270 L 280,330 L 255,375 L 215,385 L 175,370 L 145,340 L 135,300 L 140,260 Z" fill="#1a2d45" stroke="#253a55" stroke-width="1"/>
+              <!-- Greenland -->
+              <path d="M 220,15 L 270,10 L 295,30 L 285,60 L 255,72 L 225,60 L 210,40 Z" fill="#1a2d45" stroke="#253a55" stroke-width="0.7"/>
+              <!-- UK & Ireland -->
+              <path d="M 355,80 L 368,74 L 375,85 L 370,98 L 358,101 L 350,92 Z" fill="#1e3a55" stroke="#2d4f70" stroke-width="0.8"/>
+              <!-- Europe -->
+              <path d="M 370,75 L 440,60 L 475,65 L 490,80 L 480,105 L 455,120 L 430,125 L 395,115 L 370,100 Z" fill="#1a2d45" stroke="#253a55" stroke-width="1"/>
+              <!-- Scandinavia -->
+              <path d="M 395,40 L 430,25 L 455,35 L 450,65 L 430,72 L 405,65 L 390,52 Z" fill="#1a2d45" stroke="#253a55" stroke-width="0.8"/>
+              <!-- Africa -->
+              <path d="M 370,130 L 455,118 L 490,140 L 505,185 L 510,240 L 490,295 L 455,340 L 415,355 L 375,345 L 345,310 L 340,265 L 350,215 L 360,170 Z" fill="#1a2d45" stroke="#253a55" stroke-width="1"/>
+              <!-- Madagascar -->
+              <path d="M 500,280 L 510,275 L 515,300 L 505,315 L 497,305 Z" fill="#1a2d45" stroke="#253a55" stroke-width="0.6"/>
+              <!-- Russia -->
+              <path d="M 455,35 L 650,20 L 700,40 L 710,70 L 680,90 L 600,100 L 520,95 L 470,80 L 455,55 Z" fill="#1a2d45" stroke="#253a55" stroke-width="1"/>
+              <!-- Middle East -->
+              <path d="M 455,120 L 510,108 L 540,125 L 540,155 L 510,165 L 475,155 L 455,140 Z" fill="#1a2d45" stroke="#253a55" stroke-width="0.8"/>
+              <!-- Central Asia -->
+              <path d="M 510,80 L 610,72 L 630,100 L 610,125 L 555,130 L 520,115 Z" fill="#1a2d45" stroke="#253a55" stroke-width="0.8"/>
+              <!-- India -->
+              <path d="M 555,130 L 600,125 L 618,155 L 615,200 L 595,235 L 570,242 L 548,225 L 540,190 L 542,155 Z" fill="#1a2d45" stroke="#253a55" stroke-width="0.9"/>
+              <!-- China -->
+              <path d="M 610,72 L 700,60 L 740,80 L 745,120 L 720,145 L 680,155 L 635,148 L 610,125 Z" fill="#1a2d45" stroke="#253a55" stroke-width="1"/>
+              <!-- SE Asia -->
+              <path d="M 660,150 L 720,140 L 745,165 L 730,195 L 690,200 L 660,180 Z" fill="#1a2d45" stroke="#253a55" stroke-width="0.8"/>
+              <!-- Japan -->
+              <path d="M 735,80 L 750,72 L 760,88 L 748,105 L 733,100 Z" fill="#1e3a55" stroke="#2d4f70" stroke-width="0.8"/>
+              <!-- Australia -->
+              <path d="M 645,270 L 745,258 L 775,285 L 780,335 L 755,368 L 700,375 L 655,358 L 632,325 L 630,290 Z" fill="#1a2d45" stroke="#253a55" stroke-width="1"/>
+              <!-- New Zealand -->
+              <path d="M 775,340 L 784,330 L 792,348 L 786,362 L 776,355 Z" fill="#1a2d45" stroke="#253a55" stroke-width="0.6"/>
+
+              <!-- Map pins injected here -->
+              <g id="map-pins"></g>
+            </svg>
+          </div>
+          <div class="country-row">
+            <div class="ctry buyer">
+              <div class="ctry-role">Buyer</div>
+              <div class="ctry-name" id="ctry-buyer">—</div>
+              <div class="ctry-conf" id="ctry-buyer-conf">—</div>
+            </div>
+            <div class="ctry seller">
+              <div class="ctry-role">Seller</div>
+              <div class="ctry-name" id="ctry-seller">—</div>
+              <div class="ctry-conf" id="ctry-seller-conf">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Risk -->
+      <div style="margin-bottom:12px">
+        <div class="sec-label">Failure Risk</div>
+        <div class="risk-card" id="risk-card">
+          <div style="color:var(--muted);font-size:0.72rem;padding:10px 0;text-align:center">—</div>
+        </div>
+      </div>
+
+      <!-- Advisor -->
+      <div>
+        <div class="sec-label">AI Advisor</div>
+        <div class="adv-card" id="adv-card">
+          <div style="color:var(--muted);font-size:0.72rem;padding:10px 0;text-align:center">—</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── Country SVG coordinate map (lng/lat → SVG x,y in 800×400 viewBox) ── */
+const CTRY_XY = {
+  'United States':[125,140],'Canada':[120,90],'United Kingdom':[362,88],
+  'Germany':[415,85],'France':[390,100],'China':[690,110],'Japan':[746,88],
+  'India':[578,185],'Australia':[700,320],'Brazil':[200,295],'Russia':[580,55],
+};
+
+let S = { turns:[], currentIdx:-1, dim:'joy', country:null, bw:{}, sw:{} };
+
+function init() {
+  const raw = sessionStorage.getItem('nd');
+  if (!raw) { location.href='/'; return; }
+  const D = JSON.parse(raw);
+  S.turns   = D.turns;
+  S.country = D.country;
+  S.bw      = D.buyer_weights || {};
+  S.sw      = D.seller_weights || {};
+  renderTxList();
+  renderCountry();
+  document.getElementById('btn-next').disabled = false;
+  document.getElementById('turn-pill').textContent = `Turn 0 / ${S.turns.length}`;
+}
+
+function renderTxList() {
+  const el = document.getElementById('tx-list');
+  el.innerHTML = S.turns.map((t,i) => {
+    const role = t.speaker.toLowerCase();
+    const preview = t.text.length > 55 ? t.text.slice(0,55)+'…' : t.text;
+    return `<div class="turn ${role} future" id="t${i}" data-i="${i}">
+      <div class="turn-meta">
+        <span class="turn-role ${role}">${t.speaker}</span>
+        <span class="turn-idx">#${i}</span>
+      </div>
+      <div class="turn-preview">${esc(preview)}</div>
+    </div>`;
+  }).join('');
+}
+
+async function step(dir) {
+  const ni = S.currentIdx + dir;
+  if (ni < 0 || ni >= S.turns.length) return;
+  S.currentIdx = ni;
+  updateTxHighlights();
+  document.getElementById('btn-prev').disabled = ni <= 0;
+  document.getElementById('btn-next').disabled = ni >= S.turns.length - 1;
+  document.getElementById('turn-pill').textContent = `Turn ${ni+1} / ${S.turns.length}`;
+  document.getElementById('center-hint').textContent = `Turn ${ni+1} of ${S.turns.length}`;
+  addBubble(S.turns[ni], ni);
+
+  document.getElementById('spin').style.display = 'block';
+  try {
+    const res = await fetch('/api/step',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({idx:ni, turns:S.turns, emotion_dim:S.dim, buyer_weights:S.bw, seller_weights:S.sw}),
+    });
+    const data = await res.json();
+    updateEmoChart(data.emotion_img);
+    renderRisk(data.risk);
+    renderAdvisor(data.advisor);
+  } catch(e){ console.error(e); }
+  finally{ document.getElementById('spin').style.display='none'; }
+}
+
+function updateTxHighlights() {
+  S.turns.forEach((_,i) => {
+    const el = document.getElementById(`t${i}`);
+    if (!el) return;
+    el.classList.remove('current','future');
+    if (i === S.currentIdx){ el.classList.add('current'); el.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+    if (i > S.currentIdx) el.classList.add('future');
+  });
+}
+
+function addBubble(t, idx) {
+  const ph = document.getElementById('dial-placeholder');
+  if (ph) ph.remove();
+  const role = t.speaker.toLowerCase();
+  const emos = t.emotions || {};
+  const chips = Object.entries(emos).filter(([k])=>k!=='valence').map(([k,v])=>{
+    let cls = '';
+    if (k==='joy'&&v>0.15) cls='pos';
+    else if (v>0.2) cls='hot';
+    return `<span class="emo-chip ${cls}">${k}: ${v.toFixed(2)}</span>`;
+  }).join('');
+  const wrap = document.createElement('div');
+  wrap.className = `bubble-wrap ${role}`;
+  wrap.id = `bubble-${idx}`;
+  wrap.innerHTML = `
+    <div class="bubble-label ${role}">${t.speaker} · Turn ${idx}</div>
+    <div class="bubble ${role} current">
+      ${esc(t.text)}
+      <div class="bubble-emos">${chips}</div>
+    </div>`;
+  // Remove 'current' from previous bubble
+  document.querySelectorAll('.bubble.current').forEach(b=>b.classList.remove('current'));
+  document.getElementById('dialogue').appendChild(wrap);
+  wrap.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function updateEmoChart(b64) {
+  document.getElementById('emo-ph').style.display='none';
+  const img=document.getElementById('emo-img');
+  img.src='data:image/png;base64,'+b64; img.style.display='block';
+}
+
+function renderRisk(r) {
+  const pct=Math.round(r.score*100);
+  const lc=r.label.toLowerCase();
+  const c = lc==='low'?'var(--teal)':lc==='medium'?'var(--amber)':'var(--red)';
+  document.getElementById('risk-card').innerHTML=`
+    <div class="risk-row"><div class="risk-pct" style="color:${c}">${pct}%</div><span class="risk-badge ${lc}">${r.label}</span></div>
+    <div class="risk-bar-wrap"><div class="risk-bar" style="width:${pct}%;background:${c}"></div></div>
+    <div class="sigs"><span>⚠ Signals: <span>${r.negative_signals}</span></span><span>⚡ Threats: <span>${r.threats}</span></span></div>`;
+}
+
+function renderAdvisor(a) {
+  const card=document.getElementById('adv-card');
+  card.className='adv-card'+(a.should_intervene?' alert':'');
+  const reasons=(a.reasons||[]).map(r=>`<div class="reason">${r}</div>`).join('');
+  card.innerHTML=`
+    <div class="adv-top"><span class="adv-badge ${a.should_intervene?'intervene':'observe'}">${a.action}</span></div>
+    <div class="odds-labels"><span>Success ${Math.round(a.success_odds*100)}%</span><span>Walkaway ${Math.round(a.walkaway_odds*100)}%</span></div>
+    <div class="odds-bar"><div class="odds-s" style="flex:${a.success_odds}"></div><div class="odds-w" style="flex:${a.walkaway_odds}"></div></div>
+    ${reasons}
+    <div class="suggestion">${a.suggestion}</div>`;
+}
+
+function renderCountry() {
+  if (!S.country) return;
+  const {buyer:bc, seller:sc} = S.country;
+  document.getElementById('ctry-buyer').textContent = bc.flag+' '+bc.country;
+  document.getElementById('ctry-buyer-conf').textContent = Math.round(bc.confidence*100)+'% conf.';
+  document.getElementById('ctry-seller').textContent = sc.flag+' '+sc.country;
+  document.getElementById('ctry-seller-conf').textContent = Math.round(sc.confidence*100)+'% conf.';
+  // Place pins on SVG world map
+  const g = document.getElementById('map-pins');
+  g.innerHTML = '';
+  function addPin(country, color, label) {
+    const xy = CTRY_XY[country];
+    if (!xy) return;
+    const [cx,cy] = xy;
+    // Outer pulse
+    const pulse = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    pulse.setAttribute('cx',cx);pulse.setAttribute('cy',cy);pulse.setAttribute('r',14);
+    pulse.setAttribute('fill','none');pulse.setAttribute('stroke',color);pulse.setAttribute('stroke-width','1');pulse.setAttribute('opacity','0.25');
+    // Mid ring
+    const mid = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    mid.setAttribute('cx',cx);mid.setAttribute('cy',cy);mid.setAttribute('r',8);
+    mid.setAttribute('fill','none');mid.setAttribute('stroke',color);mid.setAttribute('stroke-width','1.5');mid.setAttribute('opacity','0.5');
+    // Core dot
+    const dot = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    dot.setAttribute('cx',cx);dot.setAttribute('cy',cy);dot.setAttribute('r',5);
+    dot.setAttribute('fill',color);dot.setAttribute('opacity','0.9');
+    // Label
+    const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+    const ty = cy > 350 ? cy-16 : cy-18;
+    txt.setAttribute('x',cx);txt.setAttribute('y',ty);
+    txt.setAttribute('text-anchor','middle');txt.setAttribute('font-size','9');
+    txt.setAttribute('font-family','JetBrains Mono, monospace');txt.setAttribute('fill',color);txt.setAttribute('font-weight','500');
+    txt.textContent = label;
+    // Connector line
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1',cx);line.setAttribute('y1',ty+2);line.setAttribute('x2',cx);line.setAttribute('y2',cy-6);
+    line.setAttribute('stroke',color);line.setAttribute('stroke-width','1');line.setAttribute('opacity','0.4');
+    [pulse,mid,dot,line,txt].forEach(el=>g.appendChild(el));
+  }
+  addPin(bc.country, '#4f91ff', 'Buyer');
+  const offset = bc.country === sc.country ? 18 : 0;
+  addPin(sc.country, '#f43f5e', 'Seller');
+  // If same country, offset seller pin slightly
+  if (bc.country === sc.country) {
+    const pins = g.querySelectorAll('circle, text, line');
+    const sellerPins = Array.from(pins).slice(5);
+    sellerPins.forEach(el => {
+      const attr = el.tagName === 'text' ? 'x' : el.tagName === 'line' ? 'x1' : 'cx';
+      const attr2 = el.tagName === 'line' ? 'x2' : null;
+      const cur = parseFloat(el.getAttribute(attr));
+      el.setAttribute(attr, cur + 20);
+      if (attr2) el.setAttribute(attr2, parseFloat(el.getAttribute(attr2)) + 20);
+    });
+  }
+}
+
+async function switchEmo(dim, btn) {
+  S.dim = dim;
+  document.querySelectorAll('.emo-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if (S.currentIdx < 0) return;
+  document.getElementById('spin').style.display='block';
+  try {
+    const res = await fetch('/api/step',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({idx:S.currentIdx,turns:S.turns,emotion_dim:dim,buyer_weights:S.bw,seller_weights:S.sw})
+    });
+    const data = await res.json();
+    updateEmoChart(data.emotion_img);
+  } finally { document.getElementById('spin').style.display='none'; }
+}
+
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+{
+  "turns": [
+    {
+      "idx": 0,
+      "speaker": "Buyer",
+      "text": "Hi — I’m reaching out because the headphones arrived with a crack in the left earcup.",
+      "ts": 1770360000.1,
+      "meta": {}
+    },
+    {
+      "idx": 1,
+      "speaker": "Seller",
+      "text": "Sorry to hear that. Can you share a photo of the damage?",
+      "ts": 1770360006.45,
+      "meta": {}
+    },
+    {
+      "idx": 2,
+      "speaker": "Buyer",
+      "text": "Yes. I’d like a full refund including shipping. This is really disappointing.",
+      "ts": 1770360014.02,
+      "meta": {}
+    },
+    {
+      "idx": 3,
+      "speaker": "Seller",
+      "text": "I can offer a partial refund, but returns after 14 days are normally not accepted.",
+      "ts": 1770360021.88,
+      "meta": {}
+    },
+    {
+      "idx": 4,
+      "speaker": "Buyer",
+      "text": "That’s unfair — it arrived broken. If we can’t resolve this I may file a chargeback.",
+      "ts": 1770360032.2,
+      "meta": {}
+    },
+    {
+      "idx": 5,
+      "speaker": "Seller",
+      "text": "It was insured. I can do a replacement shipped today, or a full refund if the buyer returns it.",
+      "ts": 1770360060.77,
+      "meta": {}
+    },
+    {
+      "idx": 6,
+      "speaker": "Buyer",
+      "text": "If you cover return shipping, I’m okay with returning it for a full refund.",
+      "ts": 1770360074.93,
+      "meta": {}
+    },
+    {
+      "idx": 7,
+      "speaker": "room_ended",
+      "text": "",
+      "ts": 1770360100.0,
+      "meta": {
+        "code": "W-0ccbbe1015a94f5488c070420d3bce95-00000-010"
+      }
+    }
+  ],
+  "preferences": {
+    "buyer": {
+      "ideal_price": 80
+    },
+    "seller": {
+      "ideal_price": 130
+    }
+  }
+}

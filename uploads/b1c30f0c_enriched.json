@@ -1,0 +1,110 @@
+{
+  "turns": [
+    {
+      "idx": 0,
+      "speaker": "Buyer",
+      "text": "I ordered the signed Kobe Bryant jersey for $120, but the one I received was unsigned. This is really frustrating.",
+      "ts": null,
+      "meta": {
+        "speaker": "Buyer",
+        "message": "I ordered the signed Kobe Bryant jersey for $120, but the one I received was unsigned. This is really frustrating."
+      }
+    },
+    {
+      "idx": 1,
+      "speaker": "Seller",
+      "text": "I'm sorry to hear that. According to our records, the signed version was listed at $150.",
+      "ts": null,
+      "meta": {
+        "speaker": "Seller",
+        "message": "I'm sorry to hear that. According to our records, the signed version was listed at $150."
+      }
+    },
+    {
+      "idx": 2,
+      "speaker": "Buyer",
+      "text": "The listing clearly showed it as signed. I paid $120 expecting that. I would like a full refund.",
+      "ts": null,
+      "meta": {
+        "speaker": "Buyer",
+        "message": "The listing clearly showed it as signed. I paid $120 expecting that. I would like a full refund."
+      }
+    },
+    {
+      "idx": 3,
+      "speaker": "Seller",
+      "text": "I understand your concern. Would you consider a partial refund of $40 instead?",
+      "ts": null,
+      "meta": {
+        "speaker": "Seller",
+        "message": "I understand your concern. Would you consider a partial refund of $40 instead?"
+      }
+    },
+    {
+      "idx": 4,
+      "speaker": "Buyer",
+      "text": "That feels unfair. I really wanted the signed jersey. I’m pretty upset about this.",
+      "ts": null,
+      "meta": {
+        "speaker": "Buyer",
+        "message": "That feels unfair. I really wanted the signed jersey. I’m pretty upset about this."
+      }
+    },
+    {
+      "idx": 5,
+      "speaker": "Mediator",
+      "text": "Perhaps both sides can clarify expectations and explore options for a mutually acceptable resolution.",
+      "ts": null,
+      "meta": {
+        "speaker": "Mediator",
+        "message": "Perhaps both sides can clarify expectations and explore options for a mutually acceptable resolution."
+      }
+    },
+    {
+      "idx": 6,
+      "speaker": "Seller",
+      "text": "We could offer a $60 refund and a discount on a future purchase.",
+      "ts": null,
+      "meta": {
+        "speaker": "Seller",
+        "message": "We could offer a $60 refund and a discount on a future purchase."
+      }
+    },
+    {
+      "idx": 7,
+      "speaker": "Buyer",
+      "text": "If you refund $80, I’d be willing to keep the jersey.",
+      "ts": null,
+      "meta": {
+        "speaker": "Buyer",
+        "message": "If you refund $80, I’d be willing to keep the jersey."
+      }
+    },
+    {
+      "idx": 8,
+      "speaker": "Seller",
+      "text": "Alright, we can agree to an $80 refund to resolve this.",
+      "ts": null,
+      "meta": {
+        "speaker": "Seller",
+        "message": "Alright, we can agree to an $80 refund to resolve this."
+      }
+    },
+    {
+      "idx": 9,
+      "speaker": "Buyer",
+      "text": "Okay, that works for me. Thank you for resolving this.",
+      "ts": null,
+      "meta": {
+        "speaker": "Buyer",
+        "message": "Okay, that works for me. Thank you for resolving this."
+      }
+    }
+  ],
+  "preferences": {
+    "paid_price": 120.0,
+    "desired_refund": 80.0,
+    "buyer_max_refund": 120.0,
+    "seller_min_refund": 0.0
+  }
+}

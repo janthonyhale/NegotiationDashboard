@@ -7,37 +7,24 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <div class="logo">ND</div>
-      <div>
-        <div class="brand-title">Negotiation Dashboard</div>
-        <div class="brand-sub">Upload → Analyze → Step through → Intervene (placeholders)</div>
-      </div>
+  <div class="topbar">
+    <div class="container topbarInner">
+      <div class="brand">Negotiation Dashboard</div>
+      <div class="muted small">Local Flask app</div>
     </div>
-    <nav class="nav">
-      <a href="{{ url_for('upload_page') }}">Upload</a>
-    </nav>
-  </header>
-
+  </div>
   <main class="container">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
-        <div class="flashwrap">
+        <div class="flashWrap">
           {% for category, message in messages %}
             <div class="flash {{ category }}">{{ message }}</div>
           {% endfor %}
         </div>
       {% endif %}
     {% endwith %}
-
     {% block content %}{% endblock %}
   </main>
-
-  <footer class="footer">
-    <span>Local-only skeleton. No model/API calls included.</span>
-  </footer>
-
   {% block scripts %}{% endblock %}
 </body>
 </html>

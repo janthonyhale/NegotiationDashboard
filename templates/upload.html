@@ -1,27 +1,100 @@
-{% extends "base.html" %}
-{% block content %}
-  <section class="card">
-    <h1>Upload a negotiation transcript</h1>
-    <p class="muted">
-      Supported: <code>.jsonl</code>, <code>.json</code>, <code>.txt</code>, <code>.csv</code>.
-      Parsing is best-effort; you can standardize later.
-    </p>
-
-    <form class="upload" method="post" action="{{ url_for('upload_post') }}" enctype="multipart/form-data">
-      <input type="file" name="file" accept=".jsonl,.json,.txt,.csv" required />
-      <button class="btn" type="submit">Upload & Analyze</button>
-    </form>
-
-    <hr/>
-
-    <details>
-      <summary>Example formats</summary>
-      <pre class="codeblock">Buyer: I want a refund.
-Seller: No, it's past the return date.
-Mediator: Let's focus on what would make this fair.</pre>
-
-      <pre class="codeblock">{"role":"Buyer","text":"I want a refund","ts": 1770359879.35}
-{"role":"Seller","text":"No, it is past the return date","ts": 1770359882.10}</pre>
-    </details>
-  </section>
-{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NegotiationLens — Upload</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07090f;--surface:#0c1018;--card:#111827;--border:#1a2333;--teal:#22d3a5;--accent:#4f91ff;--red:#f43f5e;--muted:#4b607a;--text:#e2e8f0;--text2:#94a3b8;--serif:'Instrument Serif',serif;--sans:'Instrument Sans',sans-serif;--mono:'JetBrains Mono',monospace;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);}
+body{display:flex;flex-direction:column;}
+nav{display:flex;align-items:center;padding:14px 32px;border-bottom:1px solid var(--border);}
+.logo{font-family:var(--serif);font-size:1.25rem;letter-spacing:-0.5px;}.logo span{color:var(--teal);}
+.steps{display:flex;margin-left:auto;}
+.step{padding:5px 16px;font-size:0.62rem;font-family:var(--mono);color:var(--muted);border:1px solid var(--border);border-right:none;background:var(--surface);}
+.step:first-child{border-radius:5px 0 0 5px;}.step:last-child{border-right:1px solid var(--border);border-radius:0 5px 5px 0;}
+.step.active{color:var(--teal);border-color:var(--teal);background:rgba(34,211,165,0.06);}
+.hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;top:-180px;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(79,145,255,0.07) 0%,transparent 65%);pointer-events:none;}
+.eyebrow{font-family:var(--mono);font-size:0.62rem;letter-spacing:3px;color:var(--teal);text-transform:uppercase;margin-bottom:16px;}
+h1{font-family:var(--serif);font-size:clamp(2.2rem,5vw,3.6rem);font-weight:400;text-align:center;line-height:1.1;letter-spacing:-1px;margin-bottom:14px;}
+h1 em{font-style:italic;color:var(--teal);}
+.sub{font-size:0.9rem;color:var(--text2);text-align:center;max-width:500px;line-height:1.7;margin-bottom:44px;}
+.drop{border:1.5px dashed var(--border);border-radius:14px;padding:44px 32px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--surface);width:100%;max-width:520px;}
+.drop:hover,.drop.drag{border-color:var(--teal);background:rgba(34,211,165,0.04);}
+.drop .icon{font-size:2.4rem;margin-bottom:12px;}
+.drop p{font-size:0.92rem;color:var(--text2);margin-bottom:6px;}.drop p strong{color:var(--text);}
+.drop small{font-family:var(--mono);font-size:0.62rem;color:var(--muted);}
+#fi{display:none;}
+.sample-btn{display:inline-flex;align-items:center;gap:6px;margin-top:14px;font-size:0.72rem;font-family:var(--mono);color:var(--muted);cursor:pointer;background:none;border:none;transition:color 0.15s;text-decoration:underline;text-underline-offset:3px;}
+.sample-btn:hover{color:var(--accent);}
+.tags{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:36px;}
+.tag{padding:4px 12px;border-radius:20px;font-size:0.65rem;font-family:var(--mono);border:1px solid var(--border);color:var(--muted);background:var(--surface);}
+.overlay{display:none;position:fixed;inset:0;background:rgba(7,9,15,0.85);z-index:100;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
+.overlay.show{display:flex;}
+.spin{width:32px;height:32px;border-radius:50%;border:2px solid var(--border);border-top-color:var(--teal);animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.spin-text{font-family:var(--mono);font-size:0.72rem;color:var(--text2);}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--red);color:#fff;padding:10px 20px;border-radius:7px;font-family:var(--mono);font-size:0.75rem;opacity:0;pointer-events:none;transition:opacity 0.3s;z-index:200;}
+#toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<nav>
+  <div class="logo">Negotiation<span>Lens</span></div>
+  <div class="steps">
+    <div class="step active">01 Upload</div><div class="step">02 Pre-Analysis</div>
+    <div class="step">03 Negotiate</div><div class="step">04 Summary</div>
+  </div>
+</nav>
+<div class="hero">
+  <div class="eyebrow">KODIS Dispute Analytics</div>
+  <h1>Decode every<br><em>dispute</em></h1>
+  <p class="sub">Upload a buyer–seller transcript to analyze emotions, model KODIS utilities, compute the Pareto frontier, and track mediator intervention signals turn-by-turn.</p>
+  <div class="drop" id="drop" onclick="document.getElementById('fi').click()"
+       ondragover="event.preventDefault();this.classList.add('drag')"
+       ondragleave="this.classList.remove('drag')"
+       ondrop="drop_handler(event)">
+    <div class="icon">📂</div>
+    <p><strong>Drop your transcript here</strong><br>or click to browse</p>
+    <small>.jsonl · .json · .txt · .csv</small>
+  </div>
+  <input type="file" id="fi" accept=".json,.jsonl,.txt,.csv" onchange="upload(event.target.files[0])">
+  <button class="sample-btn" onclick="downloadSample()">↓ Download sample KODIS dispute transcript</button>
+  <div class="tags"><span class="tag">KODIS Utility</span><span class="tag">Pareto Frontier</span><span class="tag">6-Emotion Model</span><span class="tag">Failure Risk</span><span class="tag">AI Advisor</span><span class="tag">Country Map</span><span class="tag">PDF Export</span></div>
+</div>
+<div class="overlay" id="ov"><div class="spin"></div><div class="spin-text">Parsing & enriching transcript…</div></div>
+<div id="toast"></div>
+<script>
+function drop_handler(ev){ev.preventDefault();document.getElementById('drop').classList.remove('drag');const f=ev.dataTransfer.files[0];if(f)upload(f);}
+async function upload(file){
+  document.getElementById('ov').classList.add('show');
+  const fd=new FormData();fd.append('file',file);
+  try{
+    const res=await fetch('/api/upload',{method:'POST',body:fd});
+    const data=await res.json();
+    if(data.error){toast(data.error);return;}
+    sessionStorage.setItem('nd',JSON.stringify(data));
+    window.location.href='/pre';
+  }catch(e){toast('Upload failed: '+e.message);}
+  finally{document.getElementById('ov').classList.remove('show');}
+}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),4000);}
+function downloadSample(){
+  const lines=[
+    '{"speaker":"Buyer","text":"I need to discuss the defective laptop I received. It stopped working after just two weeks. I want a full refund and I want your horrible review of me taken down — you called me a difficult customer when I was simply asking for basic consumer rights."}',
+    '{"speaker":"Seller","text":"I understand you\'re frustrated, but the laptop worked fine when shipped. Our diagnostics showed user damage. A full refund isn\'t something I can offer for mishandled equipment. However, I\'m willing to consider a partial refund. And I\'d ask you to take down your one-star review that accused us of selling fake products — that\'s damaging to our business."}',
+    '{"speaker":"Buyer","text":"User damage? That\'s absolutely outrageous. This laptop arrived with a failing battery — it was a manufacturing defect. I won\'t accept anything less than a full refund. As for the review, it reflects my genuine experience. Your review of me was completely uncalled for and I want it gone."}',
+    '{"speaker":"Seller","text":"I hear your frustration and I\'m sorry the experience has been this difficult. Let me be honest — a half refund is the maximum I can authorize without escalating to our legal team. I also want to resolve this professionally. If we each remove our reviews, would that be a reasonable middle ground?"}',
+    '{"speaker":"Buyer","text":"A half refund and mutual review removal... I\'m still quite upset about this whole ordeal. But I\'m also exhausted by this dispute. If you genuinely apologize for calling me a difficult customer, and we do the mutual review removal, I might be able to live with the half refund."}',
+    '{"speaker":"Seller","text":"I appreciate you being open to that. I do sincerely apologize for how my review described you — that was unprofessional of me. So to be clear: I\'ll issue a 50% refund, we each remove our respective reviews, and I formally apologize. Does that work?"}',
+    '{"speaker":"Buyer","text":"Yes. I accept those terms. Half refund, both reviews down, and your apology on record. I\'d also like you to know that I hope this is a lesson in how to handle customer complaints better going forward."}',
+    '{"speaker":"Seller","text":"Agreed. I\'ll process the half refund today. I\'ve already flagged both reviews for removal. And I take your feedback seriously — we are working to improve our customer service response times. Thank you for working through this with me."}'
+  ];
+  const blob=new Blob([lines.join('\n')],{type:'text/plain'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='kodis_dispute_sample.jsonl';a.click();
+}
+</script>
+</body>
+</html>

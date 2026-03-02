@@ -1,98 +1,90 @@
 {% extends "base.html" %}
 {% block content %}
-  <section class="grid">
-    <div class="card">
-      <h2>File</h2>
-      <div><b>Name:</b> {{ doc.filename }}</div>
-      <div><b>Turns:</b> {{ doc.turns|length }}</div>
-      <div><b>Uploaded:</b> {{ doc.created_at }}</div>
-    </div>
-
-    <div class="card">
-      <h2>Language / Country (placeholder)</h2>
-      <div><b>Language:</b> {{ doc.lang_country.language }}</div>
-      <div><b>Country guess:</b> {{ doc.lang_country.country_guess }}</div>
-      <div><b>Confidence:</b> {{ doc.lang_country.confidence }}</div>
-      <p class="muted">Swap this with Bin’s classifier later.</p>
-    </div>
-
-    <div class="card">
-      <h2>Failure likelihood (placeholder)</h2>
-      <div class="riskline">
-        <span class="pill">{{ doc.risk.label }}</span>
-        <span class="muted">risk={{ doc.risk.risk }}</span>
-      </div>
-      <div class="muted">Signals: neg={{ doc.risk.signals.neg_hits }}, threats={{ doc.risk.signals.threat_hits }}</div>
-      <p class="muted">Replace with a real model when ready.</p>
-    </div>
-  </section>
-
-  <section class="grid">
-    <div class="card">
-      <h2>Emotions per turn (placeholder)</h2>
-      <canvas id="emoChart" height="120"></canvas>
-      <p class="muted">Simple lexicon heuristic now; replace with classifier later.</p>
-    </div>
-
-    <div class="card">
-      <h2>Step through the dialogue</h2>
-
-      <div class="viewer">
-        <div class="viewer-top">
-          <button class="btn secondary" id="prevBtn">Prev</button>
-          <button class="btn secondary" id="nextBtn">Next</button>
-
-          <div class="jump">
-            <label for="jumpTo">Turn</label>
-            <input id="jumpTo" type="number" min="0" step="1" />
-            <button class="btn secondary" id="jumpBtn">Go</button>
-          </div>
+  <section class="layout">
+    <div class="card main">
+      <div class="headerRow">
+        <div>
+          <h1 class="h1">Negotiation</h1>
+          <div class="muted small"><b>{{ doc.filename }}</b> · <span id="turnMeta">—</span></div>
         </div>
-
-        <div class="turnbox">
-          <div class="turnmeta">
-            <span id="turnIdx" class="pill">#0</span>
-            <span id="turnSpeaker" class="pill soft">Speaker</span>
-            <span id="turnTs" class="muted"></span>
-          </div>
-          <div id="turnText" class="turntext"></div>
-
-          <div class="actions">
-            <button class="btn" id="translateBtn">Translate (placeholder)</button>
-            <select id="translateLang" class="select">
-              <option value="en">to English</option>
-              <option value="zh">to Chinese</option>
-              <option value="es">to Spanish</option>
-            </select>
-          </div>
-
-          <div id="translationBox" class="translation hidden"></div>
-
-          <div class="intervene">
-            <div class="intervene-head">
-              <b>Advisor intervention</b>
-              <span id="interveneBadge" class="pill hidden">Intervene</span>
-            </div>
-            <ul id="interveneReasons" class="reasons"></ul>
-            <div id="interveneSuggestion" class="muted"></div>
-          </div>
+        <div class="actions">
+          <button class="btn secondary" id="prevBtn">← Prev</button>
+          <button class="btn" id="nextBtn">Next →</button>
         </div>
       </div>
 
-      <p class="muted">
-        Intended future behavior: highlight turns where the system recommends the mediator / advisor should intervene,
-        and suggest what to do (reframe, ask questions, propose options, etc.).
-      </p>
-    </div>
-  </section>
+      <div class="jumpRow">
+        <input id="jumpTo" type="number" min="0" value="0" class="input smallInput" />
+        <button class="btn secondary" id="jumpBtn">Jump</button>
+        <div class="spacer"></div>
+        <a class="btn secondary" href="{{ url_for('post_dashboard', doc_id=doc.doc_id) }}">Post-summary</a>
+        <a class="btn secondary" href="{{ url_for('pdf_summary', doc_id=doc.doc_id) }}">PDF</a>
+      </div>
 
-  <section class="card">
-    <h2>Implementation notes (matches your March plan)</h2>
-    <ul>
-      <li><b>Offline mode:</b> keep everything local (fast, consistent, no secrets). Plug in local models later.</li>
-      <li><b>On-the-fly model calls:</b> easy updates, but needs keys, latency handling, and caching.</li>
-      <li>This skeleton keeps the UI/flow stable so you can swap in better models without rewriting the frontend.</li>
-    </ul>
+      <div id="transcript" class="transcript"></div>
+
+      <div class="card subcard">
+        <div class="row">
+          <div class="muted small">Emotion line chart</div>
+          <select id="emoSelect" class="select"></select>
+        </div>
+        <div class="chartWrap">
+          <canvas id="emoChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <aside class="sidebar">
+      <div class="card">
+        <h2 class="h2">Country of Origin Prediction</h2>
+        <div class="kv">
+          <div class="k">Language</div><div class="v" id="langVal">—</div>
+          <div class="k">Buyer</div><div class="v" id="buyerCountryVal">—</div>
+          <div class="k">Seller</div><div class="v" id="sellerCountryVal">—</div>
+        </div>
+        <div class="mapBox" id="countryMap"></div>
+      </div>
+
+      <div class="card">
+        <h2 class="h2">Failure risk</h2>
+        <div class="riskRow">
+          <div class="pill" id="riskLabel">—</div>
+          <div class="muted small" id="riskScore">—</div>
+        </div>
+        <div class="muted small" id="riskSignals">—</div>
+        <div class="muted small">Computed over the transcript (placeholder).</div>
+      </div>
+
+      <div class="card">
+        <h2 class="h2">Emotions (current turn)</h2>
+        <div class="emoGrid" id="emoNow"></div>
+      </div>
+
+      <div class="card">
+        <h2 class="h2">Advisor suggestion</h2>
+        <div class="row">
+          <span class="pill hidden" id="interveneBadge">Intervene</span>
+          <span class="muted small" id="interveneShort">—</span>
+        </div>
+
+        <div class="odds">
+          <div class="muted small">Odds (success vs walkaway)</div>
+          <div class="oddsBar">
+            <div class="oddsSuccess" id="oddsSuccess"></div>
+            <div class="oddsWalk" id="oddsWalk"></div>
+          </div>
+          <div class="muted small" id="oddsText">—</div>
+        </div>
+
+        <ul id="interveneReasons" class="reasons"></ul>
+        <div class="muted small" id="interveneSuggestion"></div>
+      </div>
+
+      <div class="card">
+        <a class="btn" href="{{ url_for('post_dashboard', doc_id=doc.doc_id) }}">Go to post-summary →</a>
+        <a class="btn secondary" href="{{ url_for('pdf_summary', doc_id=doc.doc_id) }}">Download PDF summary</a>
+      </div>
+    </aside>
   </section>
 {% endblock %}
 
@@ -100,5 +92,6 @@
   <script>
     window.DOC_ID = "{{ doc.doc_id }}";
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="{{ url_for('static', filename='app.js') }}"></script>
 {% endblock %}
