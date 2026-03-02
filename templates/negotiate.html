@@ -4,6 +4,9 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NegotiationLens — Negotiation</title>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsvectormap/dist/css/jsvectormap.min.css">
+<script src="https://cdn.jsdelivr.net/npm/jsvectormap"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsvectormap/dist/maps/world.js"></script>
 <style>
 :root{--bg:#07090f;--surface:#0c1018;--card:#0e1521;--border:#1a2333;--teal:#22d3a5;--accent:#4f91ff;--red:#f43f5e;--amber:#f59e0b;--purple:#a78bfa;--muted:#4b607a;--text:#e2e8f0;--text2:#94a3b8;--serif:'Instrument Serif',serif;--sans:'Instrument Sans',sans-serif;--mono:'JetBrains Mono',monospace;}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -101,8 +104,10 @@ nav{display:flex;align-items:center;padding:10px 20px;border-bottom:1px solid va
 .map-card{background:var(--card);border:1px solid var(--border);border-radius:9px;overflow:hidden;margin-bottom:12px;}
 .map-card-head{padding:7px 11px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
 .map-card-label{font-family:var(--mono);font-size:0.56rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);}
-.world-map-wrap{background:#0a1520;position:relative;}
-.world-map-wrap svg{width:100%;display:block;}
+.maps-grid{display:grid;grid-template-columns:1fr;gap:8px;padding:8px;}
+.world-map-wrap{background:#0a1520;position:relative;padding:4px;border:1px solid #132236;border-radius:6px;}
+.map-title{font-family:var(--mono);font-size:0.52rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:2px 4px 4px 4px;}
+#buyer-map,#seller-map{width:100%;height:140px;}
 .country-row{display:flex;gap:6px;padding:8px 10px;}
 .ctry{flex:1;background:var(--surface);border-radius:6px;padding:7px 8px;}
 .ctry.buyer{border-left:2px solid var(--accent);}
@@ -210,61 +215,15 @@ nav{display:flex;align-items:center;padding:10px 20px;border-bottom:1px solid va
             <span class="map-card-label">Predicted Origins</span>
             <span style="font-size:0.58rem;font-family:var(--mono);color:var(--teal)">English</span>
           </div>
-          <div class="world-map-wrap">
-            <!-- Leaflet-style SVG world map with actual country polygons approximated -->
-            <svg id="world-svg" viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg" style="background:#0a1520">
-              <defs>
-                <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                  <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#111f30" stroke-width="0.5"/>
-                </pattern>
-              </defs>
-              <rect width="800" height="400" fill="url(#grid)"/>
-              <!-- Equator & prime meridian -->
-              <line x1="0" y1="200" x2="800" y2="200" stroke="#1a2840" stroke-width="0.8" stroke-dasharray="4,4"/>
-              <line x1="400" y1="0" x2="400" y2="400" stroke="#1a2840" stroke-width="0.8" stroke-dasharray="4,4"/>
-
-              <!-- North America -->
-              <path d="M 45,60 L 190,45 L 230,75 L 245,110 L 225,150 L 200,185 L 170,200 L 145,195 L 120,180 L 85,165 L 55,145 L 40,115 Z" fill="#1a2d45" stroke="#253a55" stroke-width="1"/>
-              <!-- Central America -->
-              <path d="M 145,195 L 165,200 L 170,220 L 155,225 L 140,215 Z" fill="#1a2d45" stroke="#253a55" stroke-width="0.7"/>
-              <!-- Caribbean roughly -->
-              <rect x="175" y="192" width="18" height="8" rx="3" fill="#1a2d45" stroke="#253a55" stroke-width="0.6"/>
-              <!-- South America -->
-              <path d="M 155,225 L 220,215 L 255,235 L 275,270 L 280,330 L 255,375 L 215,385 L 175,370 L 145,340 L 135,300 L 140,260 Z" fill="#1a2d45" stroke="#253a55" stroke-width="1"/>
-              <!-- Greenland -->
-              <path d="M 220,15 L 270,10 L 295,30 L 285,60 L 255,72 L 225,60 L 210,40 Z" fill="#1a2d45" stroke="#253a55" stroke-width="0.7"/>
-              <!-- UK & Ireland -->
-              <path d="M 355,80 L 368,74 L 375,85 L 370,98 L 358,101 L 350,92 Z" fill="#1e3a55" stroke="#2d4f70" stroke-width="0.8"/>
-              <!-- Europe -->
-              <path d="M 370,75 L 440,60 L 475,65 L 490,80 L 480,105 L 455,120 L 430,125 L 395,115 L 370,100 Z" fill="#1a2d45" stroke="#253a55" stroke-width="1"/>
-              <!-- Scandinavia -->
-              <path d="M 395,40 L 430,25 L 455,35 L 450,65 L 430,72 L 405,65 L 390,52 Z" fill="#1a2d45" stroke="#253a55" stroke-width="0.8"/>
-              <!-- Africa -->
-              <path d="M 370,130 L 455,118 L 490,140 L 505,185 L 510,240 L 490,295 L 455,340 L 415,355 L 375,345 L 345,310 L 340,265 L 350,215 L 360,170 Z" fill="#1a2d45" stroke="#253a55" stroke-width="1"/>
-              <!-- Madagascar -->
-              <path d="M 500,280 L 510,275 L 515,300 L 505,315 L 497,305 Z" fill="#1a2d45" stroke="#253a55" stroke-width="0.6"/>
-              <!-- Russia -->
-              <path d="M 455,35 L 650,20 L 700,40 L 710,70 L 680,90 L 600,100 L 520,95 L 470,80 L 455,55 Z" fill="#1a2d45" stroke="#253a55" stroke-width="1"/>
-              <!-- Middle East -->
-              <path d="M 455,120 L 510,108 L 540,125 L 540,155 L 510,165 L 475,155 L 455,140 Z" fill="#1a2d45" stroke="#253a55" stroke-width="0.8"/>
-              <!-- Central Asia -->
-              <path d="M 510,80 L 610,72 L 630,100 L 610,125 L 555,130 L 520,115 Z" fill="#1a2d45" stroke="#253a55" stroke-width="0.8"/>
-              <!-- India -->
-              <path d="M 555,130 L 600,125 L 618,155 L 615,200 L 595,235 L 570,242 L 548,225 L 540,190 L 542,155 Z" fill="#1a2d45" stroke="#253a55" stroke-width="0.9"/>
-              <!-- China -->
-              <path d="M 610,72 L 700,60 L 740,80 L 745,120 L 720,145 L 680,155 L 635,148 L 610,125 Z" fill="#1a2d45" stroke="#253a55" stroke-width="1"/>
-              <!-- SE Asia -->
-              <path d="M 660,150 L 720,140 L 745,165 L 730,195 L 690,200 L 660,180 Z" fill="#1a2d45" stroke="#253a55" stroke-width="0.8"/>
-              <!-- Japan -->
-              <path d="M 735,80 L 750,72 L 760,88 L 748,105 L 733,100 Z" fill="#1e3a55" stroke="#2d4f70" stroke-width="0.8"/>
-              <!-- Australia -->
-              <path d="M 645,270 L 745,258 L 775,285 L 780,335 L 755,368 L 700,375 L 655,358 L 632,325 L 630,290 Z" fill="#1a2d45" stroke="#253a55" stroke-width="1"/>
-              <!-- New Zealand -->
-              <path d="M 775,340 L 784,330 L 792,348 L 786,362 L 776,355 Z" fill="#1a2d45" stroke="#253a55" stroke-width="0.6"/>
-
-              <!-- Map pins injected here -->
-              <g id="map-pins"></g>
-            </svg>
+          <div class="maps-grid">
+            <div class="world-map-wrap">
+              <div class="map-title">Buyer probability map</div>
+              <div id="buyer-map"></div>
+            </div>
+            <div class="world-map-wrap">
+              <div class="map-title">Seller probability map</div>
+              <div id="seller-map"></div>
+            </div>
           </div>
           <div class="country-row">
             <div class="ctry buyer">
@@ -302,14 +261,16 @@ nav{display:flex;align-items:center;padding:10px 20px;border-bottom:1px solid va
 </div>
 
 <script>
-/* ── Country SVG coordinate map (lng/lat → SVG x,y in 800×400 viewBox) ── */
-const CTRY_XY = {
-  'United States':[125,140],'Canada':[120,90],'United Kingdom':[362,88],
-  'Germany':[415,85],'France':[390,100],'China':[690,110],'Japan':[746,88],
-  'India':[578,185],'Australia':[700,320],'Brazil':[200,295],'Russia':[580,55],
+const COUNTRY_META = {
+  US:{name:'United States', flag:'🇺🇸', coords:[38,-97]},
+  CN:{name:'China', flag:'🇨🇳', coords:[35,103]},
+  IN:{name:'India', flag:'🇮🇳', coords:[21,78]},
+  DE:{name:'Germany', flag:'🇩🇪', coords:[51,10]},
+  GB:{name:'United Kingdom', flag:'🇬🇧', coords:[55,-3]},
+  BR:{name:'Brazil', flag:'🇧🇷', coords:[-14,-52]},
 };
-
-let S = { turns:[], currentIdx:-1, dim:'joy', country:null, bw:{}, sw:{} };
+const BASE_COUNTRY_WEIGHTS = {US:0.50, CN:0.20, IN:0.12, DE:0.08, GB:0.06, BR:0.04};
+let S = { turns:[], currentIdx:-1, dim:'joy', country:null, bw:{}, sw:{}, countryTimeline:[], mapBuyer:null, mapSeller:null };
 
 function init() {
   const raw = sessionStorage.getItem('nd');
@@ -320,6 +281,7 @@ function init() {
   S.bw      = D.buyer_weights || {};
   S.sw      = D.seller_weights || {};
   renderTxList();
+  createCountryTimeline();
   renderCountry();
   document.getElementById('btn-next').disabled = false;
   document.getElementById('turn-pill').textContent = `Turn 0 / ${S.turns.length}`;
@@ -350,6 +312,7 @@ async function step(dir) {
   document.getElementById('turn-pill').textContent = `Turn ${ni+1} / ${S.turns.length}`;
   document.getElementById('center-hint').textContent = `Turn ${ni+1} of ${S.turns.length}`;
   addBubble(S.turns[ni], ni);
+  renderCountry();
 
   document.getElementById('spin').style.display = 'block';
   try {
@@ -429,60 +392,93 @@ function renderAdvisor(a) {
     <div class="suggestion">${a.suggestion}</div>`;
 }
 
-function renderCountry() {
-  if (!S.country) return;
-  const {buyer:bc, seller:sc} = S.country;
-  document.getElementById('ctry-buyer').textContent = bc.flag+' '+bc.country;
-  document.getElementById('ctry-buyer-conf').textContent = Math.round(bc.confidence*100)+'% conf.';
-  document.getElementById('ctry-seller').textContent = sc.flag+' '+sc.country;
-  document.getElementById('ctry-seller-conf').textContent = Math.round(sc.confidence*100)+'% conf.';
-  // Place pins on SVG world map
-  const g = document.getElementById('map-pins');
-  g.innerHTML = '';
-  function addPin(country, color, label) {
-    const xy = CTRY_XY[country];
-    if (!xy) return;
-    const [cx,cy] = xy;
-    // Outer pulse
-    const pulse = document.createElementNS('http://www.w3.org/2000/svg','circle');
-    pulse.setAttribute('cx',cx);pulse.setAttribute('cy',cy);pulse.setAttribute('r',14);
-    pulse.setAttribute('fill','none');pulse.setAttribute('stroke',color);pulse.setAttribute('stroke-width','1');pulse.setAttribute('opacity','0.25');
-    // Mid ring
-    const mid = document.createElementNS('http://www.w3.org/2000/svg','circle');
-    mid.setAttribute('cx',cx);mid.setAttribute('cy',cy);mid.setAttribute('r',8);
-    mid.setAttribute('fill','none');mid.setAttribute('stroke',color);mid.setAttribute('stroke-width','1.5');mid.setAttribute('opacity','0.5');
-    // Core dot
-    const dot = document.createElementNS('http://www.w3.org/2000/svg','circle');
-    dot.setAttribute('cx',cx);dot.setAttribute('cy',cy);dot.setAttribute('r',5);
-    dot.setAttribute('fill',color);dot.setAttribute('opacity','0.9');
-    // Label
-    const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
-    const ty = cy > 350 ? cy-16 : cy-18;
-    txt.setAttribute('x',cx);txt.setAttribute('y',ty);
-    txt.setAttribute('text-anchor','middle');txt.setAttribute('font-size','9');
-    txt.setAttribute('font-family','JetBrains Mono, monospace');txt.setAttribute('fill',color);txt.setAttribute('font-weight','500');
-    txt.textContent = label;
-    // Connector line
-    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
-    line.setAttribute('x1',cx);line.setAttribute('y1',ty+2);line.setAttribute('x2',cx);line.setAttribute('y2',cy-6);
-    line.setAttribute('stroke',color);line.setAttribute('stroke-width','1');line.setAttribute('opacity','0.4');
-    [pulse,mid,dot,line,txt].forEach(el=>g.appendChild(el));
-  }
-  addPin(bc.country, '#4f91ff', 'Buyer');
-  const offset = bc.country === sc.country ? 18 : 0;
-  addPin(sc.country, '#f43f5e', 'Seller');
-  // If same country, offset seller pin slightly
-  if (bc.country === sc.country) {
-    const pins = g.querySelectorAll('circle, text, line');
-    const sellerPins = Array.from(pins).slice(5);
-    sellerPins.forEach(el => {
-      const attr = el.tagName === 'text' ? 'x' : el.tagName === 'line' ? 'x1' : 'cx';
-      const attr2 = el.tagName === 'line' ? 'x2' : null;
-      const cur = parseFloat(el.getAttribute(attr));
-      el.setAttribute(attr, cur + 20);
-      if (attr2) el.setAttribute(attr2, parseFloat(el.getAttribute(attr2)) + 20);
+function normalizeDist(dist){
+  const total = Object.values(dist).reduce((a,b)=>a+b,0) || 1;
+  const out = {};
+  Object.entries(dist).forEach(([k,v])=>out[k]=v/total);
+  return out;
+}
+
+function randomDist(){
+  const noisy={};
+  Object.entries(BASE_COUNTRY_WEIGHTS).forEach(([k,v])=>{
+    noisy[k]=Math.max(0.001,v*(0.55+Math.random()));
+  });
+  return normalizeDist(noisy);
+}
+
+function createCountryTimeline(){
+  S.countryTimeline = S.turns.map(() => {
+    let buyer = randomDist();
+    let seller = randomDist();
+    if (Math.random() > 0.6){
+      const shared = Object.keys(BASE_COUNTRY_WEIGHTS)[Math.floor(Math.random()*Object.keys(BASE_COUNTRY_WEIGHTS).length)];
+      buyer[shared]+=0.2; seller[shared]+=0.2;
+      buyer=normalizeDist(buyer); seller=normalizeDist(seller);
+    }
+    return {buyer, seller};
+  });
+}
+
+function topCountry(dist){
+  return Object.entries(dist).sort((a,b)=>b[1]-a[1])[0];
+}
+
+function roleShade(prob, role){
+  const p = Math.max(0, Math.min(1, prob || 0));
+  const base = role === 'buyer' ? [79,145,255] : [244,63,94];
+  const dark = [22,34,52];
+  const rgb = base.map((c,i)=>Math.round(dark[i]*(1-p)+c*p));
+  return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+}
+
+function buildRoleFills(dist, role){
+  const fills = {};
+  Object.keys(BASE_COUNTRY_WEIGHTS).forEach(code=>{
+    fills[code] = roleShade(dist[code] || 0, role);
+  });
+  return fills;
+}
+
+function renderRoleMap(which, selector, role, dist, topCode, topProb){
+  const top = COUNTRY_META[topCode];
+  const markers = [];
+  if (top?.coords){
+    markers.push({
+      name: `${role === 'buyer' ? 'Buyer' : 'Seller'} top: ${top.name} (${Math.round(topProb*100)}%)`,
+      coords:[top.coords[0], top.coords[1]],
+      style:{fill: role === 'buyer' ? '#4f91ff' : '#f43f5e', stroke: role === 'buyer' ? '#dbeafe' : '#fecdd3'}
     });
   }
+
+  const key = which === 'buyer' ? 'mapBuyer' : 'mapSeller';
+  if (S[key]) S[key].destroy();
+  S[key] = new jsVectorMap({
+    selector,
+    map:'world',
+    zoomButtons:false,
+    backgroundColor:'#0a1520',
+    markers,
+    markerStyle:{initial:{r:6, strokeWidth:2}},
+    regionStyle:{initial:{fill:'#1a2d45',stroke:'#253a55',strokeWidth:0.6}},
+    series:{regions:[{attribute:'fill', values:buildRoleFills(dist, role)}]}
+  });
+}
+
+function renderCountry(){
+  if (!S.countryTimeline.length) return;
+  const i = Math.max(0, S.currentIdx);
+  const snap = S.countryTimeline[i] || S.countryTimeline[0];
+  const [buyerCode,buyerProb] = topCountry(snap.buyer);
+  const [sellerCode,sellerProb] = topCountry(snap.seller);
+  const bc = COUNTRY_META[buyerCode], sc = COUNTRY_META[sellerCode];
+  document.getElementById('ctry-buyer').textContent = `${bc.flag} ${bc.name}`;
+  document.getElementById('ctry-buyer-conf').textContent = `${Math.round(buyerProb*100)}% conf.`;
+  document.getElementById('ctry-seller').textContent = `${sc.flag} ${sc.name}`;
+  document.getElementById('ctry-seller-conf').textContent = `${Math.round(sellerProb*100)}% conf.`;
+
+  renderRoleMap('buyer', '#buyer-map', 'buyer', snap.buyer, buyerCode, buyerProb);
+  renderRoleMap('seller', '#seller-map', 'seller', snap.seller, sellerCode, sellerProb);
 }
 
 async function switchEmo(dim, btn) {
