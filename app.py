@@ -1,4 +1,6 @@
 import os, json, csv, io, re, base64
+import urllib.request
+import urllib.error
 from flask import Flask, render_template, request, jsonify, send_file
 from werkzeug.utils import secure_filename
 import matplotlib
@@ -11,6 +13,8 @@ from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as RLImage, Table, TableStyle, HRFlowable
 from reportlab.lib.units import inch
+
+from predictor import RegionPredictor
 
 app = Flask(__name__)
 app.secret_key = 'nego_dash_kodis_2024'
@@ -157,6 +161,59 @@ def enrich(turns):
         t['threat_signals']   = sum(1 for s in ['sue','lawyer','court','legal action'] if s in tl)
     return turns
 
+
+
+def llm_emotion_scores(text):
+    """Use GPT-4o for emotion recognition when OPENAI_API_KEY is available.
+    Falls back to keyword heuristic on error/missing key.
+    """
+    api_key = os.getenv('OPENAI_API_KEY')
+    if not api_key:
+        return score_emo(text)
+
+    prompt = (
+        "Return ONLY JSON with keys anger,fear,joy,surprise,compassion,neutral,valence. "
+        "All except valence in [0,1], valence in [-1,1]. Text: " + (text or "")
+    )
+    payload = {
+        "model": "gpt-4o",
+        "messages": [
+            {"role":"system","content":"You are an emotion classifier for negotiation transcripts."},
+            {"role":"user","content": prompt}
+        ],
+        "temperature": 0,
+        "response_format": {"type":"json_object"}
+    }
+    req = urllib.request.Request(
+        'https://api.openai.com/v1/chat/completions',
+        data=json.dumps(payload).encode('utf-8'),
+        headers={
+            'Content-Type':'application/json',
+            'Authorization': f'Bearer {api_key}'
+        },
+        method='POST'
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=12) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+        content = data['choices'][0]['message']['content']
+        obj = json.loads(content)
+        out = {
+            'anger': float(obj.get('anger',0)),
+            'fear': float(obj.get('fear',0)),
+            'joy': float(obj.get('joy',0)),
+            'surprise': float(obj.get('surprise',0)),
+            'compassion': float(obj.get('compassion',0)),
+            'neutral': float(obj.get('neutral',0)),
+            'valence': float(obj.get('valence',0)),
+        }
+        for k in ['anger','fear','joy','surprise','compassion','neutral']:
+            out[k] = max(0.0, min(1.0, out[k]))
+        out['valence'] = max(-1.0, min(1.0, out['valence']))
+        return out
+    except Exception:
+        return score_emo(text)
+
 def estimate_risk(turns_so_far):
     if not turns_so_far:
         return {'score':0,'label':'Low','negative_signals':0,'threats':0}
@@ -202,7 +259,61 @@ COUNTRY_SVG = {
     'Australia':     {'lat':-25.27,'lng':133.77,'flag':'🇦🇺'},
     'Canada':        {'lat':56.13,'lng':-106.34,'flag':'🇨🇦'},
     'Brazil':        {'lat':-14.23,'lng':-51.92,'flag':'🇧🇷'},
+    'Mexico':        {'lat':23.63,'lng':-102.55,'flag':'🇲🇽'},
+    'South Africa':  {'lat':-30.56,'lng':22.94,'flag':'🇿🇦'},
 }
+
+
+PREDICTOR = RegionPredictor(language='english', model_name='svm')
+
+COUNTRY_LABEL_MAP = {
+    'U.S.':'United States','US':'United States','United States':'United States',
+    'U.K.':'United Kingdom','UK':'United Kingdom','United Kingdom':'United Kingdom',
+    'Mexico':'Mexico','South Africa':'South Africa','Germany':'Germany','China':'China',
+    'Japan':'Japan','India':'India','France':'France','Australia':'Australia','Canada':'Canada','Brazil':'Brazil'
+}
+
+def _normalize_probabilities(probabilities):
+    norm = {}
+    if not isinstance(probabilities, dict):
+        return norm
+    for raw_label, raw_prob in probabilities.items():
+        canonical = COUNTRY_LABEL_MAP.get(str(raw_label).strip(), str(raw_label).strip())
+        try:
+            prob = float(raw_prob)
+        except (TypeError, ValueError):
+            continue
+        norm[canonical] = norm.get(canonical, 0.0) + max(0.0, prob)
+    total = sum(norm.values())
+    if total > 0:
+        norm = {k: round(v / total, 6) for k, v in norm.items()}
+    return norm
+
+
+def _to_geo_payload(label, confidence, probabilities=None):
+    canonical = COUNTRY_LABEL_MAP.get(label, label)
+    info = COUNTRY_SVG.get(canonical, {'lat':0,'lng':0,'flag':'🌍'})
+    return {
+        'country': canonical,
+        'confidence': round(float(confidence or 0),2),
+        'lat': info['lat'],
+        'lng': info['lng'],
+        'flag': info['flag'],
+        'probabilities': _normalize_probabilities(probabilities),
+    }
+
+def predict_country_with_model(turns, role):
+    text = ' '.join(t.get('text','') for t in turns if t.get('speaker') == role).strip()
+    if not text:
+        return _to_geo_payload('United States', 0.0, {})
+    try:
+        out = PREDICTOR.predict_one(text)
+        pred = out.get('predicted_class','United States')
+        conf = out.get('confidence',0)
+        probs = out.get('probabilities',{})
+        return _to_geo_payload(pred, conf, probs)
+    except Exception:
+        return predict_country(turns, role)
 
 def predict_country(turns, role):
     text  = ' '.join(t['text'] for t in turns if t['speaker']==role).lower()
@@ -346,8 +457,8 @@ def api_upload():
         outcomes = generate_all_outcomes(bw, sw)
         pareto   = compute_pareto(outcomes)
         pareto_img = make_pareto_plot(outcomes, pareto, title='Pre-Negotiation: KODIS Solution Space')
-        buyer_c  = predict_country(turns,'Buyer')
-        seller_c = predict_country(turns,'Seller')
+        buyer_c  = predict_country_with_model(turns,'Buyer')
+        seller_c = predict_country_with_model(turns,'Seller')
         return jsonify({
             'turns':turns,'filename':filename,
             'buyer_weights':bw,'seller_weights':sw,
@@ -375,15 +486,18 @@ def api_step():
     idx   = data.get('idx',0)
     turns = data.get('turns',[])
     dim   = data.get('emotion_dim','joy')
-    bw    = data.get('buyer_weights', DEFAULT_BUYER_WEIGHTS)
-    sw    = data.get('seller_weights', DEFAULT_SELLER_WEIGHTS)
     if not turns or idx >= len(turns): return jsonify({'error':'Invalid'}),400
+
+    cur = turns[idx]
+    cur['emotions'] = llm_emotion_scores(cur.get('text',''))
     turns_so_far = turns[:idx+1]
-    cur   = turns[idx]
+
     risk  = estimate_risk(turns_so_far)
     adv   = get_advisor(turns_so_far, cur)
     emo_img = make_emotion_plot(turns_so_far, dim)
-    return jsonify({'risk':risk,'advisor':adv,'emotion_img':emo_img,'current_turn':cur})
+    buyer_c = predict_country_with_model(turns_so_far, 'Buyer')
+    seller_c = predict_country_with_model(turns_so_far, 'Seller')
+    return jsonify({'risk':risk,'advisor':adv,'emotion_img':emo_img,'current_turn':cur,'country':{'buyer':buyer_c,'seller':seller_c}})
 
 @app.route('/api/post_summary', methods=['POST'])
 def api_post_summary():
@@ -456,16 +570,31 @@ def api_export_pdf():
                             leftMargin=0.7*inch, rightMargin=0.7*inch,
                             topMargin=0.7*inch, bottomMargin=0.7*inch)
     styles = getSampleStyleSheet()
-    title_s = ParagraphStyle('T',parent=styles['Title'],textColor=colors.HexColor('#0f172a'),fontSize=18,spaceAfter=4)
-    h2_s    = ParagraphStyle('H2',parent=styles['Heading2'],textColor=colors.HexColor('#1e3a5f'),fontSize=12,spaceAfter=3)
-    body_s  = ParagraphStyle('B',parent=styles['Normal'],fontSize=8.5,spaceAfter=2,leading=12)
+    title_s = ParagraphStyle('T',parent=styles['Title'],textColor=colors.HexColor('#0f172a'),fontSize=20,spaceAfter=6)
+    h2_s    = ParagraphStyle('H2',parent=styles['Heading2'],textColor=colors.HexColor('#1e3a5f'),fontSize=12,spaceAfter=4)
+    body_s  = ParagraphStyle('B',parent=styles['Normal'],fontSize=8.8,spaceAfter=3,leading=12)
     mono_s  = ParagraphStyle('M',parent=styles['Normal'],fontSize=8,fontName='Courier',spaceAfter=2,leading=11)
 
     story = []
-    story.append(Paragraph('NegotiationLens — KODIS Dispute Report', title_s))
-    story.append(Paragraph(f'Source file: {filename}  |  Turns: {len(turns)}  |  Risk: {risk["label"]} ({risk["score"]*100:.0f}%)', body_s))
+    cover = Table([[
+      Paragraph('<b>NegotiationLens — Mission Summary Report</b>', ParagraphStyle('ct', parent=styles['Normal'], textColor=colors.white, fontSize=14, leading=16)),
+      Paragraph(f'<b>Risk:</b> {risk["label"]} ({risk["score"]*100:.0f}%)<br/><b>Turns:</b> {len(turns)}', ParagraphStyle('cr', parent=styles['Normal'], textColor=colors.white, fontSize=9, leading=12))
+    ]], colWidths=[4.5*inch, 1.7*inch])
+    cover.setStyle(TableStyle([
+      ('BACKGROUND',(0,0),(-1,-1),colors.HexColor('#1e3a5f')),
+      ('BOX',(0,0),(-1,-1),0.5,colors.HexColor('#0f172a')),
+      ('VALIGN',(0,0),(-1,-1),'MIDDLE'),
+      ('LEFTPADDING',(0,0),(-1,-1),10),('RIGHTPADDING',(0,0),(-1,-1),10),
+      ('TOPPADDING',(0,0),(-1,-1),8),('BOTTOMPADDING',(0,0),(-1,-1),8),
+    ]))
+    story.append(cover)
+    story.append(Spacer(1,0.12*inch))
+    story.append(Paragraph(f'Source file: <b>{filename}</b>', body_s))
     story.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor('#94a3b8')))
-    story.append(Spacer(1,0.1*inch))
+    story.append(Spacer(1,0.08*inch))
+    agreement = 'Agreement detected' if final_outcome else 'No definitive agreement detected'
+    story.append(Paragraph(f'<b>Executive Brief:</b> {agreement}. Risk posture is <b>{risk["label"]}</b> with <b>{risk["negative_signals"]}</b> negative signals and <b>{risk["threats"]}</b> threats.', body_s))
+    story.append(Spacer(1,0.08*inch))
 
     # Weights table
     story.append(Paragraph('KODIS Preference Weights', h2_s))
