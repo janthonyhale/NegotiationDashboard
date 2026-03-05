@@ -31,10 +31,10 @@ nav{display:flex;align-items:center;padding:10px 20px;border-bottom:1px solid va
 @keyframes spin{to{transform:rotate(360deg);}}
 
 /* === 3-col layout === */
-.main{display:grid;grid-template-columns:minmax(380px,1.25fr) minmax(340px,1fr) 330px;flex:1;overflow:hidden;}
+.main{display:grid;grid-template-columns:minmax(300px,0.95fr) minmax(560px,1.55fr) 330px;flex:1;overflow:hidden;}
 .col{display:flex;flex-direction:column;border-right:1px solid var(--border);overflow:hidden;}
 .col:last-child{border-right:none;}
-.col-hd{padding:8px 13px;border-bottom:1px solid var(--border);font-size:0.57rem;font-family:var(--mono);letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:7px;flex-shrink:0;}
+.col-hd{padding:9px 13px;border-bottom:1px solid var(--border);font-size:0.64rem;font-family:var(--mono);letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:7px;flex-shrink:0;}
 .dot{width:5px;height:5px;border-radius:50%;}
 .col-body{flex:1;overflow-y:auto;padding:10px 12px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
 .col-body::-webkit-scrollbar{width:3px;}
@@ -81,11 +81,11 @@ nav{display:flex;align-items:center;padding:10px 20px;border-bottom:1px solid va
 
 /* === EMOTION CHART below dialogue === */
 .center-bottom{flex-shrink:0;border-top:1px solid var(--border);}
-.emo-chart-wrap{padding:10px 14px;}
+.emo-chart-wrap{padding:12px 14px;height:100%;display:flex;flex-direction:column;}
 .emo-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
-.emo-title{font-family:var(--mono);font-size:0.57rem;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);}
+.emo-title{font-family:var(--mono);font-size:0.68rem;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);}
 .emo-toggle{display:flex;gap:4px;flex-wrap:wrap;}
-.emo-btn{font-size:0.6rem;font-family:var(--mono);padding:2px 8px;border-radius:4px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);transition:all 0.15s;}
+.emo-btn{font-size:0.66rem;font-family:var(--mono);padding:3px 9px;border-radius:4px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);transition:all 0.15s;}
 .emo-btn.active{color:#07090f;border-color:transparent;}
 .emo-btn[data-emo="joy"].active{background:var(--teal);border-color:var(--teal);}
 .emo-btn[data-emo="anger"].active{background:var(--red);border-color:var(--red);}
@@ -93,22 +93,24 @@ nav{display:flex;align-items:center;padding:10px 20px;border-bottom:1px solid va
 .emo-btn[data-emo="surprise"].active{background:var(--amber);border-color:var(--amber);}
 .emo-btn[data-emo="compassion"].active{background:var(--accent);border-color:var(--accent);}
 .emo-btn[data-emo="neutral"].active{background:#6b7280;border-color:#6b7280;}
-#emo-img{width:100%;display:block;}
-#emo-ph{padding:24px;text-align:center;color:var(--muted);font-size:0.72rem;}
+#emo-img{flex:1;width:100%;height:100%;display:block;object-fit:contain;}
+#emo-ph{flex:1;display:flex;align-items:center;justify-content:center;padding:20px;text-align:center;color:var(--muted);font-size:0.84rem;}
 
 /* === RIGHT SIDEBAR === */
 .sidebar-body{flex:1;overflow-y:auto;padding:10px 12px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
-.sec-label{font-size:0.55rem;font-family:var(--mono);letter-spacing:1.6px;text-transform:uppercase;color:var(--muted);padding-bottom:5px;border-bottom:1px solid var(--border);margin-bottom:8px;}
+.middle-stack{flex:1;display:grid;grid-template-rows:1fr 1fr;gap:10px;padding:10px 12px;min-height:0;overflow:hidden;}
+.middle-panel{min-height:0;background:var(--card);border:1px solid var(--border);border-radius:9px;overflow:hidden;display:flex;flex-direction:column;}
+.sec-label{font-size:0.64rem;font-family:var(--mono);letter-spacing:1.6px;text-transform:uppercase;color:var(--muted);padding-bottom:5px;border-bottom:1px solid var(--border);margin-bottom:8px;}
 
 /* World map */
-.map-card{background:var(--card);border:1px solid var(--border);border-radius:9px;overflow:hidden;margin-bottom:12px;}
+.map-card{background:var(--card);border:1px solid var(--border);border-radius:9px;overflow:hidden;margin-bottom:12px;display:flex;flex-direction:column;min-height:0;}
 .map-card-head{padding:7px 11px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
 .map-card-label{font-family:var(--mono);font-size:0.56rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);}
-.maps-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px;}
-.world-map-wrap{background:#0a1520;position:relative;padding:4px;border:1px solid #132236;border-radius:6px;}
-.map-title{font-family:var(--mono);font-size:0.52rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:2px 4px 4px 4px;}
-.map-scale-note{font-family:var(--mono);font-size:0.5rem;color:#8da2bf;padding:0 4px 4px 4px;}
-#buyer-map,#seller-map{width:100%;height:155px;}
+.maps-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px;flex:1;min-height:0;}
+.world-map-wrap{background:#0a1520;position:relative;padding:5px;border:1px solid #132236;border-radius:6px;display:flex;flex-direction:column;min-height:0;}
+.map-title{font-family:var(--mono);font-size:0.62rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:2px 4px 4px 4px;}
+.map-scale-note{font-family:var(--mono);font-size:0.58rem;color:#8da2bf;padding:0 4px 4px 4px;}
+#buyer-map,#seller-map{width:100%;height:100%;min-height:170px;}
 .country-row{display:flex;gap:6px;padding:8px 10px;}
 .ctry{flex:1;background:var(--surface);border-radius:6px;padding:7px 8px;}
 .ctry.buyer{border-left:2px solid var(--accent);}
@@ -186,13 +188,13 @@ nav{display:flex;align-items:center;padding:10px 20px;border-bottom:1px solid va
   <!-- COL 2: Maps + Emotion chart -->
   <div class="col" style="border-right:1px solid var(--border)">
     <div class="col-hd"><div class="dot" style="background:var(--accent)"></div>Geo-Signal & Emotional Dynamics</div>
-    <div class="sidebar-body">
-      <div style="margin-bottom:12px">
-        <div class="sec-label">Country of Origin</div>
-        <div class="map-card">
+    <div class="middle-stack">
+      <div class="middle-panel">
+        <div class="sec-label" style="padding:10px 10px 5px;margin:0 10px 4px">Country of Origin</div>
+        <div class="map-card" style="border:none;margin:0 8px 8px;height:100%">
           <div class="map-card-head">
             <span class="map-card-label">Predicted Origins</span>
-            <span style="font-size:0.58rem;font-family:var(--mono);color:var(--teal)">English</span>
+            <span style="font-size:0.66rem;font-family:var(--mono);color:var(--teal)">English</span>
           </div>
           <div class="maps-grid">
             <div class="world-map-wrap">
@@ -221,7 +223,7 @@ nav{display:flex;align-items:center;padding:10px 20px;border-bottom:1px solid va
         </div>
       </div>
 
-      <div class="center-bottom">
+      <div class="middle-panel center-bottom">
         <div class="emo-chart-wrap">
           <div class="emo-header">
             <div class="emo-title">Emotion over time</div>
@@ -234,7 +236,7 @@ nav{display:flex;align-items:center;padding:10px 20px;border-bottom:1px solid va
               <button class="emo-btn" data-emo="neutral" onclick="switchEmo('neutral',this)">Neutral</button>
             </div>
           </div>
-          <div id="emo-ph" style="padding:20px;text-align:center;color:var(--muted);font-size:0.7rem">Step through turns to see emotion trajectory</div>
+          <div id="emo-ph">Step through turns to see emotion trajectory</div>
           <img id="emo-img" src="" style="display:none">
         </div>
       </div>
