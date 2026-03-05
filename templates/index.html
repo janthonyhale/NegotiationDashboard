@@ -57,6 +57,28 @@
   .badge.red   { border-color: var(--red);   color: var(--red);   }
   .badge.amber { border-color: var(--amber); color: var(--amber); }
 
+  .bg-globe {
+    position: fixed;
+    right: -40px;
+    top: 50%;
+    width: 620px;
+    height: 620px;
+    transform: translateY(-50%);
+    opacity: 0.32;
+    pointer-events: none;
+    z-index: 0;
+    filter: drop-shadow(0 0 30px rgba(59,130,246,0.08));
+  }
+  .bg-globe svg { width:100%; height:100%; }
+  .bg-globe .ring { fill:none; stroke:#35506f; stroke-width:1.1; }
+  .bg-globe .meridian { fill:none; stroke:#2a3f58; stroke-width:0.8; }
+  .bg-globe .latitude { fill:none; stroke:#29425a; stroke-width:0.8; }
+  .bg-globe .outline { fill:none; stroke:#4f6a87; stroke-width:1.4; }
+  .bg-globe .sweep { fill:none; stroke:#22d3a5; stroke-width:1.4; stroke-dasharray:6 8; transform-origin:50% 50%; animation: spinGlobe 18s linear infinite; }
+  @keyframes spinGlobe { from { transform: rotate(0deg);} to {transform: rotate(360deg);} }
+  header, .main { position: relative; z-index: 1; }
+
+
   /* ─── Main layout ─────── */
   .main {
     display: grid;
@@ -296,6 +318,20 @@
 </style>
 </head>
 <body>
+
+<div class="bg-globe" aria-hidden="true">
+  <svg viewBox="0 0 500 500">
+    <circle class="ring" cx="250" cy="250" r="238"/>
+    <circle class="outline" cx="250" cy="250" r="190"/>
+    <ellipse class="meridian" cx="250" cy="250" rx="70" ry="190"/>
+    <ellipse class="meridian" cx="250" cy="250" rx="120" ry="190"/>
+    <ellipse class="meridian" cx="250" cy="250" rx="160" ry="190"/>
+    <ellipse class="latitude" cx="250" cy="250" rx="190" ry="55"/>
+    <ellipse class="latitude" cx="250" cy="250" rx="190" ry="100"/>
+    <ellipse class="latitude" cx="250" cy="250" rx="190" ry="145"/>
+    <circle class="sweep" cx="250" cy="250" r="208"/>
+  </svg>
+</div>
 
 <header>
   <div>

@@ -12,6 +12,8 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as RLImage, Table, TableStyle, HRFlowable
 from reportlab.lib.units import inch
 
+from predictor import RegionPredictor
+
 app = Flask(__name__)
 app.secret_key = 'nego_dash_kodis_2024'
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -204,6 +206,41 @@ COUNTRY_SVG = {
     'Brazil':        {'lat':-14.23,'lng':-51.92,'flag':'🇧🇷'},
 }
 
+
+PREDICTOR = RegionPredictor(language='english', model_name='svm')
+
+COUNTRY_LABEL_MAP = {
+    'U.S.':'United States','US':'United States','United States':'United States',
+    'U.K.':'United Kingdom','UK':'United Kingdom','United Kingdom':'United Kingdom',
+    'Mexico':'Mexico','South Africa':'South Africa','Germany':'Germany','China':'China',
+    'Japan':'Japan','India':'India','France':'France','Australia':'Australia','Canada':'Canada','Brazil':'Brazil'
+}
+
+def _to_geo_payload(label, confidence, probabilities=None):
+    canonical = COUNTRY_LABEL_MAP.get(label, label)
+    info = COUNTRY_SVG.get(canonical, {'lat':0,'lng':0,'flag':'🌍'})
+    return {
+        'country': canonical,
+        'confidence': round(float(confidence or 0),2),
+        'lat': info['lat'],
+        'lng': info['lng'],
+        'flag': info['flag'],
+        'probabilities': probabilities or {},
+    }
+
+def predict_country_with_model(turns, role):
+    text = ' '.join(t.get('text','') for t in turns if t.get('speaker') == role).strip()
+    if not text:
+        return _to_geo_payload('United States', 0.0, {})
+    try:
+        out = PREDICTOR.predict_one(text)
+        pred = out.get('predicted_class','United States')
+        conf = out.get('confidence',0)
+        probs = out.get('probabilities',{})
+        return _to_geo_payload(pred, conf, probs)
+    except Exception:
+        return predict_country(turns, role)
+
 def predict_country(turns, role):
     text  = ' '.join(t['text'] for t in turns if t['speaker']==role).lower()
     formal = len(re.findall(r'\b(therefore|hence|furthermore|shall|hereby|pursuant|esteemed|aforesaid)\b', text))
@@ -346,8 +383,8 @@ def api_upload():
         outcomes = generate_all_outcomes(bw, sw)
         pareto   = compute_pareto(outcomes)
         pareto_img = make_pareto_plot(outcomes, pareto, title='Pre-Negotiation: KODIS Solution Space')
-        buyer_c  = predict_country(turns,'Buyer')
-        seller_c = predict_country(turns,'Seller')
+        buyer_c  = predict_country_with_model(turns,'Buyer')
+        seller_c = predict_country_with_model(turns,'Seller')
         return jsonify({
             'turns':turns,'filename':filename,
             'buyer_weights':bw,'seller_weights':sw,
