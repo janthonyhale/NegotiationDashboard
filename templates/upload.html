@@ -17,6 +17,17 @@ nav{display:flex;align-items:center;padding:14px 32px;border-bottom:1px solid va
 .step.active{color:var(--teal);border-color:var(--teal);background:rgba(34,211,165,0.06);}
 .hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;position:relative;overflow:hidden;}
 .hero::before{content:'';position:absolute;top:-180px;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(79,145,255,0.07) 0%,transparent 65%);pointer-events:none;}
+
+.bg-globe{position:absolute;right:-40px;top:52%;width:640px;height:640px;transform:translateY(-50%);opacity:0.45;pointer-events:none;z-index:0;filter:drop-shadow(0 0 45px rgba(34,211,165,0.18));mix-blend-mode:screen;}
+.bg-globe svg{width:100%;height:100%;}
+.bg-globe .ring{fill:none;stroke:#35506f;stroke-width:1.1;}
+.bg-globe .meridian{fill:none;stroke:#2a3f58;stroke-width:0.85;}
+.bg-globe .latitude{fill:none;stroke:#29425a;stroke-width:0.85;}
+.bg-globe .outline{fill:none;stroke:#4f6a87;stroke-width:1.5;}
+.bg-globe .sweep{fill:none;stroke:#22d3a5;stroke-width:1.5;stroke-dasharray:7 8;transform-origin:50% 50%;animation:spinGlobe 16s linear infinite;}
+@keyframes spinGlobe{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+.hero > *{position:relative;z-index:1;}
+
 .eyebrow{font-family:var(--mono);font-size:0.62rem;letter-spacing:3px;color:var(--teal);text-transform:uppercase;margin-bottom:16px;}
 h1{font-family:var(--serif);font-size:clamp(2.2rem,5vw,3.6rem);font-weight:400;text-align:center;line-height:1.1;letter-spacing:-1px;margin-bottom:14px;}
 h1 em{font-style:italic;color:var(--teal);}
@@ -49,6 +60,20 @@ h1 em{font-style:italic;color:var(--teal);}
   </div>
 </nav>
 <div class="hero">
+
+  <div class="bg-globe" aria-hidden="true">
+    <svg viewBox="0 0 500 500">
+      <circle class="ring" cx="250" cy="250" r="238"/>
+      <circle class="outline" cx="250" cy="250" r="190"/>
+      <ellipse class="meridian" cx="250" cy="250" rx="70" ry="190"/>
+      <ellipse class="meridian" cx="250" cy="250" rx="120" ry="190"/>
+      <ellipse class="meridian" cx="250" cy="250" rx="160" ry="190"/>
+      <ellipse class="latitude" cx="250" cy="250" rx="190" ry="55"/>
+      <ellipse class="latitude" cx="250" cy="250" rx="190" ry="100"/>
+      <ellipse class="latitude" cx="250" cy="250" rx="190" ry="145"/>
+      <circle class="sweep" cx="250" cy="250" r="208"/>
+    </svg>
+  </div>
   <div class="eyebrow">KODIS Dispute Analytics</div>
   <h1>Decode every<br><em>dispute</em></h1>
   <p class="sub">Upload a buyer–seller transcript to analyze emotions, model KODIS utilities, compute the Pareto frontier, and track mediator intervention signals turn-by-turn.</p>

@@ -70,7 +70,7 @@ input[type=range]{width:100%;height:4px;border-radius:2px;background:var(--borde
   <div class="left-panel">
     <div class="panel-head"><div class="dot" style="background:var(--teal)"></div>KODIS Preference Weights</div>
     <div class="panel-body">
-      <p style="font-size:0.72rem;color:var(--text2);line-height:1.55;margin-bottom:14px">Adjust how much each party values each issue (0–100). The solution space and Pareto frontier will update in real time.</p>
+      <p style="font-size:0.72rem;color:var(--text2);line-height:1.55;margin-bottom:14px">Submitted KODIS preferences are locked for traceability. Review-only values are shown below.</p>
       <div class="weights-section">
         <div class="ws-title buyer">Buyer Weights</div>
         <div id="buyer-sliders"></div>
@@ -79,8 +79,8 @@ input[type=range]{width:100%;height:4px;border-radius:2px;background:var(--borde
         <div class="ws-title seller">Seller Weights</div>
         <div id="seller-sliders"></div>
       </div>
-      <button class="update-btn" onclick="updateWeights()">↺ Recompute Solution Space</button>
-      <div style="font-size:0.65rem;color:var(--muted);margin-top:7px;font-family:var(--mono)">Auto-update is on while dragging sliders.</div>
+      <button class="update-btn" disabled style="opacity:0.55;cursor:not-allowed">🔒 Preferences Locked</button>
+      <div style="font-size:0.65rem;color:var(--muted);margin-top:7px;font-family:var(--mono)">Weights are fixed from the uploaded session and cannot be edited here.</div>
       <div style="display:flex;justify-content:center;margin-top:10px"><div class="spin" id="wspin"></div></div>
     </div>
   </div>
@@ -104,7 +104,7 @@ input[type=range]{width:100%;height:4px;border-radius:2px;background:var(--borde
       <div class="card">
         <div class="card-head">Pareto Frontier — KODIS Solution Space<span style="color:var(--teal)">Efficient outcomes highlighted</span></div>
         <div id="pareto-ph" style="padding:60px;text-align:center;color:var(--muted);font-size:0.78rem">Loading…</div>
-        <img id="pareto-img" src="" style="display:none">
+        <div id="pareto-chart" style="display:none;width:100%;height:420px;background:#0a1520"></div>
       </div>
 
       <div class="card">
@@ -140,7 +140,7 @@ function init() {
   document.getElementById('st-outcomes').textContent= D.outcomes.length;
   buildSliders('buyer-sliders', BW, 'buyer');
   buildSliders('seller-sliders', SW, 'seller');
-  showPareto(D.pareto_img);
+  renderSolutionSpace(D.outcomes, D.pareto);
   buildIssuesTable();
 }
 
@@ -153,55 +153,51 @@ function buildSliders(containerId, weights, role) {
         <span class="issue-val" id="${role}-val-${iss.key}">${weights[iss.key] ?? 0}</span>
       </div>
       <input type="range" min="0" max="100" value="${weights[iss.key] ?? 0}"
-             oninput="updateVal('${role}','${iss.key}',this.value)">
+             disabled>
     </div>`).join('');
 }
 
-function updateVal(role, key, val) {
-  if (role==='buyer') BW[key] = parseInt(val);
-  else SW[key] = parseInt(val);
-  document.getElementById(`${role}-val-${key}`).textContent = val;
-  // Save updated weights to session
-  D.buyer_weights = BW; D.seller_weights = SW;
-  sessionStorage.setItem('nd', JSON.stringify(D));
-  scheduleUpdateWeights();
-}
+function updateVal(){}
+function scheduleUpdateWeights(){}
+async function updateWeights(){}
 
-function scheduleUpdateWeights(){
-  if (pendingUpdate) clearTimeout(pendingUpdate);
-  pendingUpdate = setTimeout(() => {
-    pendingUpdate = null;
-    updateWeights();
-  }, 180);
-}
+function renderSolutionSpace(outcomes, pareto) {
+  const host = document.getElementById('pareto-chart');
+  const ph = document.getElementById('pareto-ph');
+  if (!host || !outcomes || !outcomes.length) return;
+  const w = host.clientWidth || 760;
+  const h = host.clientHeight || 420;
+  const m = {l:54,r:20,t:22,b:40};
+  const x = v => m.l + (v/100) * (w-m.l-m.r);
+  const y = v => h-m.b - (v/100) * (h-m.t-m.b);
 
-async function updateWeights() {
-  document.getElementById('wspin').style.display='block';
-  document.getElementById('rspin').style.display='block';
-  try {
-    const res = await fetch('/api/update_weights',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({buyer_weights:BW,seller_weights:SW})
-    });
-    const data = await res.json();
-    D.outcomes = data.outcomes; D.pareto = data.pareto;
-    D.pareto_img = data.pareto_img;
-    D.buyer_weights = BW; D.seller_weights = SW;
-    sessionStorage.setItem('nd', JSON.stringify(D));
-    document.getElementById('st-pareto').textContent  = data.pareto.length;
-    document.getElementById('st-outcomes').textContent= data.outcomes.length;
-    showPareto(data.pareto_img);
-    buildIssuesTable();
-  } finally {
-    document.getElementById('wspin').style.display='none';
-    document.getElementById('rspin').style.display='none';
+  const dots = outcomes.map(o => `<circle cx="${x(o.buyer_util)}" cy="${y(o.seller_util)}" r="3" fill="#28466a" opacity="0.68"/>`).join('');
+  const px = [...pareto].sort((a,b)=>a.buyer_util-b.buyer_util);
+  const path = px.map((p,i)=> `${i?'L':'M'} ${x(p.buyer_util).toFixed(1)} ${y(p.seller_util).toFixed(1)}`).join(' ');
+  const paretoPts = px.map(p => `<circle cx="${x(p.buyer_util)}" cy="${y(p.seller_util)}" r="4" fill="#22d3a5"/>`).join('');
+
+  let grid='';
+  for(let i=0;i<=5;i++){
+    const xv = i*20; const yv = i*20;
+    grid += `<line x1="${x(xv)}" y1="${m.t}" x2="${x(xv)}" y2="${h-m.b}" stroke="rgba(79,96,122,0.25)"/>`;
+    grid += `<line x1="${m.l}" y1="${y(yv)}" x2="${w-m.r}" y2="${y(yv)}" stroke="rgba(79,96,122,0.25)"/>`;
+    grid += `<text x="${x(xv)-8}" y="${h-14}" fill="#8ea5c1" font-size="11" font-family="var(--mono)">${xv}</text>`;
+    grid += `<text x="16" y="${y(yv)+4}" fill="#8ea5c1" font-size="11" font-family="var(--mono)">${yv}</text>`;
   }
-}
 
-function showPareto(b64) {
-  document.getElementById('pareto-ph').style.display='none';
-  const img=document.getElementById('pareto-img');
-  img.src='data:image/png;base64,'+b64; img.style.display='block';
+  host.innerHTML = `<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%">
+    ${grid}
+    <line x1="${m.l}" y1="${h-m.b}" x2="${w-m.r}" y2="${h-m.b}" stroke="#4b607a" stroke-width="1.3"/>
+    <line x1="${m.l}" y1="${m.t}" x2="${m.l}" y2="${h-m.b}" stroke="#4b607a" stroke-width="1.3"/>
+    ${dots}
+    ${path ? `<path d="${path}" fill="none" stroke="#22d3a5" stroke-width="2.6"/>` : ''}
+    ${paretoPts}
+    <text x="${w-180}" y="18" fill="#22d3a5" font-size="12" font-family="var(--mono)">Pareto Frontier</text>
+    <text x="${w/2-65}" y="${h-6}" fill="#8ea5c1" font-size="11" font-family="var(--mono)">Buyer Utility</text>
+    <text x="10" y="18" fill="#8ea5c1" font-size="11" font-family="var(--mono)">Seller Utility</text>
+  </svg>`;
+  ph.style.display='none';
+  host.style.display='block';
 }
 
 function buildIssuesTable() {
