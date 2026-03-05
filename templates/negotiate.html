@@ -13,16 +13,16 @@
 html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--sans);}
 body{display:flex;flex-direction:column;}
 
-nav{display:flex;align-items:center;padding:12px 22px;border-bottom:1px solid var(--border);flex-shrink:0;gap:12px;}
-.logo{font-family:var(--serif);font-size:1.45rem;letter-spacing:-0.6px;white-space:nowrap;}.logo span{color:var(--teal);}
+nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid var(--border);flex-shrink:0;gap:14px;}
+.logo{font-family:var(--serif);font-size:1.65rem;letter-spacing:-0.7px;white-space:nowrap;}.logo span{color:var(--teal);}
 .steps{display:flex;}
-.step{padding:5px 14px;font-size:0.64rem;font-family:var(--mono);color:var(--muted);border:1px solid var(--border);border-right:none;background:var(--surface);}
+.step{padding:6px 15px;font-size:0.7rem;font-family:var(--mono);color:var(--muted);border:1px solid var(--border);border-right:none;background:var(--surface);}
 .step:first-child{border-radius:5px 0 0 5px;}.step:last-child{border-right:1px solid var(--border);border-radius:0 5px 5px 0;}
 .step.active{color:var(--teal);border-color:var(--teal);background:rgba(34,211,165,0.06);}
 .step.done{color:var(--accent);border-color:rgba(79,145,255,0.25);}
 .nav-r{margin-left:auto;display:flex;align-items:center;gap:8px;}
-.pill{font-family:var(--mono);font-size:0.72rem;padding:4px 11px;border-radius:4px;border:1px solid var(--border);color:var(--text2);background:var(--surface);}
-.btn{padding:6px 14px;border-radius:5px;font-family:var(--sans);font-size:0.8rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--text);transition:all 0.15s;}
+.pill{font-family:var(--mono);font-size:0.78rem;padding:5px 12px;border-radius:4px;border:1px solid var(--border);color:var(--text2);background:var(--surface);}
+.btn{padding:7px 15px;border-radius:5px;font-family:var(--sans);font-size:0.86rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--text);transition:all 0.15s;}
 .btn:hover:not(:disabled){background:var(--accent);border-color:var(--accent);color:#07090f;}
 .btn:disabled{opacity:0.3;cursor:not-allowed;}
 .btn.primary{background:var(--teal);border-color:var(--teal);color:#07090f;}
@@ -34,7 +34,7 @@ nav{display:flex;align-items:center;padding:12px 22px;border-bottom:1px solid va
 .main{display:grid;grid-template-columns:minmax(280px,0.9fr) minmax(520px,1.7fr) 300px;flex:1;overflow:hidden;}
 .col{display:flex;flex-direction:column;border-right:1px solid var(--border);overflow:hidden;}
 .col:last-child{border-right:none;}
-.col-hd{padding:9px 12px;border-bottom:1px solid var(--border);font-size:0.67rem;font-family:var(--mono);letter-spacing:1.25px;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:7px;flex-shrink:0;}
+.col-hd{padding:10px 13px;border-bottom:1px solid var(--border);font-size:0.72rem;font-family:var(--mono);letter-spacing:1.25px;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:7px;flex-shrink:0;}
 .dot{width:5px;height:5px;border-radius:50%;}
 .col-body{flex:1;overflow-y:auto;padding:10px 12px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
 .col-body::-webkit-scrollbar{width:3px;}
@@ -93,21 +93,21 @@ nav{display:flex;align-items:center;padding:12px 22px;border-bottom:1px solid va
 .emo-btn[data-emo="surprise"].active{background:var(--amber);border-color:var(--amber);}
 .emo-btn[data-emo="compassion"].active{background:var(--accent);border-color:var(--accent);}
 .emo-btn[data-emo="neutral"].active{background:#6b7280;border-color:#6b7280;}
-#emo-img{flex:1;width:100%;height:100%;display:block;object-fit:fill;}
-#emo-ph{flex:1;display:flex;align-items:center;justify-content:center;padding:10px;text-align:center;color:var(--muted);font-size:0.72rem;}
+#emo-chart{flex:1;width:100%;min-height:210px;border:1px solid var(--border);border-radius:7px;background:#0b1320;display:flex;align-items:center;justify-content:center;}
+.emo-empty{font-size:0.8rem;color:var(--muted);}
 
 /* === RIGHT SIDEBAR === */
 .sidebar-body{flex:1;overflow-y:auto;padding:10px 12px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
-.middle-stack{flex:1;display:grid;grid-template-rows:1fr 1fr;gap:8px;padding:8px 10px;min-height:0;overflow:hidden;}
+.middle-stack{flex:1;display:grid;grid-template-rows:1.2fr 0.8fr;gap:8px;padding:8px 10px;min-height:0;overflow:hidden;}
 .middle-panel{min-height:0;background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;}
-.sec-label{font-size:0.64rem;font-family:var(--mono);letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);padding-bottom:4px;border-bottom:1px solid var(--border);margin-bottom:6px;}
+.sec-label{font-size:0.68rem;font-family:var(--mono);letter-spacing:1.1px;text-transform:uppercase;color:var(--muted);padding-bottom:4px;border-bottom:1px solid var(--border);margin-bottom:6px;}
 
 /* World map */
 .map-card{background:var(--card);border:1px solid var(--border);border-radius:9px;overflow:hidden;margin-bottom:12px;display:flex;flex-direction:column;min-height:0;}
-.map-card-head{padding:6px 9px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
-.map-card-label{font-family:var(--mono);font-size:0.52rem;letter-spacing:0.8px;text-transform:uppercase;color:var(--muted);}
+.map-card-head{padding:6px 9px;display:flex;justify-content:flex-end;align-items:center;}
+.map-card-label{display:none;}
 .map-toggle{display:flex;gap:6px;padding:6px 8px 2px;}
-.map-btn{font-size:0.62rem;font-family:var(--mono);padding:3px 8px;border-radius:4px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);}
+.map-btn{font-size:0.68rem;font-family:var(--mono);padding:4px 10px;border-radius:4px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);}
 .map-btn.active{color:#07090f;border-color:transparent;}
 .map-btn[data-role="buyer"].active{background:var(--accent);}
 .map-btn[data-role="seller"].active{background:var(--red);}
@@ -115,7 +115,7 @@ nav{display:flex;align-items:center;padding:12px 22px;border-bottom:1px solid va
 
 .map-title{font-family:var(--mono);font-size:0.62rem;letter-spacing:0.8px;text-transform:uppercase;color:var(--muted);padding:2px 4px;}
 .map-scale-note{font-family:var(--mono);font-size:0.56rem;color:#8da2bf;padding:0 4px 3px 4px;}
-#active-map{width:100%;height:100%;min-height:180px;}
+#active-map{width:100%;height:100%;min-height:260px;}
 .country-row{display:flex;gap:6px;padding:6px 8px;}
 .ctry{flex:1;background:var(--surface);border-radius:6px;padding:7px 8px;}
 .ctry.buyer{border-left:2px solid var(--accent);}
@@ -195,10 +195,8 @@ nav{display:flex;align-items:center;padding:12px 22px;border-bottom:1px solid va
     <div class="col-hd"><div class="dot" style="background:var(--accent)"></div>Signals</div>
     <div class="middle-stack">
       <div class="middle-panel">
-        <div class="sec-label" style="padding:8px 8px 4px;margin:0 8px 2px">Origins</div>
-        <div class="map-card" style="border:none;margin:0 6px 6px;height:100%">
+                <div class="map-card" style="border:none;margin:0 4px 4px;height:100%">
           <div class="map-card-head">
-            <span class="map-card-label">Origin</span>
             <span style="font-size:0.72rem;font-family:var(--mono);color:var(--teal)">English</span>
           </div>
           <div class="map-toggle">
@@ -238,8 +236,7 @@ nav{display:flex;align-items:center;padding:12px 22px;border-bottom:1px solid va
               <button class="emo-btn" data-emo="neutral" onclick="switchEmo('neutral',this)">Neutral</button>
             </div>
           </div>
-          <div id="emo-ph">Step through turns to see emotion trajectory</div>
-          <img id="emo-img" src="" style="display:none">
+          <div id="emo-chart"></div>
         </div>
       </div>
     </div>
@@ -340,7 +337,7 @@ async function step(dir) {
       body: JSON.stringify({idx:ni, turns:S.turns, emotion_dim:S.dim, buyer_weights:S.bw, seller_weights:S.sw}),
     });
     const data = await res.json();
-    updateEmoChart(data.emotion_img);
+    updateEmoChart();
     renderRisk(data.risk);
     renderAdvisor(data.advisor);
   } catch(e){ console.error(e); }
@@ -384,10 +381,59 @@ function addBubble(t, idx) {
   wrap.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
-function updateEmoChart(b64) {
-  document.getElementById('emo-ph').style.display='none';
-  const img=document.getElementById('emo-img');
-  img.src='data:image/png;base64,'+b64; img.style.display='block';
+function updateEmoChart() {
+  const host = document.getElementById('emo-chart');
+  if (!host) return;
+  if (S.currentIdx < 0) {
+    host.innerHTML = '<div class="emo-empty">Step through turns to see emotion trajectory</div>';
+    return;
+  }
+
+  const upto = S.turns.slice(0, S.currentIdx + 1);
+  const buyerSeries = [];
+  const sellerSeries = [];
+  upto.forEach((t, i) => {
+    const role = (t.speaker || '').toLowerCase();
+    const val = (t.emotions && typeof t.emotions[S.dim] === 'number') ? t.emotions[S.dim] : 0;
+    if (role === 'buyer') buyerSeries.push({x:i, y:val});
+    if (role === 'seller') sellerSeries.push({x:i, y:val});
+  });
+
+  const w = host.clientWidth || 600;
+  const h = host.clientHeight || 220;
+  const m = {l:40,r:12,t:14,b:28};
+  const pw = w - m.l - m.r;
+  const ph = h - m.t - m.b;
+  const maxX = Math.max(1, upto.length - 1);
+  const xPos = (x)=> m.l + (x / maxX) * pw;
+  const yPos = (y)=> m.t + (1 - Math.max(0, Math.min(1, y))) * ph;
+
+  const linePath = (arr)=> arr.map((p,idx)=> `${idx===0?'M':'L'} ${xPos(p.x).toFixed(1)} ${yPos(p.y).toFixed(1)}`).join(' ');
+
+  const buyerPath = linePath(buyerSeries);
+  const sellerPath = linePath(sellerSeries);
+
+  let grid='';
+  for (let i=0;i<=4;i++){
+    const y = m.t + (i/4)*ph;
+    const v = (1 - i/4).toFixed(2);
+    grid += `<line x1="${m.l}" y1="${y}" x2="${w-m.r}" y2="${y}" stroke="rgba(148,163,184,0.18)" stroke-width="1"/>`;
+    grid += `<text x="8" y="${y+4}" fill="#8da2bf" font-size="10" font-family="var(--mono)">${v}</text>`;
+  }
+
+  const points = (arr,color)=> arr.map(p=> `<circle cx="${xPos(p.x)}" cy="${yPos(p.y)}" r="3" fill="${color}"/>`).join('');
+
+  host.innerHTML = `<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" preserveAspectRatio="none">
+      ${grid}
+      <line x1="${m.l}" y1="${h-m.b}" x2="${w-m.r}" y2="${h-m.b}" stroke="#4b607a" stroke-width="1.2"/>
+      <line x1="${m.l}" y1="${m.t}" x2="${m.l}" y2="${h-m.b}" stroke="#4b607a" stroke-width="1.2"/>
+      ${buyerPath ? `<path d="${buyerPath}" fill="none" stroke="#4f91ff" stroke-width="2.4"/>` : ''}
+      ${sellerPath ? `<path d="${sellerPath}" fill="none" stroke="#f43f5e" stroke-width="2.4"/>` : ''}
+      ${points(buyerSeries,'#4f91ff')}
+      ${points(sellerSeries,'#f43f5e')}
+      <text x="${w-140}" y="16" fill="#4f91ff" font-size="11" font-family="var(--mono)">Buyer</text>
+      <text x="${w-72}" y="16" fill="#f43f5e" font-size="11" font-family="var(--mono)">Seller</text>
+    </svg>`;
 }
 
 function renderRisk(r) {
@@ -519,6 +565,21 @@ function renderRoleMap(selector, role, dist, topCode, topProb){
 
 function renderCountry(){
   if (!S.countryTimeline.length) return;
+  if (S.currentIdx < 0){
+    document.getElementById('ctry-buyer').textContent = '—';
+    document.getElementById('ctry-buyer-conf').textContent = '—';
+    document.getElementById('ctry-seller').textContent = '—';
+    document.getElementById('ctry-seller-conf').textContent = '—';
+    document.getElementById('map-title').textContent = S.mapRole === 'buyer' ? 'Buyer map' : 'Seller map';
+    document.getElementById('map-scale-note').textContent = 'Turn 0 · awaiting first exchange';
+    if (S.activeMap) S.activeMap.destroy();
+    S.activeMap = new jsVectorMap({
+      selector:'#active-map', map:'world', zoomButtons:false, backgroundColor:'#0a1520', markers:[],
+      regionStyle:{initial:{fill:'#3b4559', stroke:'#253a55', strokeWidth:0.6}}
+    });
+    updateEmoChart();
+    return;
+  }
   const i = Math.max(0, S.currentIdx);
   const snap = S.countryTimeline[i] || S.countryTimeline[0];
   const [buyerCode,buyerProb] = topCountry(snap.buyer);
@@ -558,7 +619,7 @@ async function switchEmo(dim, btn) {
       body:JSON.stringify({idx:S.currentIdx,turns:S.turns,emotion_dim:dim,buyer_weights:S.bw,seller_weights:S.sw})
     });
     const data = await res.json();
-    updateEmoChart(data.emotion_img);
+    updateEmoChart();
   } finally { document.getElementById('spin').style.display='none'; }
 }
 
