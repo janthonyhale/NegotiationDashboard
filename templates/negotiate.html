@@ -93,7 +93,7 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
 .emo-btn[data-emo="surprise"].active{background:var(--amber);border-color:var(--amber);}
 .emo-btn[data-emo="compassion"].active{background:var(--accent);border-color:var(--accent);}
 .emo-btn[data-emo="neutral"].active{background:#6b7280;border-color:#6b7280;}
-#emo-chart{flex:1;width:100%;min-height:260px;border:1px solid var(--border);border-radius:7px;background:#0b1320;display:flex;align-items:center;justify-content:center;}
+#emo-chart{flex:1;width:100%;min-height:260px;border:1px solid var(--border);border-radius:7px;background:#0b1320;display:block;overflow-x:auto;overflow-y:hidden;}
 .emo-empty{font-size:0.8rem;color:var(--muted);}
 
 /* === RIGHT SIDEBAR === */
@@ -195,9 +195,7 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
     <div class="middle-stack">
       <div class="middle-panel">
                 <div class="map-card" style="border:none;margin:0 4px 4px;height:100%">
-          <div class="map-card-head">
-                      </div>
-          <div class="map-toggle">
+                    <div class="map-toggle">
             <button class="map-btn active" data-role="buyer" onclick="switchMapRole('buyer', this)">Buyer</button>
             <button class="map-btn" data-role="seller" onclick="switchMapRole('seller', this)">Seller</button>
           </div>
@@ -383,7 +381,8 @@ function updateEmoChart() {
   const host = document.getElementById('emo-chart');
   if (!host) return;
   if (S.currentIdx < 0) {
-    host.innerHTML = '<div class="emo-empty">Step through turns to see emotion trajectory</div>';
+    host.innerHTML = '<div class="emo-empty" style="padding:18px">Step through turns to see emotion trajectory</div>';
+    host.scrollLeft = 0;
     return;
   }
 
@@ -397,12 +396,17 @@ function updateEmoChart() {
     if (role === 'seller') sellerSeries.push({x:i, y:val});
   });
 
-  const w = host.clientWidth || 600;
-  const h = host.clientHeight || 220;
-  const m = {l:40,r:12,t:14,b:28};
-  const pw = w - m.l - m.r;
+  const baseW = host.clientWidth || 600;
+  const h = host.clientHeight || 260;
+  const turnCount = upto.length;
+  const visibleTurns = 8;
+  const extraTurns = Math.max(0, turnCount - visibleTurns);
+  const chartW = baseW + extraTurns * 72;
+
+  const m = {l:44,r:16,t:14,b:32};
+  const pw = chartW - m.l - m.r;
   const ph = h - m.t - m.b;
-  const maxX = Math.max(1, upto.length - 1);
+  const maxX = Math.max(1, turnCount - 1);
   const xPos = (x)=> m.l + (x / maxX) * pw;
   const yPos = (y)=> m.t + (1 - Math.max(0, Math.min(1, y))) * ph;
 
@@ -415,30 +419,33 @@ function updateEmoChart() {
   for (let i=0;i<=4;i++){
     const y = m.t + (i/4)*ph;
     const v = (1 - i/4).toFixed(2);
-    grid += `<line x1="${m.l}" y1="${y}" x2="${w-m.r}" y2="${y}" stroke="rgba(148,163,184,0.18)" stroke-width="1"/>`;
+    grid += `<line x1="${m.l}" y1="${y}" x2="${chartW-m.r}" y2="${y}" stroke="rgba(148,163,184,0.18)" stroke-width="1"/>`;
     grid += `<text x="8" y="${y+4}" fill="#8da2bf" font-size="10" font-family="var(--mono)">${v}</text>`;
   }
+
   let xTicks='';
-  for (let i=0;i<upto.length;i++){
+  for (let i=0;i<turnCount;i++){
     const x = xPos(i);
     xTicks += `<line x1="${x}" y1="${h-m.b}" x2="${x}" y2="${h-m.b+5}" stroke="#6b7280" stroke-width="1"/>`;
-    xTicks += `<text x="${x-7}" y="${h-6}" fill="#8da2bf" font-size="10" font-family="var(--mono)">T${i+1}</text>`;
+    xTicks += `<text x="${x-8}" y="${h-6}" fill="#8da2bf" font-size="10" font-family="var(--mono)">T${i+1}</text>`;
   }
 
   const points = (arr,color)=> arr.map(p=> `<circle cx="${xPos(p.x)}" cy="${yPos(p.y)}" r="3" fill="${color}"/>`).join('');
 
-  host.innerHTML = `<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" preserveAspectRatio="none">
+  host.innerHTML = `<svg viewBox="0 0 ${chartW} ${h}" width="${chartW}" height="${h}" preserveAspectRatio="none">
       ${grid}
       ${xTicks}
-      <line x1="${m.l}" y1="${h-m.b}" x2="${w-m.r}" y2="${h-m.b}" stroke="#4b607a" stroke-width="1.2"/>
+      <line x1="${m.l}" y1="${h-m.b}" x2="${chartW-m.r}" y2="${h-m.b}" stroke="#4b607a" stroke-width="1.2"/>
       <line x1="${m.l}" y1="${m.t}" x2="${m.l}" y2="${h-m.b}" stroke="#4b607a" stroke-width="1.2"/>
       ${buyerPath ? `<path d="${buyerPath}" fill="none" stroke="#4f91ff" stroke-width="2.4"/>` : ''}
       ${sellerPath ? `<path d="${sellerPath}" fill="none" stroke="#f43f5e" stroke-width="2.4"/>` : ''}
       ${points(buyerSeries,'#4f91ff')}
       ${points(sellerSeries,'#f43f5e')}
-      <text x="${w-140}" y="16" fill="#4f91ff" font-size="11" font-family="var(--mono)">Buyer</text>
-      <text x="${w-72}" y="16" fill="#f43f5e" font-size="11" font-family="var(--mono)">Seller</text>
+      <text x="${chartW-150}" y="16" fill="#4f91ff" font-size="11" font-family="var(--mono)">Buyer</text>
+      <text x="${chartW-82}" y="16" fill="#f43f5e" font-size="11" font-family="var(--mono)">Seller</text>
     </svg>`;
+
+  if (turnCount > visibleTurns) host.scrollLeft = host.scrollWidth;
 }
 
 function renderRisk(r) {
