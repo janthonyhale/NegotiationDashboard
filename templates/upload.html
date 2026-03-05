@@ -17,6 +17,9 @@ nav{display:flex;align-items:center;padding:14px 32px;border-bottom:1px solid va
 .step.active{color:var(--teal);border-color:var(--teal);background:rgba(34,211,165,0.06);}
 .hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;position:relative;overflow:hidden;}
 .hero::before{content:'';position:absolute;top:-180px;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(79,145,255,0.07) 0%,transparent 65%);pointer-events:none;}
+.upload-video-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.5;pointer-events:none;z-index:0;filter:saturate(0.7) contrast(1.05) drop-shadow(0 0 45px rgba(34,211,165,0.18));mix-blend-mode:screen;}
+.hero::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 40%,rgba(34,211,165,0.08),rgba(7,9,15,0.62));pointer-events:none;z-index:0;}
+.hero > :not(.upload-video-bg){position:relative;z-index:1;}
 .eyebrow{font-family:var(--mono);font-size:0.62rem;letter-spacing:3px;color:var(--teal);text-transform:uppercase;margin-bottom:16px;}
 h1{font-family:var(--serif);font-size:clamp(2.2rem,5vw,3.6rem);font-weight:400;text-align:center;line-height:1.1;letter-spacing:-1px;margin-bottom:14px;}
 h1 em{font-style:italic;color:var(--teal);}
@@ -49,6 +52,9 @@ h1 em{font-style:italic;color:var(--teal);}
   </div>
 </nav>
 <div class="hero">
+  <video class="upload-video-bg" autoplay muted loop playsinline preload="auto" playbackRate="0.5">
+    <source src="/static/globe.mp4" type="video/mp4">
+  </video>
   <div class="eyebrow">KODIS Dispute Analytics</div>
   <h1>Decode every<br><em>dispute</em></h1>
   <p class="sub">Upload a buyer–seller transcript to analyze emotions, model KODIS utilities, compute the Pareto frontier, and track mediator intervention signals turn-by-turn.</p>
@@ -67,6 +73,8 @@ h1 em{font-style:italic;color:var(--teal);}
 <div class="overlay" id="ov"><div class="spin"></div><div class="spin-text">Parsing & enriching transcript…</div></div>
 <div id="toast"></div>
 <script>
+const bgVideo = document.querySelector('.upload-video-bg');
+if (bgVideo){ bgVideo.playbackRate = 0.5; bgVideo.defaultPlaybackRate = 0.5; }
 function drop_handler(ev){ev.preventDefault();document.getElementById('drop').classList.remove('drag');const f=ev.dataTransfer.files[0];if(f)upload(f);}
 async function upload(file){
   document.getElementById('ov').classList.add('show');
