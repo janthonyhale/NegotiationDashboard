@@ -273,6 +273,23 @@ COUNTRY_LABEL_MAP = {
     'Japan':'Japan','India':'India','France':'France','Australia':'Australia','Canada':'Canada','Brazil':'Brazil'
 }
 
+def _normalize_probabilities(probabilities):
+    norm = {}
+    if not isinstance(probabilities, dict):
+        return norm
+    for raw_label, raw_prob in probabilities.items():
+        canonical = COUNTRY_LABEL_MAP.get(str(raw_label).strip(), str(raw_label).strip())
+        try:
+            prob = float(raw_prob)
+        except (TypeError, ValueError):
+            continue
+        norm[canonical] = norm.get(canonical, 0.0) + max(0.0, prob)
+    total = sum(norm.values())
+    if total > 0:
+        norm = {k: round(v / total, 6) for k, v in norm.items()}
+    return norm
+
+
 def _to_geo_payload(label, confidence, probabilities=None):
     canonical = COUNTRY_LABEL_MAP.get(label, label)
     info = COUNTRY_SVG.get(canonical, {'lat':0,'lng':0,'flag':'🌍'})
@@ -282,7 +299,7 @@ def _to_geo_payload(label, confidence, probabilities=None):
         'lat': info['lat'],
         'lng': info['lng'],
         'flag': info['flag'],
-        'probabilities': probabilities or {},
+        'probabilities': _normalize_probabilities(probabilities),
     }
 
 def predict_country_with_model(turns, role):

@@ -506,7 +506,12 @@ function renderCountry(countrySnap){
   const active = role === 'buyer' ? buyer : seller;
   const probs = active.probabilities || {};
   const dist = {};
-  const labelToCode = {'U.S.':'US','US':'US','United States':'US','U.K.':'GB','UK':'GB','United Kingdom':'GB','Germany':'DE','China':'CN','India':'IN','Brazil':'BR','Mexico':'MX','South Africa':'ZA'};
+  const labelToCode = {
+    'U.S.':'US','US':'US','United States':'US',
+    'U.K.':'GB','UK':'GB','United Kingdom':'GB',
+    'Germany':'DE','China':'CN','Japan':'JP','India':'IN','France':'FR',
+    'Australia':'AU','Canada':'CA','Brazil':'BR','Mexico':'MX','South Africa':'ZA'
+  };
   Object.entries(probs).forEach(([k,v])=>{ const c=labelToCode[k]||labelToCode[k.trim()]; if(c) dist[c]=Number(v)||0; });
   const topCode = Object.entries(dist).sort((a,b)=>b[1]-a[1])[0]?.[0] || 'US';
   const topProb = Object.entries(dist).sort((a,b)=>b[1]-a[1])[0]?.[1] || 0;
