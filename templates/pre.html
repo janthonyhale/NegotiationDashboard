@@ -25,16 +25,13 @@ nav{display:flex;align-items:center;padding:11px 24px;border-bottom:1px solid va
 .panel-head{padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;font-size:0.58rem;font-family:var(--mono);letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:8px;}
 .dot{width:5px;height:5px;border-radius:50%;}
 .panel-body{flex:1;overflow-y:auto;padding:14px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
-/* Weights */
-.weights-section{margin-bottom:18px;}
-.ws-title{font-size:0.65rem;font-family:var(--mono);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;padding-bottom:5px;border-bottom:1px solid var(--border);}
-.ws-title.buyer{color:var(--accent);}.ws-title.seller{color:var(--red);}
-.issue-row{margin-bottom:10px;}
-.issue-label{display:flex;justify-content:space-between;align-items:center;font-size:0.72rem;color:var(--text2);margin-bottom:4px;}
-.issue-val{font-family:var(--mono);font-size:0.65rem;color:var(--teal);}
-input[type=range]{width:100%;height:4px;border-radius:2px;background:var(--border);outline:none;cursor:pointer;accent-color:var(--teal);}
-.update-btn{width:100%;padding:7px;border-radius:6px;font-family:var(--sans);font-size:0.75rem;font-weight:600;cursor:pointer;border:1px solid var(--teal);background:rgba(34,211,165,0.08);color:var(--teal);margin-top:6px;transition:all 0.15s;}
-.update-btn:hover{background:var(--teal);color:#07090f;}
+/* Preferences */
+.pref-table{width:100%;border-collapse:collapse;font-size:0.73rem;}
+.pref-table th,.pref-table td{padding:8px 6px;border-bottom:1px solid var(--border);text-align:left;}
+.pref-table th{font-family:var(--mono);font-size:0.6rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);}
+.pref-table td:nth-child(2){color:var(--accent);font-family:var(--mono);}
+.pref-table td:nth-child(3){color:var(--red);font-family:var(--mono);}
+.pref-note{font-size:0.65rem;color:var(--muted);margin-top:8px;font-family:var(--mono);}
 /* Right: pareto + info */
 .right-body{flex:1;overflow-y:auto;padding:16px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
 .page-header{margin-bottom:20px;}
@@ -44,12 +41,6 @@ input[type=range]{width:100%;height:4px;border-radius:2px;background:var(--borde
 .card{background:var(--card);border:1px solid var(--border);border-radius:11px;overflow:hidden;margin-bottom:16px;}
 .card-head{padding:9px 14px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:0.58rem;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:center;}
 .card img{width:100%;display:block;}
-/* Stats row */
-.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
-.stat{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:11px 13px;}
-.stat-label{font-family:var(--mono);font-size:0.55rem;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
-.stat-val{font-family:var(--serif);font-size:1.6rem;line-height:1;}
-.stat-val.teal{color:var(--teal);}.stat-val.blue{color:var(--accent);}.stat-val.amber{color:var(--amber);}
 /* Spinner */
 .spin{width:14px;height:14px;border-radius:50%;border:2px solid var(--border);border-top-color:var(--teal);animation:spin 0.7s linear infinite;display:none;}
 @keyframes spin{to{transform:rotate(360deg);}}
@@ -66,22 +57,13 @@ input[type=range]{width:100%;height:4px;border-radius:2px;background:var(--borde
 </nav>
 
 <div class="body">
-  <!-- Left: weight sliders -->
+  <!-- Left: locked preferences -->
   <div class="left-panel">
-    <div class="panel-head"><div class="dot" style="background:var(--teal)"></div>KODIS Preference Weights</div>
+    <div class="panel-head"><div class="dot" style="background:var(--teal)"></div>KODIS Preferences (Locked)</div>
     <div class="panel-body">
-      <p style="font-size:0.72rem;color:var(--text2);line-height:1.55;margin-bottom:14px">Submitted KODIS preferences are locked for traceability. Review-only values are shown below.</p>
-      <div class="weights-section">
-        <div class="ws-title buyer">Buyer Weights</div>
-        <div id="buyer-sliders"></div>
-      </div>
-      <div class="weights-section">
-        <div class="ws-title seller">Seller Weights</div>
-        <div id="seller-sliders"></div>
-      </div>
-      <button class="update-btn" disabled style="opacity:0.55;cursor:not-allowed">🔒 Preferences Locked</button>
-      <div style="font-size:0.65rem;color:var(--muted);margin-top:7px;font-family:var(--mono)">Weights are fixed from the uploaded session and cannot be edited here.</div>
-      <div style="display:flex;justify-content:center;margin-top:10px"><div class="spin" id="wspin"></div></div>
+      <p style="font-size:0.72rem;color:var(--text2);line-height:1.55;margin-bottom:10px">Submitted KODIS preferences are shown once for reference.</p>
+      <table class="pref-table" id="pref-table"></table>
+      <div class="pref-note">These values are fixed from the uploaded session.</div>
     </div>
   </div>
 
@@ -95,23 +77,13 @@ input[type=range]{width:100%;height:4px;border-radius:2px;background:var(--borde
         <div class="page-sub" id="fname-sub">—</div>
       </div>
 
-      <div class="stats-row">
-        <div class="stat"><div class="stat-label">Total Turns</div><div class="stat-val blue" id="st-turns">—</div></div>
-        <div class="stat"><div class="stat-label">Pareto Solutions</div><div class="stat-val teal" id="st-pareto">—</div></div>
-        <div class="stat"><div class="stat-label">Total Outcomes</div><div class="stat-val amber" id="st-outcomes">—</div></div>
-      </div>
-
       <div class="card">
-        <div class="card-head">Pareto Frontier — KODIS Solution Space<span style="color:var(--teal)">Efficient outcomes highlighted</span></div>
+        <div class="card-head">Pareto Frontier & Integrative Potential<span style="color:var(--teal)">Shaded = value-creating zone</span></div>
         <div id="pareto-ph" style="padding:60px;text-align:center;color:var(--muted);font-size:0.78rem">Loading…</div>
         <div id="pareto-chart" style="display:none;width:100%;height:420px;background:#0a1520"></div>
       </div>
-
-      <div class="card">
-        <div class="card-head">Issue Summary</div>
-        <div style="padding:12px 14px" id="issues-table">—</div>
-      </div>
     </div>
+  </div>
   </div>
 </div>
 
@@ -126,7 +98,6 @@ const ISSUES = [
 
 let D = null;
 let BW = {}, SW = {};
-let pendingUpdate = null;
 
 function init() {
   const raw = sessionStorage.getItem('nd');
@@ -135,31 +106,16 @@ function init() {
   BW = {...D.buyer_weights};
   SW = {...D.seller_weights};
   document.getElementById('fname-sub').textContent = `File: ${D.filename}  |  ${D.turns.length} turns`;
-  document.getElementById('st-turns').textContent   = D.turns.length;
-  document.getElementById('st-pareto').textContent  = D.pareto.length;
-  document.getElementById('st-outcomes').textContent= D.outcomes.length;
-  buildSliders('buyer-sliders', BW, 'buyer');
-  buildSliders('seller-sliders', SW, 'seller');
+  buildPrefTable();
   renderSolutionSpace(D.outcomes, D.pareto);
-  buildIssuesTable();
 }
 
-function buildSliders(containerId, weights, role) {
-  const el = document.getElementById(containerId);
-  el.innerHTML = ISSUES.map(iss => `
-    <div class="issue-row">
-      <div class="issue-label">
-        <span>${iss.label}</span>
-        <span class="issue-val" id="${role}-val-${iss.key}">${weights[iss.key] ?? 0}</span>
-      </div>
-      <input type="range" min="0" max="100" value="${weights[iss.key] ?? 0}"
-             disabled>
-    </div>`).join('');
+function buildPrefTable(){
+  const el = document.getElementById('pref-table');
+  el.innerHTML = `<tr><th>Issue</th><th>Buyer</th><th>Seller</th></tr>` + ISSUES.map(iss =>
+    `<tr><td>${iss.label}</td><td>${BW[iss.key] ?? 0}</td><td>${SW[iss.key] ?? 0}</td></tr>`
+  ).join('');
 }
-
-function updateVal(){}
-function scheduleUpdateWeights(){}
-async function updateWeights(){}
 
 function renderSolutionSpace(outcomes, pareto) {
   const host = document.getElementById('pareto-chart');
@@ -171,10 +127,26 @@ function renderSolutionSpace(outcomes, pareto) {
   const x = v => m.l + (v/100) * (w-m.l-m.r);
   const y = v => h-m.b - (v/100) * (h-m.t-m.b);
 
-  const dots = outcomes.map(o => `<circle cx="${x(o.buyer_util)}" cy="${y(o.seller_util)}" r="3" fill="#28466a" opacity="0.68"/>`).join('');
+  const dots = outcomes.map(o => `<circle cx="${x(o.buyer_util)}" cy="${y(o.seller_util)}" r="3" fill="#28466a" opacity="0.58"/>`).join('');
   const px = [...pareto].sort((a,b)=>a.buyer_util-b.buyer_util);
   const path = px.map((p,i)=> `${i?'L':'M'} ${x(p.buyer_util).toFixed(1)} ${y(p.seller_util).toFixed(1)}`).join(' ');
   const paretoPts = px.map(p => `<circle cx="${x(p.buyer_util)}" cy="${y(p.seller_util)}" r="4" fill="#22d3a5"/>`).join('');
+
+  const reservationPath = `M ${x(0)} ${y(100)} L ${x(100)} ${y(0)}`;
+  const frontierForShade = px.filter(p => (p.buyer_util + p.seller_util) >= 100);
+  let shade = '';
+  if (frontierForShade.length >= 2){
+    const first = frontierForShade[0];
+    const last = frontierForShade[frontierForShade.length-1];
+    const lowerFirst = {bx:first.buyer_util, sy:Math.max(0, 100-first.buyer_util)};
+    const lowerLast = {bx:last.buyer_util, sy:Math.max(0, 100-last.buyer_util)};
+    const poly = [
+      ...frontierForShade.map(p=>`${x(p.buyer_util)},${y(p.seller_util)}`),
+      `${x(lowerLast.bx)},${y(lowerLast.sy)}`,
+      `${x(lowerFirst.bx)},${y(lowerFirst.sy)}`
+    ].join(' ');
+    shade = `<polygon points="${poly}" fill="rgba(34,211,165,0.16)" stroke="none"/>`;
+  }
 
   let grid='';
   for(let i=0;i<=5;i++){
@@ -190,26 +162,17 @@ function renderSolutionSpace(outcomes, pareto) {
     <line x1="${m.l}" y1="${h-m.b}" x2="${w-m.r}" y2="${h-m.b}" stroke="#4b607a" stroke-width="1.3"/>
     <line x1="${m.l}" y1="${m.t}" x2="${m.l}" y2="${h-m.b}" stroke="#4b607a" stroke-width="1.3"/>
     ${dots}
+    ${shade}
+    <path d="${reservationPath}" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5 4"/>
     ${path ? `<path d="${path}" fill="none" stroke="#22d3a5" stroke-width="2.6"/>` : ''}
     ${paretoPts}
-    <text x="${w-180}" y="18" fill="#22d3a5" font-size="12" font-family="var(--mono)">Pareto Frontier</text>
+    <text x="${w-190}" y="18" fill="#22d3a5" font-size="12" font-family="var(--mono)">Pareto Frontier</text>
+    <text x="${w-240}" y="34" fill="#f59e0b" font-size="11" font-family="var(--mono)">Buyer100 ↔ Seller100 baseline</text>
     <text x="${w/2-65}" y="${h-6}" fill="#8ea5c1" font-size="11" font-family="var(--mono)">Buyer Utility</text>
     <text x="10" y="18" fill="#8ea5c1" font-size="11" font-family="var(--mono)">Seller Utility</text>
   </svg>`;
   ph.style.display='none';
   host.style.display='block';
-}
-
-function buildIssuesTable() {
-  const rows = ISSUES.map(iss=>`
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:0.78rem;">
-      <span style="color:var(--text2)">${iss.label}</span>
-      <span style="font-family:var(--mono);font-size:0.65rem;display:flex;gap:14px">
-        <span style="color:var(--accent)">B: ${BW[iss.key]??0}</span>
-        <span style="color:var(--red)">S: ${SW[iss.key]??0}</span>
-      </span>
-    </div>`).join('');
-  document.getElementById('issues-table').innerHTML = rows + `<div style="font-size:0.65rem;color:var(--muted);margin-top:8px;font-family:var(--mono)">Higher weight = issue matters more to that party</div>`;
 }
 
 init();

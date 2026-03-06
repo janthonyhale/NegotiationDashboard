@@ -172,9 +172,16 @@ def llm_emotion_scores(text):
         return score_emo(text)
 
     prompt = (
-        "Return ONLY JSON with keys anger,fear,joy,surprise,compassion,neutral,valence. "
-        "All except valence in [0,1], valence in [-1,1]. Text: " + (text or "")
+        "Provide a concise 2-3 sentence operational summary of the dispute shown so far (only observed turns). "
+        "Incorporate: (1) emotional trajectory, (2) country prediction priors as uncertain distributions, and "
+        "(3) IRP framing (Interests, Rights, Power signals). "
+        "Do not treat classifier outputs as certain facts; nearby/other regions remain possible. "
+        "Keep it practical and neutral for a negotiation dashboard.\n\n"
+        f"Risk snapshot: {json.dumps(risk_snapshot)}\n"
+        f"Country snapshot: {json.dumps(country_snapshot)}\n"
+        f"Observed turns:\n{transcript_excerpt}"
     )
+
     payload = {
         "model": "gpt-4o",
         "messages": [
@@ -224,7 +231,7 @@ def llm_operational_summary(turns_so_far, country_snapshot, risk_snapshot):
     buyer_country = (country_snapshot or {}).get('buyer', {}).get('country', 'Unknown')
     seller_country = (country_snapshot or {}).get('seller', {}).get('country', 'Unknown')
 
-    recent_turns = turns_so_far[-8:]
+    recent_turns = turns_so_far[-40:]
     transcript_excerpt = '\n'.join(
         f"{t.get('speaker','Unknown')}: {t.get('text','')} | emo={t.get('emotions',{})}"
         for t in recent_turns
@@ -238,13 +245,14 @@ def llm_operational_summary(turns_so_far, country_snapshot, risk_snapshot):
         )
 
     prompt = (
-        "Provide a concise 2-3 sentence operational summary of the dispute so far. "
-        "Incorporate: (1) emotional trajectory, (2) country prediction priors, and "
+        "Provide a concise 2-3 sentence operational summary of the dispute shown so far (only observed turns). "
+        "Incorporate: (1) emotional trajectory, (2) country prediction priors as uncertain distributions, and "
         "(3) IRP framing (Interests, Rights, Power signals). "
+        "Do not treat classifier outputs as certain facts; nearby/other regions remain possible. "
         "Keep it practical and neutral for a negotiation dashboard.\n\n"
         f"Risk snapshot: {json.dumps(risk_snapshot)}\n"
         f"Country snapshot: {json.dumps(country_snapshot)}\n"
-        f"Recent turns:\n{transcript_excerpt}"
+        f"Observed turns:\n{transcript_excerpt}"
     )
 
     payload = {
@@ -275,6 +283,50 @@ def llm_operational_summary(turns_so_far, country_snapshot, risk_snapshot):
             f"Likely country priors are Buyer={buyer_country}, Seller={seller_country}. "
             "Focus next on acknowledging emotions, clarifying interests, and proposing reciprocal concessions."
         )
+
+
+
+def llm_evolution_summary(op_summaries):
+    """Summarize how operational assessments evolved across the negotiation."""
+    if not op_summaries:
+        return 'No operational summaries were recorded during this session.'
+    api_key = os.getenv('OPENAI_API_KEY')
+    ordered = sorted(op_summaries, key=lambda x: int(x.get('idx', 0)))
+    joined = '\n'.join(f"Turn {item.get('idx', 0) + 1}: {item.get('summary', '')}" for item in ordered if item.get('summary'))
+    if not joined:
+        return 'No operational summaries were recorded during this session.'
+
+    if not api_key:
+        return 'Operational summaries indicate shifting emotional intensity with intermittent convergence opportunities; uncertainty remained around cultural priors while risk signals fluctuated by turn.'
+
+    payload = {
+        "model": "gpt-4o",
+        "messages": [
+            {"role": "system", "content": "You synthesize negotiation timeline analyses."},
+            {"role": "user", "content": (
+                "Summarize in 3-4 sentences how the dispute evolved over time from these per-turn operational summaries. "
+                "Highlight shifts in emotions, IRP posture, and movement toward/away from agreement.\n\n" + joined
+            )}
+        ],
+        "temperature": 0.2,
+        "max_tokens": 180
+    }
+    req = urllib.request.Request(
+        'https://api.openai.com/v1/chat/completions',
+        data=json.dumps(payload).encode('utf-8'),
+        headers={
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {api_key}'
+        },
+        method='POST'
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+        return (data['choices'][0]['message']['content'] or '').strip()
+    except Exception:
+        return 'Operational summaries indicate shifting emotional intensity with intermittent convergence opportunities; uncertainty remained around cultural priors while risk signals fluctuated by turn.'
+
 
 def estimate_risk(turns_so_far):
     if not turns_so_far:
@@ -634,6 +686,7 @@ def api_export_pdf():
     final_outcome= data.get('final_outcome', None)
     bw           = data.get('buyer_weights', DEFAULT_BUYER_WEIGHTS)
     sw           = data.get('seller_weights', DEFAULT_SELLER_WEIGHTS)
+    op_summaries = data.get('op_summaries', [])
 
     # Generate post-negotiation pareto if not provided
     outcomes = generate_all_outcomes(bw, sw)
@@ -686,6 +739,11 @@ def api_export_pdf():
     story.append(Spacer(1,0.08*inch))
     agreement = 'Agreement detected' if final_outcome else 'No definitive agreement detected'
     story.append(Paragraph(f'<b>Executive Brief:</b> {agreement}. Risk posture is <b>{risk["label"]}</b> with <b>{risk["negative_signals"]}</b> negative signals and <b>{risk["threats"]}</b> threats.', body_s))
+    story.append(Spacer(1,0.08*inch))
+
+    evolution_summary = llm_evolution_summary(op_summaries)
+    story.append(Paragraph('Dispute Evolution (Operational Timeline)', h2_s))
+    story.append(Paragraph(evolution_summary, body_s))
     story.append(Spacer(1,0.08*inch))
 
     # Weights table
