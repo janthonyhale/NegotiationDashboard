@@ -244,9 +244,16 @@ def llm_emotion_scores(text):
         return score_emo(text)
 
     prompt = (
-        "Return ONLY JSON with keys anger,fear,joy,surprise,compassion,neutral,valence. "
-        "All except valence in [0,1], valence in [-1,1]. Text: " + (text or "")
+        "Provide a concise 2-3 sentence operational summary of the dispute shown so far (only observed turns). "
+        "Incorporate: (1) emotional trajectory, (2) country prediction priors as uncertain distributions, and "
+        "(3) IRP framing (Interests, Rights, Power signals). "
+        "Do not treat classifier outputs as certain facts; nearby/other regions remain possible. "
+        "Keep it practical and neutral for a negotiation dashboard.\n\n"
+        f"Risk snapshot: {json.dumps(risk_snapshot)}\n"
+        f"Country snapshot: {json.dumps(country_snapshot)}\n"
+        f"Observed turns:\n{transcript_excerpt}"
     )
+
     payload = {
         "model": "gpt-4o",
         "messages": [
