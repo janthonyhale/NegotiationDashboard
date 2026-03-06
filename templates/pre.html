@@ -107,7 +107,8 @@ function renderSolutionSpace(outcomes, pareto){
 
   const dots=outcomes.map((o,i)=>{
     const deal=`Refund ${o.refund_label}; Buyer review removed ${o.buyer_review?'Yes':'No'}; Seller review removed ${o.seller_review?'Yes':'No'}; Seller apology ${o.seller_apology?'Yes':'No'}; Buyer apology ${o.buyer_apology?'Yes':'No'}`;
-    return `<circle data-i="${i}" data-deal="${deal.replace(/"/g,'&quot;')}" data-bu="${o.buyer_util}" data-su="${o.seller_util}" cx="${x(o.buyer_util)}" cy="${y(o.seller_util)}" r="3" fill="#28466a" opacity="0.58"/>`;
+    const title = `${deal} | Buyer utility ${o.buyer_util}, Seller utility ${o.seller_util}`;
+    return `<circle data-i="${i}" data-deal="${deal.replace(/"/g,'&quot;')}" data-bu="${o.buyer_util}" data-su="${o.seller_util}" cx="${x(o.buyer_util)}" cy="${y(o.seller_util)}" r="3.4" fill="#28466a" opacity="0.72" stroke="transparent" stroke-width="8"><title>${title}</title></circle>`;
   }).join('');
 
   const px=[...pareto].sort((a,b)=>a.buyer_util-b.buyer_util);
@@ -132,13 +133,17 @@ function renderSolutionSpace(outcomes, pareto){
   </svg>`;
   ph.style.display='none'; host.style.display='block';
 
+  const wrap = document.getElementById('chartWrap');
   host.querySelectorAll('circle[data-i]').forEach(c=>{
-    c.addEventListener('mousemove', ev=>{
+    c.addEventListener('pointermove', ev=>{
+      if (!tip || !wrap) return;
+      const rect = wrap.getBoundingClientRect();
       tip.style.display='block';
-      tip.style.left=`${ev.offsetX+12}px`; tip.style.top=`${ev.offsetY+12}px`;
+      tip.style.left=`${ev.clientX - rect.left + 12}px`;
+      tip.style.top=`${ev.clientY - rect.top + 12}px`;
       tip.innerHTML=`<div><b>Deal</b>: ${c.dataset.deal}</div><div>Buyer utility: <b>${c.dataset.bu}</b> · Seller utility: <b>${c.dataset.su}</b></div>`;
     });
-    c.addEventListener('mouseleave', ()=> tip.style.display='none');
+    c.addEventListener('pointerleave', ()=> { if (tip) tip.style.display='none'; });
   });
 }
 
