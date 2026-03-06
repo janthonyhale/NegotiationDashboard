@@ -172,9 +172,16 @@ def llm_emotion_scores(text):
         return score_emo(text)
 
     prompt = (
-        "Return ONLY JSON with keys anger,fear,joy,surprise,compassion,neutral,valence. "
-        "All except valence in [0,1], valence in [-1,1]. Text: " + (text or "")
+        "Provide a concise 2-3 sentence operational summary of the dispute shown so far (only observed turns). "
+        "Incorporate: (1) emotional trajectory, (2) country prediction priors as uncertain distributions, and "
+        "(3) IRP framing (Interests, Rights, Power signals). "
+        "Do not treat classifier outputs as certain facts; nearby/other regions remain possible. "
+        "Keep it practical and neutral for a negotiation dashboard.\n\n"
+        f"Risk snapshot: {json.dumps(risk_snapshot)}\n"
+        f"Country snapshot: {json.dumps(country_snapshot)}\n"
+        f"Observed turns:\n{transcript_excerpt}"
     )
+
     payload = {
         "model": "gpt-4o",
         "messages": [
@@ -213,6 +220,113 @@ def llm_emotion_scores(text):
         return out
     except Exception:
         return score_emo(text)
+
+
+def llm_operational_summary(turns_so_far, country_snapshot, risk_snapshot):
+    """Generate a concise IRP-aware operational summary for the current state."""
+    api_key = os.getenv('OPENAI_API_KEY')
+    if not turns_so_far:
+        return 'No turns processed yet. Step through the dialogue to generate an operational summary.'
+
+    buyer_country = (country_snapshot or {}).get('buyer', {}).get('country', 'Unknown')
+    seller_country = (country_snapshot or {}).get('seller', {}).get('country', 'Unknown')
+
+    recent_turns = turns_so_far[-40:]
+    transcript_excerpt = '\n'.join(
+        f"{t.get('speaker','Unknown')}: {t.get('text','')} | emo={t.get('emotions',{})}"
+        for t in recent_turns
+    )
+
+    if not api_key:
+        return (
+            f"IRP snapshot: risk is {risk_snapshot.get('label','Unknown')} ({risk_snapshot.get('score',0)}). "
+            f"Likely country priors are Buyer={buyer_country}, Seller={seller_country}. "
+            "Focus next on acknowledging emotions, clarifying interests, and proposing reciprocal concessions."
+        )
+
+    prompt = (
+        "Provide a concise 2-3 sentence operational summary of the dispute shown so far (only observed turns). "
+        "Incorporate: (1) emotional trajectory, (2) country prediction priors as uncertain distributions, and "
+        "(3) IRP framing (Interests, Rights, Power signals). "
+        "Do not treat classifier outputs as certain facts; nearby/other regions remain possible. "
+        "Keep it practical and neutral for a negotiation dashboard.\n\n"
+        f"Risk snapshot: {json.dumps(risk_snapshot)}\n"
+        f"Country snapshot: {json.dumps(country_snapshot)}\n"
+        f"Observed turns:\n{transcript_excerpt}"
+    )
+
+    payload = {
+        "model": "gpt-4o",
+        "messages": [
+            {"role": "system", "content": "You summarize negotiation states for mediators."},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.2,
+        "max_tokens": 140
+    }
+    req = urllib.request.Request(
+        'https://api.openai.com/v1/chat/completions',
+        data=json.dumps(payload).encode('utf-8'),
+        headers={
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {api_key}'
+        },
+        method='POST'
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=12) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+        return (data['choices'][0]['message']['content'] or '').strip()
+    except Exception:
+        return (
+            f"IRP snapshot: risk is {risk_snapshot.get('label','Unknown')} ({risk_snapshot.get('score',0)}). "
+            f"Likely country priors are Buyer={buyer_country}, Seller={seller_country}. "
+            "Focus next on acknowledging emotions, clarifying interests, and proposing reciprocal concessions."
+        )
+
+
+
+def llm_evolution_summary(op_summaries):
+    """Summarize how operational assessments evolved across the negotiation."""
+    if not op_summaries:
+        return 'No operational summaries were recorded during this session.'
+    api_key = os.getenv('OPENAI_API_KEY')
+    ordered = sorted(op_summaries, key=lambda x: int(x.get('idx', 0)))
+    joined = '\n'.join(f"Turn {item.get('idx', 0) + 1}: {item.get('summary', '')}" for item in ordered if item.get('summary'))
+    if not joined:
+        return 'No operational summaries were recorded during this session.'
+
+    if not api_key:
+        return 'Operational summaries indicate shifting emotional intensity with intermittent convergence opportunities; uncertainty remained around cultural priors while risk signals fluctuated by turn.'
+
+    payload = {
+        "model": "gpt-4o",
+        "messages": [
+            {"role": "system", "content": "You synthesize negotiation timeline analyses."},
+            {"role": "user", "content": (
+                "Summarize in 3-4 sentences how the dispute evolved over time from these per-turn operational summaries. "
+                "Highlight shifts in emotions, IRP posture, and movement toward/away from agreement.\n\n" + joined
+            )}
+        ],
+        "temperature": 0.2,
+        "max_tokens": 180
+    }
+    req = urllib.request.Request(
+        'https://api.openai.com/v1/chat/completions',
+        data=json.dumps(payload).encode('utf-8'),
+        headers={
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {api_key}'
+        },
+        method='POST'
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+        return (data['choices'][0]['message']['content'] or '').strip()
+    except Exception:
+        return 'Operational summaries indicate shifting emotional intensity with intermittent convergence opportunities; uncertainty remained around cultural priors while risk signals fluctuated by turn.'
+
 
 def estimate_risk(turns_so_far):
     if not turns_so_far:
@@ -303,15 +417,29 @@ def _to_geo_payload(label, confidence, probabilities=None):
     }
 
 def predict_country_with_model(turns, role):
-    text = ' '.join(t.get('text','') for t in turns if t.get('speaker') == role).strip()
-    if not text:
+    role_turns = [t.get('text', '').strip() for t in turns if t.get('speaker') == role and t.get('text', '').strip()]
+    if not role_turns:
         return _to_geo_payload('United States', 0.0, {})
     try:
-        out = PREDICTOR.predict_one(text)
-        pred = out.get('predicted_class','United States')
-        conf = out.get('confidence',0)
-        probs = out.get('probabilities',{})
-        return _to_geo_payload(pred, conf, probs)
+        outputs = PREDICTOR.predict_batch(role_turns)
+        if not outputs:
+            return _to_geo_payload('United States', 0.0, {})
+
+        combined_probs = {}
+        for out in outputs:
+            probs = _normalize_probabilities(out.get('probabilities', {}))
+            for label, prob in probs.items():
+                combined_probs[label] = combined_probs.get(label, 0.0) + prob
+
+        turn_count = len(outputs)
+        averaged_probs = {label: (prob / turn_count) for label, prob in combined_probs.items()} if turn_count else {}
+        averaged_probs = _normalize_probabilities(averaged_probs)
+
+        if averaged_probs:
+            pred, conf = max(averaged_probs.items(), key=lambda item: item[1])
+        else:
+            pred, conf = 'United States', 0.0
+        return _to_geo_payload(pred, conf, averaged_probs)
     except Exception:
         return predict_country(turns, role)
 
@@ -330,7 +458,14 @@ def predict_country(turns, role):
         ranking = [('United States',0.38),('United Kingdom',0.27),('Germany',0.20),('China',0.15)]
     country, conf = ranking[0]
     info = COUNTRY_SVG.get(country, {'lat':0,'lng':0,'flag':'🌍'})
-    return {'country':country,'confidence':round(conf,2),'lat':info['lat'],'lng':info['lng'],'flag':info['flag']}
+    return {
+        'country': country,
+        'confidence': round(conf, 2),
+        'lat': info['lat'],
+        'lng': info['lng'],
+        'flag': info['flag'],
+        'probabilities': _normalize_probabilities({label: score for label, score in ranking}),
+    }
 
 # ── Plotting ──────────────────────────────────────────────────────────────────
 BG   = '#07090f'
@@ -497,7 +632,16 @@ def api_step():
     emo_img = make_emotion_plot(turns_so_far, dim)
     buyer_c = predict_country_with_model(turns_so_far, 'Buyer')
     seller_c = predict_country_with_model(turns_so_far, 'Seller')
-    return jsonify({'risk':risk,'advisor':adv,'emotion_img':emo_img,'current_turn':cur,'country':{'buyer':buyer_c,'seller':seller_c}})
+    country_snapshot = {'buyer':buyer_c,'seller':seller_c}
+    op_summary = llm_operational_summary(turns_so_far, country_snapshot, risk)
+    return jsonify({
+        'risk':risk,
+        'advisor':adv,
+        'emotion_img':emo_img,
+        'current_turn':cur,
+        'country':country_snapshot,
+        'operational_summary': op_summary,
+    })
 
 @app.route('/api/post_summary', methods=['POST'])
 def api_post_summary():
@@ -542,6 +686,7 @@ def api_export_pdf():
     final_outcome= data.get('final_outcome', None)
     bw           = data.get('buyer_weights', DEFAULT_BUYER_WEIGHTS)
     sw           = data.get('seller_weights', DEFAULT_SELLER_WEIGHTS)
+    op_summaries = data.get('op_summaries', [])
 
     # Generate post-negotiation pareto if not provided
     outcomes = generate_all_outcomes(bw, sw)
@@ -594,6 +739,11 @@ def api_export_pdf():
     story.append(Spacer(1,0.08*inch))
     agreement = 'Agreement detected' if final_outcome else 'No definitive agreement detected'
     story.append(Paragraph(f'<b>Executive Brief:</b> {agreement}. Risk posture is <b>{risk["label"]}</b> with <b>{risk["negative_signals"]}</b> negative signals and <b>{risk["threats"]}</b> threats.', body_s))
+    story.append(Spacer(1,0.08*inch))
+
+    evolution_summary = llm_evolution_summary(op_summaries)
+    story.append(Paragraph('Dispute Evolution (Operational Timeline)', h2_s))
+    story.append(Paragraph(evolution_summary, body_s))
     story.append(Spacer(1,0.08*inch))
 
     # Weights table

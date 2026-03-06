@@ -115,14 +115,7 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
 
 .map-title{font-family:var(--mono);font-size:0.62rem;letter-spacing:0.8px;text-transform:uppercase;color:var(--muted);padding:2px 4px;}
 .map-scale-note{font-family:var(--mono);font-size:0.56rem;color:#8da2bf;padding:0 4px 3px 4px;}
-#active-map{width:100%;height:100%;min-height:260px;}
-.country-row{display:flex;gap:6px;padding:6px 8px;}
-.ctry{flex:1;background:var(--surface);border-radius:6px;padding:7px 8px;}
-.ctry.buyer{border-left:2px solid var(--accent);}
-.ctry.seller{border-left:2px solid var(--red);}
-.ctry-role{font-family:var(--mono);font-size:0.52rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);}
-.ctry-name{font-size:0.76rem;font-weight:600;margin-top:2px;}
-.ctry-conf{font-family:var(--mono);font-size:0.54rem;color:var(--muted);margin-top:1px;}
+#active-map{width:100%;height:100%;min-height:320px;}
 
 /* Risk */
 .risk-card{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:10px 12px;margin-bottom:10px;}
@@ -158,6 +151,8 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
 .summary-title{font-family:var(--mono);font-size:0.62rem;text-transform:uppercase;letter-spacing:1.3px;color:#c0d7ff;}
 .summary-tag{font-family:var(--mono);font-size:0.55rem;padding:2px 6px;border-radius:4px;border:1px solid rgba(34,211,165,0.5);color:var(--teal);background:rgba(34,211,165,0.08);}
 .summary-text{font-size:0.74rem;line-height:1.62;color:#d7e3f7;}
+.summary-text.loading::after{content:"";display:inline-block;width:18px;text-align:left;animation:dots 1.2s steps(3,end) infinite;}
+@keyframes dots{0%{content:"";}33%{content:".";}66%{content:"..";}100%{content:"...";}}
 </style>
 </head>
 <body>
@@ -195,7 +190,7 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
     <div class="middle-stack">
       <div class="middle-panel">
                 <div class="map-card" style="border:none;margin:0 4px 4px;height:100%">
-                    <div class="map-toggle">
+          <div class="map-toggle">
             <button class="map-btn active" data-role="buyer" onclick="switchMapRole('buyer', this)">Buyer</button>
             <button class="map-btn" data-role="seller" onclick="switchMapRole('seller', this)">Seller</button>
           </div>
@@ -203,18 +198,6 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
             <div class="map-title" id="map-title">Buyer map</div>
             <div class="map-scale-note" id="map-scale-note">Blue = higher confidence</div>
             <div id="active-map"></div>
-          </div>
-          <div class="country-row">
-            <div class="ctry buyer">
-              <div class="ctry-role">Buyer</div>
-              <div class="ctry-name" id="ctry-buyer">—</div>
-              <div class="ctry-conf" id="ctry-buyer-conf">—</div>
-            </div>
-            <div class="ctry seller">
-              <div class="ctry-role">Seller</div>
-              <div class="ctry-name" id="ctry-seller">—</div>
-              <div class="ctry-conf" id="ctry-seller-conf">—</div>
-            </div>
           </div>
         </div>
       </div>
@@ -249,21 +232,21 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
             <div class="summary-title">Operational Summary</div>
             <div class="summary-tag">LIVE</div>
           </div>
-          <div class="summary-text">Current posture: both parties remain engaged with moderate strategic tension. Buyer confidence is increasing in concrete terms, while seller rhetoric shows guarded firmness. Geographic priors and emotional trajectory suggest a viable agreement window if pressure signals are contained over the next several turns.</div>
+          <div class="summary-text" id="operational-summary">Run the first turn to generate a live operational summary.</div>
         </div>
       </div>
 
       <div style="margin-bottom:12px">
         <div class="sec-label">Failure Risk</div>
         <div class="risk-card" id="risk-card">
-          <div style="color:var(--muted);font-size:0.72rem;padding:10px 0;text-align:center">—</div>
+          <div style="color:var(--muted);font-size:0.72rem;padding:10px 0;text-align:center">Waiting for first analyzed turn…</div>
         </div>
       </div>
 
       <div>
         <div class="sec-label">AI Advisor</div>
         <div class="adv-card" id="adv-card">
-          <div style="color:var(--muted);font-size:0.72rem;padding:10px 0;text-align:center">—</div>
+          <div style="color:var(--muted);font-size:0.72rem;padding:10px 0;text-align:center">Waiting for first analyzed turn…</div>
         </div>
       </div>
 
@@ -283,7 +266,7 @@ const COUNTRY_META = {
   ZA:{name:'South Africa', flag:'🇿🇦', coords:[-30,22]},
 };
 const BASE_COUNTRY_WEIGHTS = {US:0.34, CN:0.17, IN:0.11, DE:0.08, GB:0.08, BR:0.06, MX:0.09, ZA:0.07};
-let S = { turns:[], currentIdx:-1, dim:'joy', mapRole:'buyer', currentMapDist:{}, country:null, lastCountry:null, bw:{}, sw:{}, activeMap:null };
+let S = { turns:[], currentIdx:-1, dim:'joy', mapRole:'buyer', currentMapDist:{}, country:null, lastCountry:null, bw:{}, sw:{}, activeMap:null, opSummaries:[] };
 
 function init() {
   const raw = sessionStorage.getItem('nd');
@@ -293,6 +276,7 @@ function init() {
   S.country = D.country;
   S.bw      = D.buyer_weights || {};
   S.sw      = D.seller_weights || {};
+  S.opSummaries = Array.isArray(D.op_summaries) ? D.op_summaries : [];
   renderTxList();
   renderCountry();
   document.getElementById('btn-next').disabled = false;
@@ -315,6 +299,30 @@ function renderTxList() {
   }).join('');
 }
 
+
+function setOperationalSummaryLoading(){
+  const summaryEl = document.getElementById('operational-summary');
+  if (!summaryEl) return;
+  summaryEl.classList.add('loading');
+  summaryEl.textContent = 'Analyzing observed turns';
+}
+
+function setOperationalSummary(text){
+  const summaryEl = document.getElementById('operational-summary');
+  if (!summaryEl) return;
+  summaryEl.classList.remove('loading');
+  summaryEl.textContent = text || 'No operational summary available yet.';
+}
+
+function persistSessionState(){
+  const raw = sessionStorage.getItem('nd');
+  if (!raw) return;
+  const base = JSON.parse(raw);
+  base.turns = S.turns;
+  base.op_summaries = S.opSummaries;
+  sessionStorage.setItem('nd', JSON.stringify(base));
+}
+
 async function step(dir) {
   const ni = S.currentIdx + dir;
   if (ni < 0 || ni >= S.turns.length) return;
@@ -327,18 +335,31 @@ async function step(dir) {
   addBubble(S.turns[ni], ni);
 
   document.getElementById('spin').style.display = 'block';
+  setOperationalSummaryLoading();
   try {
     const res = await fetch('/api/step',{
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({idx:ni, turns:S.turns, emotion_dim:S.dim, buyer_weights:S.bw, seller_weights:S.sw}),
     });
     const data = await res.json();
-    if (data.current_turn && data.current_turn.emotions) S.turns[ni].emotions = data.current_turn.emotions;
+    if (data.current_turn && data.current_turn.emotions) {
+      S.turns[ni].emotions = data.current_turn.emotions;
+      syncBubbleEmotions(ni);
+    }
     if (data.country) { S.lastCountry = data.country; renderCountry(data.country); }
+    if (data.operational_summary) {
+      setOperationalSummary(data.operational_summary);
+      S.opSummaries = S.opSummaries.filter(item => Number(item.idx) !== ni);
+      S.opSummaries.push({idx: ni, summary: data.operational_summary});
+      S.opSummaries.sort((a,b)=>Number(a.idx)-Number(b.idx));
+    } else {
+      setOperationalSummary('No operational summary available for this turn.');
+    }
+    persistSessionState();
     updateEmoChart();
     renderRisk(data.risk);
     renderAdvisor(data.advisor);
-  } catch(e){ console.error(e); }
+  } catch(e){ console.error(e); setOperationalSummary('Operational summary unavailable (analysis request failed).'); }
   finally{ document.getElementById('spin').style.display='none'; }
 }
 
@@ -353,17 +374,29 @@ function updateTxHighlights() {
   });
 }
 
+
+function renderEmotionChips(emos){
+  return Object.entries(emos || {}).filter(([k])=>k!=='valence').map(([k,v])=>{
+    const num = typeof v === 'number' ? v : Number(v || 0);
+    let cls = '';
+    if (k==='joy' && num>0.15) cls='pos';
+    else if (num>0.2) cls='hot';
+    return `<span class="emo-chip ${cls}">${k}: ${num.toFixed(2)}</span>`;
+  }).join('');
+}
+
+function syncBubbleEmotions(idx){
+  const turn = S.turns[idx] || {};
+  const chips = renderEmotionChips(turn.emotions || {});
+  const bubble = document.querySelector(`#bubble-${idx} .bubble-emos`);
+  if (bubble) bubble.innerHTML = chips;
+}
+
 function addBubble(t, idx) {
   const ph = document.getElementById('dial-placeholder');
   if (ph) ph.remove();
   const role = t.speaker.toLowerCase();
-  const emos = t.emotions || {};
-  const chips = Object.entries(emos).filter(([k])=>k!=='valence').map(([k,v])=>{
-    let cls = '';
-    if (k==='joy'&&v>0.15) cls='pos';
-    else if (v>0.2) cls='hot';
-    return `<span class="emo-chip ${cls}">${k}: ${v.toFixed(2)}</span>`;
-  }).join('');
+  const chips = renderEmotionChips(t.emotions || {});
   const wrap = document.createElement('div');
   wrap.className = `bubble-wrap ${role}`;
   wrap.id = `bubble-${idx}`;
@@ -477,44 +510,83 @@ function normalizeDist(dist){
   return out;
 }
 
+
+function renderRoleMap(selector, role, dist, topCode, topProb){
+  const palette = role === 'buyer'
+    ? ['#20334a','#1f4f7d','#2f6fb4','#4f91ff']
+    : ['#3c1f2f','#6a2742','#a4355a','#f43f5e'];
+  if (S.activeMap) S.activeMap.destroy();
+
+  const values = {};
+  Object.entries(dist || {}).forEach(([code, val])=>{ values[code] = Number(val) || 0; });
+
+  S.activeMap = new jsVectorMap({
+    selector,
+    map:'world',
+    zoomButtons:false,
+    zoomOnScroll:false,
+    regionStyle:{
+      initial:{fill:'#334155', stroke:'#253a55', strokeWidth:0.6},
+      hover:{fillOpacity:1, strokeWidth:0.8, cursor:'pointer'}
+    },
+    backgroundColor:'#0a1520',
+    selectedRegions: topCode ? [topCode] : [],
+    selectedRegionsStyle:{fill: palette[3]},
+    series:{
+      regions:[{
+        values,
+        scale: palette,
+        normalizeFunction:'linear',
+        attribute:'fill'
+      }]
+    },
+    markers:[],
+    onRegionTooltipShow(event, tooltip, code){
+      const pct = Math.round((values[code] || 0) * 100);
+      tooltip.text(`${tooltip.text()} · ${pct}%`);
+      tooltip.css({backgroundColor:'rgba(75,96,122,0.95)', color:'#fff'});
+    },
+    onLoaded(map){
+      try {
+        map.setFocus({scale:0.72, animate:false});
+      } catch (_) {}
+    }
+  });
+}
+
 function renderCountry(countrySnap){
   if (S.currentIdx < 0 || !countrySnap){
-    document.getElementById('ctry-buyer').textContent = '—';
-    document.getElementById('ctry-buyer-conf').textContent = '—';
-    document.getElementById('ctry-seller').textContent = '—';
-    document.getElementById('ctry-seller-conf').textContent = '—';
     document.getElementById('map-title').textContent = S.mapRole === 'buyer' ? 'Buyer map' : 'Seller map';
     document.getElementById('map-scale-note').textContent = 'Turn 0 · awaiting first exchange';
-    if (S.activeMap) S.activeMap.destroy();
-    S.activeMap = new jsVectorMap({
-      selector:'#active-map', map:'world', zoomButtons:false, backgroundColor:'#0a1520', markers:[],
-      regionStyle:{initial:{fill:'#3b4559', stroke:'#253a55', strokeWidth:0.6},hover:{fill:'#3b4559',fillOpacity:1,strokeWidth:0.8,cursor:'pointer'}},
-      onRegionTooltipShow(event, tooltip){ tooltip.text(`${tooltip.text()} · 0%`); tooltip.css({backgroundColor:'rgba(75,96,122,0.95)', color:'#fff'});}
-    });
+    renderRoleMap('#active-map', S.mapRole, {}, null, 0);
     updateEmoChart();
     return;
   }
 
   const buyer = countrySnap.buyer || {};
   const seller = countrySnap.seller || {};
-  document.getElementById('ctry-buyer').textContent = `${buyer.flag || '🌍'} ${buyer.country || '—'}`;
-  document.getElementById('ctry-buyer-conf').textContent = `${Math.round((buyer.confidence||0)*100)}% conf.`;
-  document.getElementById('ctry-seller').textContent = `${seller.flag || '🌍'} ${seller.country || '—'}`;
-  document.getElementById('ctry-seller-conf').textContent = `${Math.round((seller.confidence||0)*100)}% conf.`;
-
   const role = S.mapRole;
   const active = role === 'buyer' ? buyer : seller;
   const probs = active.probabilities || {};
   const dist = {};
   const labelToCode = {
-    'U.S.':'US','US':'US','United States':'US',
-    'U.K.':'GB','UK':'GB','United Kingdom':'GB',
-    'Germany':'DE','China':'CN','Japan':'JP','India':'IN','France':'FR',
-    'Australia':'AU','Canada':'CA','Brazil':'BR','Mexico':'MX','South Africa':'ZA'
+    'u.s.':'US','us':'US','united states':'US',
+    'u.k.':'GB','uk':'GB','united kingdom':'GB',
+    'germany':'DE','china':'CN','japan':'JP','india':'IN','france':'FR',
+    'australia':'AU','canada':'CA','brazil':'BR','mexico':'MX','south africa':'ZA'
   };
-  Object.entries(probs).forEach(([k,v])=>{ const c=labelToCode[k]||labelToCode[k.trim()]; if(c) dist[c]=Number(v)||0; });
-  const topCode = Object.entries(dist).sort((a,b)=>b[1]-a[1])[0]?.[0] || 'US';
-  const topProb = Object.entries(dist).sort((a,b)=>b[1]-a[1])[0]?.[1] || 0;
+  Object.entries(probs).forEach(([k,v])=>{
+    const norm = String(k || '').trim().toLowerCase();
+    const c = labelToCode[norm];
+    if(c) dist[c]=Number(v)||0;
+  });
+  if (!Object.keys(dist).length && active.country){
+    const fallback = labelToCode[String(active.country).trim().toLowerCase()];
+    if (fallback) dist[fallback] = Number(active.confidence || 0) || 0.5;
+  }
+  const sortedDist = Object.entries(dist).sort((a,b)=>b[1]-a[1]);
+  const topCode = sortedDist[0]?.[0] || null;
+  const topProb = sortedDist[0]?.[1] || 0;
   document.getElementById('map-title').textContent = role === 'buyer' ? 'Buyer map' : 'Seller map';
   document.getElementById('map-scale-note').textContent = role === 'buyer' ? 'Blue = higher confidence' : 'Red = higher confidence';
   renderRoleMap('#active-map', role, dist, topCode, topProb);
@@ -527,20 +599,11 @@ function switchMapRole(role, btn){
   if (S.currentIdx >= 0 && S.lastCountry) renderCountry(S.lastCountry);
 }
 
-async function switchEmo(dim, btn) {
+function switchEmo(dim, btn) {
   S.dim = dim;
   document.querySelectorAll('.emo-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  if (S.currentIdx < 0) return;
-  document.getElementById('spin').style.display='block';
-  try {
-    const res = await fetch('/api/step',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({idx:S.currentIdx,turns:S.turns,emotion_dim:dim,buyer_weights:S.bw,seller_weights:S.sw})
-    });
-    const data = await res.json();
-    updateEmoChart();
-  } finally { document.getElementById('spin').style.display='none'; }
+  updateEmoChart();
 }
 
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}

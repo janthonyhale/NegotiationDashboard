@@ -162,7 +162,7 @@ nav{display:flex;align-items:center;padding:11px 22px;border-bottom:1px solid va
 <div id="toast"></div>
 
 <script>
-let S = { turns:[], bw:{}, sw:{}, filename:'', preImg:'', postImg:'', emoImg:'', finalOutcome:null };
+let S = { turns:[], bw:{}, sw:{}, filename:'', preImg:'', postImg:'', emoImg:'', finalOutcome:null, opSummaries:[] };
 
 async function init() {
   const raw = sessionStorage.getItem('nd');
@@ -173,6 +173,7 @@ async function init() {
   S.sw       = D.seller_weights || {};
   S.filename = D.filename;
   S.preImg   = D.pareto_img;
+  S.opSummaries = Array.isArray(D.op_summaries) ? D.op_summaries : [];
 
   document.getElementById('pre-img').src = 'data:image/png;base64,' + S.preImg;
   document.getElementById('pre-img').style.display = 'block';
@@ -295,6 +296,7 @@ async function exportPDF() {
         buyer_weights: S.bw, seller_weights: S.sw,
         pre_img: S.preImg, emotion_img: S.emoImg, post_img: S.postImg,
         final_outcome: S.finalOutcome,
+        op_summaries: S.opSummaries,
       })
     });
     if (!res.ok) { toast('Export failed',true); return; }
