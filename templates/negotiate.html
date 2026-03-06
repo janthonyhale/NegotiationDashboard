@@ -132,17 +132,17 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
 
 /* Advisor */
 .adv-card{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:10px 12px;margin-bottom:10px;}
-.adv-card.alert{border-color:rgba(245,158,11,0.4);background:rgba(245,158,11,0.03);}
-.adv-top{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.adv-card.alert{border-color:rgba(245,158,11,0.5);background:rgba(245,158,11,0.06);}
+.adv-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;}
 .adv-badge{font-family:var(--mono);font-size:0.6rem;font-weight:600;padding:2px 9px;border-radius:4px;}
 .adv-badge.intervene{background:rgba(245,158,11,0.15);border:1px solid var(--amber);color:var(--amber);}
 .adv-badge.observe{background:rgba(34,211,165,0.08);border:1px solid rgba(34,211,165,0.35);color:var(--teal);}
-.odds-labels{display:flex;justify-content:space-between;font-size:0.57rem;font-family:var(--mono);color:var(--muted);margin-bottom:3px;}
-.odds-bar{display:flex;height:5px;border-radius:3px;overflow:hidden;margin-bottom:7px;}
-.odds-s{background:var(--teal);transition:flex 0.4s;}
-.odds-w{background:var(--red);transition:flex 0.4s;}
-.reason{font-size:0.62rem;font-family:var(--mono);color:var(--amber);padding:1px 0;}
-.reason::before{content:'⚠ ';}
+.adv-scale{display:flex;gap:8px;align-items:center;margin:6px 0 10px;}
+.adv-circle{width:22px;height:22px;border-radius:50%;border:1px solid #5b6677;color:#8da2bf;font-family:var(--mono);font-size:0.63rem;display:flex;align-items:center;justify-content:center;}
+.adv-circle.active{border-color:var(--amber);box-shadow:0 0 0 2px rgba(245,158,11,0.2) inset;color:#ffd89b;background:rgba(245,158,11,0.15);}
+.adv-legend{display:flex;justify-content:space-between;font-size:0.55rem;font-family:var(--mono);color:var(--muted);margin-top:-3px;margin-bottom:8px;}
+.reason{font-size:0.66rem;font-family:var(--mono);color:var(--amber);padding:1px 0;}
+.reason::before{content:'Reason: ';color:#e2e8f0;}
 .suggestion{font-size:0.7rem;color:var(--text2);line-height:1.55;padding:6px 9px;background:var(--surface);border-radius:5px;border-left:2px solid var(--accent);font-style:italic;margin-top:6px;}
 
 /* Summary brief */
@@ -244,9 +244,9 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
       </div>
 
       <div>
-        <div class="sec-label">AI Advisor</div>
+        <div class="sec-label">Intervention Guidance</div>
         <div class="adv-card" id="adv-card">
-          <div style="color:var(--muted);font-size:0.72rem;padding:10px 0;text-align:center">Waiting for first analyzed turn…</div>
+          <div style="color:var(--muted);font-size:0.72rem;padding:10px 0;text-align:center">Run the first turn to score intervention urgency.</div>
         </div>
       </div>
 
@@ -521,14 +521,19 @@ function renderRisk(r) {
 
 function renderAdvisor(a) {
   const card=document.getElementById('adv-card');
+  const rating = Math.max(1, Math.min(5, Number(a.rating) || 1));
   card.className='adv-card'+(a.should_intervene?' alert':'');
-  const reasons=(a.reasons||[]).map(r=>`<div class="reason">${r}</div>`).join('');
+  const circles = [1,2,3,4,5].map(n=>`<div class="adv-circle ${n===rating?'active':''}">${n}</div>`).join('');
+  const reasonText = a.reason && a.reason !== 'None' ? `<div class="reason">${a.reason}</div>` : '<div class="reason">None</div>';
   card.innerHTML=`
-    <div class="adv-top"><span class="adv-badge ${a.should_intervene?'intervene':'observe'}">${a.action}</span></div>
-    <div class="odds-labels"><span>Success ${Math.round(a.success_odds*100)}%</span><span>Walkaway ${Math.round(a.walkaway_odds*100)}%</span></div>
-    <div class="odds-bar"><div class="odds-s" style="flex:${a.success_odds}"></div><div class="odds-w" style="flex:${a.walkaway_odds}"></div></div>
-    ${reasons}
-    <div class="suggestion">${a.suggestion}</div>`;
+    <div class="adv-top">
+      <span class="adv-badge ${a.should_intervene?'intervene':'observe'}">${a.action}</span>
+      <span style="font-size:0.58rem;font-family:var(--mono);color:var(--muted)">Rating ${rating}/5</span>
+    </div>
+    <div class="adv-scale">${circles}</div>
+    <div class="adv-legend"><span>1 = Don't Intervene</span><span>5 = Definitely Intervene</span></div>
+    ${reasonText}
+    <div class="suggestion">${a.statement || 'Continue the negotiation without intervention for now.'}</div>`;
 }
 
 function normalizeDist(dist){
@@ -541,14 +546,16 @@ function normalizeDist(dist){
 
 function renderRoleMap(selector, role, dist, topCode, topProb){
   const palette = role === 'buyer'
-    ? ['#20334a','#1f4f7d','#2f6fb4','#4f91ff']
-    : ['#3c1f2f','#6a2742','#a4355a','#f43f5e'];
+    ? ['#dbeafe','#93c5fd','#60a5fa','#2563eb']
+    : ['#fee2e2','#fca5a5','#f87171','#dc2626'];
   if (S.activeMap) S.activeMap.destroy();
 
   const values = {};
   Object.entries(dist || {}).forEach(([code, val])=>{
     const score = Math.max(0, Math.min(1, Number(val) || 0));
-    values[String(code || '').toUpperCase()] = score;
+    const up = String(code || '').toUpperCase();
+    values[up] = score;
+    values[up.toLowerCase()] = score;
   });
 
   S.activeMap = new jsVectorMap({
@@ -557,7 +564,7 @@ function renderRoleMap(selector, role, dist, topCode, topProb){
     zoomButtons:false,
     zoomOnScroll:false,
     regionStyle:{
-      initial:{fill:'#243346', fillOpacity:1, stroke:'#253a55', strokeWidth:0.6},
+      initial:{fill:'#1f2937', fillOpacity:1, stroke:'#253a55', strokeWidth:0.6},
       hover:{fillOpacity:1, strokeWidth:0.8, cursor:'pointer'}
     },
     backgroundColor:'#0a1520',
@@ -580,16 +587,11 @@ function renderRoleMap(selector, role, dist, topCode, topProb){
     },
     onLoaded(map){
       try {
-        map.setFocus({scale:0.95, lat:12, lng:0, animate:false});
+        map.setFocus({scale:0.9, lat:14, lng:0, animate:false});
       } catch (_) {}
     }
   });
 
-  try {
-    if (S.activeMap?.series?.regions?.[0]) {
-      S.activeMap.series.regions[0].setValues(values);
-    }
-  } catch (_) {}
 }
 
 function renderCountry(countrySnap){
