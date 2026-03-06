@@ -303,15 +303,29 @@ def _to_geo_payload(label, confidence, probabilities=None):
     }
 
 def predict_country_with_model(turns, role):
-    text = ' '.join(t.get('text','') for t in turns if t.get('speaker') == role).strip()
-    if not text:
+    role_turns = [t.get('text', '').strip() for t in turns if t.get('speaker') == role and t.get('text', '').strip()]
+    if not role_turns:
         return _to_geo_payload('United States', 0.0, {})
     try:
-        out = PREDICTOR.predict_one(text)
-        pred = out.get('predicted_class','United States')
-        conf = out.get('confidence',0)
-        probs = out.get('probabilities',{})
-        return _to_geo_payload(pred, conf, probs)
+        outputs = PREDICTOR.predict_batch(role_turns)
+        if not outputs:
+            return _to_geo_payload('United States', 0.0, {})
+
+        combined_probs = {}
+        for out in outputs:
+            probs = _normalize_probabilities(out.get('probabilities', {}))
+            for label, prob in probs.items():
+                combined_probs[label] = combined_probs.get(label, 0.0) + prob
+
+        turn_count = len(outputs)
+        averaged_probs = {label: (prob / turn_count) for label, prob in combined_probs.items()} if turn_count else {}
+        averaged_probs = _normalize_probabilities(averaged_probs)
+
+        if averaged_probs:
+            pred, conf = max(averaged_probs.items(), key=lambda item: item[1])
+        else:
+            pred, conf = 'United States', 0.0
+        return _to_geo_payload(pred, conf, averaged_probs)
     except Exception:
         return predict_country(turns, role)
 
