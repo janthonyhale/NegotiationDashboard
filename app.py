@@ -214,6 +214,68 @@ def llm_emotion_scores(text):
     except Exception:
         return score_emo(text)
 
+
+def llm_operational_summary(turns_so_far, country_snapshot, risk_snapshot):
+    """Generate a concise IRP-aware operational summary for the current state."""
+    api_key = os.getenv('OPENAI_API_KEY')
+    if not turns_so_far:
+        return 'No turns processed yet. Step through the dialogue to generate an operational summary.'
+
+    buyer_country = (country_snapshot or {}).get('buyer', {}).get('country', 'Unknown')
+    seller_country = (country_snapshot or {}).get('seller', {}).get('country', 'Unknown')
+
+    recent_turns = turns_so_far[-8:]
+    transcript_excerpt = '\n'.join(
+        f"{t.get('speaker','Unknown')}: {t.get('text','')} | emo={t.get('emotions',{})}"
+        for t in recent_turns
+    )
+
+    if not api_key:
+        return (
+            f"IRP snapshot: risk is {risk_snapshot.get('label','Unknown')} ({risk_snapshot.get('score',0)}). "
+            f"Likely country priors are Buyer={buyer_country}, Seller={seller_country}. "
+            "Focus next on acknowledging emotions, clarifying interests, and proposing reciprocal concessions."
+        )
+
+    prompt = (
+        "Provide a concise 2-3 sentence operational summary of the dispute so far. "
+        "Incorporate: (1) emotional trajectory, (2) country prediction priors, and "
+        "(3) IRP framing (Interests, Rights, Power signals). "
+        "Keep it practical and neutral for a negotiation dashboard.\n\n"
+        f"Risk snapshot: {json.dumps(risk_snapshot)}\n"
+        f"Country snapshot: {json.dumps(country_snapshot)}\n"
+        f"Recent turns:\n{transcript_excerpt}"
+    )
+
+    payload = {
+        "model": "gpt-4o",
+        "messages": [
+            {"role": "system", "content": "You summarize negotiation states for mediators."},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.2,
+        "max_tokens": 140
+    }
+    req = urllib.request.Request(
+        'https://api.openai.com/v1/chat/completions',
+        data=json.dumps(payload).encode('utf-8'),
+        headers={
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {api_key}'
+        },
+        method='POST'
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=12) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+        return (data['choices'][0]['message']['content'] or '').strip()
+    except Exception:
+        return (
+            f"IRP snapshot: risk is {risk_snapshot.get('label','Unknown')} ({risk_snapshot.get('score',0)}). "
+            f"Likely country priors are Buyer={buyer_country}, Seller={seller_country}. "
+            "Focus next on acknowledging emotions, clarifying interests, and proposing reciprocal concessions."
+        )
+
 def estimate_risk(turns_so_far):
     if not turns_so_far:
         return {'score':0,'label':'Low','negative_signals':0,'threats':0}
@@ -344,7 +406,14 @@ def predict_country(turns, role):
         ranking = [('United States',0.38),('United Kingdom',0.27),('Germany',0.20),('China',0.15)]
     country, conf = ranking[0]
     info = COUNTRY_SVG.get(country, {'lat':0,'lng':0,'flag':'🌍'})
-    return {'country':country,'confidence':round(conf,2),'lat':info['lat'],'lng':info['lng'],'flag':info['flag']}
+    return {
+        'country': country,
+        'confidence': round(conf, 2),
+        'lat': info['lat'],
+        'lng': info['lng'],
+        'flag': info['flag'],
+        'probabilities': _normalize_probabilities({label: score for label, score in ranking}),
+    }
 
 # ── Plotting ──────────────────────────────────────────────────────────────────
 BG   = '#07090f'
@@ -511,7 +580,16 @@ def api_step():
     emo_img = make_emotion_plot(turns_so_far, dim)
     buyer_c = predict_country_with_model(turns_so_far, 'Buyer')
     seller_c = predict_country_with_model(turns_so_far, 'Seller')
-    return jsonify({'risk':risk,'advisor':adv,'emotion_img':emo_img,'current_turn':cur,'country':{'buyer':buyer_c,'seller':seller_c}})
+    country_snapshot = {'buyer':buyer_c,'seller':seller_c}
+    op_summary = llm_operational_summary(turns_so_far, country_snapshot, risk)
+    return jsonify({
+        'risk':risk,
+        'advisor':adv,
+        'emotion_img':emo_img,
+        'current_turn':cur,
+        'country':country_snapshot,
+        'operational_summary': op_summary,
+    })
 
 @app.route('/api/post_summary', methods=['POST'])
 def api_post_summary():

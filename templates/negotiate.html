@@ -115,14 +115,7 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
 
 .map-title{font-family:var(--mono);font-size:0.62rem;letter-spacing:0.8px;text-transform:uppercase;color:var(--muted);padding:2px 4px;}
 .map-scale-note{font-family:var(--mono);font-size:0.56rem;color:#8da2bf;padding:0 4px 3px 4px;}
-#active-map{width:100%;height:100%;min-height:300px;}
-.country-row{display:flex;gap:6px;padding:6px 8px;}
-.ctry{flex:1;background:var(--surface);border-radius:6px;padding:7px 8px;}
-.ctry.buyer{border-left:2px solid var(--accent);}
-.ctry.seller{border-left:2px solid var(--red);}
-.ctry-role{font-family:var(--mono);font-size:0.52rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);}
-.ctry-name{font-size:0.76rem;font-weight:600;margin-top:2px;}
-.ctry-conf{font-family:var(--mono);font-size:0.54rem;color:var(--muted);margin-top:1px;}
+#active-map{width:100%;height:100%;min-height:320px;}
 
 /* Risk */
 .risk-card{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:10px 12px;margin-bottom:10px;}
@@ -195,7 +188,7 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
     <div class="middle-stack">
       <div class="middle-panel">
                 <div class="map-card" style="border:none;margin:0 4px 4px;height:100%">
-                    <div class="map-toggle">
+          <div class="map-toggle">
             <button class="map-btn active" data-role="buyer" onclick="switchMapRole('buyer', this)">Buyer</button>
             <button class="map-btn" data-role="seller" onclick="switchMapRole('seller', this)">Seller</button>
           </div>
@@ -203,18 +196,6 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
             <div class="map-title" id="map-title">Buyer map</div>
             <div class="map-scale-note" id="map-scale-note">Blue = higher confidence</div>
             <div id="active-map"></div>
-          </div>
-          <div class="country-row">
-            <div class="ctry buyer">
-              <div class="ctry-role">Buyer</div>
-              <div class="ctry-name" id="ctry-buyer">—</div>
-              <div class="ctry-conf" id="ctry-buyer-conf">—</div>
-            </div>
-            <div class="ctry seller">
-              <div class="ctry-role">Seller</div>
-              <div class="ctry-name" id="ctry-seller">—</div>
-              <div class="ctry-conf" id="ctry-seller-conf">—</div>
-            </div>
           </div>
         </div>
       </div>
@@ -249,7 +230,7 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
             <div class="summary-title">Operational Summary</div>
             <div class="summary-tag">LIVE</div>
           </div>
-          <div class="summary-text">Current posture: both parties remain engaged with moderate strategic tension. Buyer confidence is increasing in concrete terms, while seller rhetoric shows guarded firmness. Geographic priors and emotional trajectory suggest a viable agreement window if pressure signals are contained over the next several turns.</div>
+          <div class="summary-text" id="operational-summary">Current posture: both parties remain engaged with moderate strategic tension. Buyer confidence is increasing in concrete terms, while seller rhetoric shows guarded firmness. Geographic priors and emotional trajectory suggest a viable agreement window if pressure signals are contained over the next several turns.</div>
         </div>
       </div>
 
@@ -333,8 +314,15 @@ async function step(dir) {
       body: JSON.stringify({idx:ni, turns:S.turns, emotion_dim:S.dim, buyer_weights:S.bw, seller_weights:S.sw}),
     });
     const data = await res.json();
-    if (data.current_turn && data.current_turn.emotions) S.turns[ni].emotions = data.current_turn.emotions;
+    if (data.current_turn && data.current_turn.emotions) {
+      S.turns[ni].emotions = data.current_turn.emotions;
+      syncBubbleEmotions(ni);
+    }
     if (data.country) { S.lastCountry = data.country; renderCountry(data.country); }
+    if (data.operational_summary) {
+      const summaryEl = document.getElementById('operational-summary');
+      if (summaryEl) summaryEl.textContent = data.operational_summary;
+    }
     updateEmoChart();
     renderRisk(data.risk);
     renderAdvisor(data.advisor);
@@ -353,17 +341,29 @@ function updateTxHighlights() {
   });
 }
 
+
+function renderEmotionChips(emos){
+  return Object.entries(emos || {}).filter(([k])=>k!=='valence').map(([k,v])=>{
+    const num = typeof v === 'number' ? v : Number(v || 0);
+    let cls = '';
+    if (k==='joy' && num>0.15) cls='pos';
+    else if (num>0.2) cls='hot';
+    return `<span class="emo-chip ${cls}">${k}: ${num.toFixed(2)}</span>`;
+  }).join('');
+}
+
+function syncBubbleEmotions(idx){
+  const turn = S.turns[idx] || {};
+  const chips = renderEmotionChips(turn.emotions || {});
+  const bubble = document.querySelector(`#bubble-${idx} .bubble-emos`);
+  if (bubble) bubble.innerHTML = chips;
+}
+
 function addBubble(t, idx) {
   const ph = document.getElementById('dial-placeholder');
   if (ph) ph.remove();
   const role = t.speaker.toLowerCase();
-  const emos = t.emotions || {};
-  const chips = Object.entries(emos).filter(([k])=>k!=='valence').map(([k,v])=>{
-    let cls = '';
-    if (k==='joy'&&v>0.15) cls='pos';
-    else if (v>0.2) cls='hot';
-    return `<span class="emo-chip ${cls}">${k}: ${v.toFixed(2)}</span>`;
-  }).join('');
+  const chips = renderEmotionChips(t.emotions || {});
   const wrap = document.createElement('div');
   wrap.className = `bubble-wrap ${role}`;
   wrap.id = `bubble-${idx}`;
@@ -515,7 +515,7 @@ function renderRoleMap(selector, role, dist, topCode, topProb){
     },
     onLoaded(map){
       try {
-        map.setFocus({scale:0.86, animate:false});
+        map.setFocus({scale:0.72, animate:false});
       } catch (_) {}
     }
   });
@@ -523,10 +523,6 @@ function renderRoleMap(selector, role, dist, topCode, topProb){
 
 function renderCountry(countrySnap){
   if (S.currentIdx < 0 || !countrySnap){
-    document.getElementById('ctry-buyer').textContent = '—';
-    document.getElementById('ctry-buyer-conf').textContent = '—';
-    document.getElementById('ctry-seller').textContent = '—';
-    document.getElementById('ctry-seller-conf').textContent = '—';
     document.getElementById('map-title').textContent = S.mapRole === 'buyer' ? 'Buyer map' : 'Seller map';
     document.getElementById('map-scale-note').textContent = 'Turn 0 · awaiting first exchange';
     renderRoleMap('#active-map', S.mapRole, {}, null, 0);
@@ -536,24 +532,28 @@ function renderCountry(countrySnap){
 
   const buyer = countrySnap.buyer || {};
   const seller = countrySnap.seller || {};
-  document.getElementById('ctry-buyer').textContent = `${buyer.flag || '🌍'} ${buyer.country || '—'}`;
-  document.getElementById('ctry-buyer-conf').textContent = `${Math.round((buyer.confidence||0)*100)}% conf.`;
-  document.getElementById('ctry-seller').textContent = `${seller.flag || '🌍'} ${seller.country || '—'}`;
-  document.getElementById('ctry-seller-conf').textContent = `${Math.round((seller.confidence||0)*100)}% conf.`;
-
   const role = S.mapRole;
   const active = role === 'buyer' ? buyer : seller;
   const probs = active.probabilities || {};
   const dist = {};
   const labelToCode = {
-    'U.S.':'US','US':'US','United States':'US',
-    'U.K.':'GB','UK':'GB','United Kingdom':'GB',
-    'Germany':'DE','China':'CN','Japan':'JP','India':'IN','France':'FR',
-    'Australia':'AU','Canada':'CA','Brazil':'BR','Mexico':'MX','South Africa':'ZA'
+    'u.s.':'US','us':'US','united states':'US',
+    'u.k.':'GB','uk':'GB','united kingdom':'GB',
+    'germany':'DE','china':'CN','japan':'JP','india':'IN','france':'FR',
+    'australia':'AU','canada':'CA','brazil':'BR','mexico':'MX','south africa':'ZA'
   };
-  Object.entries(probs).forEach(([k,v])=>{ const c=labelToCode[k]||labelToCode[k.trim()]; if(c) dist[c]=Number(v)||0; });
-  const topCode = Object.entries(dist).sort((a,b)=>b[1]-a[1])[0]?.[0] || 'US';
-  const topProb = Object.entries(dist).sort((a,b)=>b[1]-a[1])[0]?.[1] || 0;
+  Object.entries(probs).forEach(([k,v])=>{
+    const norm = String(k || '').trim().toLowerCase();
+    const c = labelToCode[norm];
+    if(c) dist[c]=Number(v)||0;
+  });
+  if (!Object.keys(dist).length && active.country){
+    const fallback = labelToCode[String(active.country).trim().toLowerCase()];
+    if (fallback) dist[fallback] = Number(active.confidence || 0) || 0.5;
+  }
+  const sortedDist = Object.entries(dist).sort((a,b)=>b[1]-a[1]);
+  const topCode = sortedDist[0]?.[0] || null;
+  const topProb = sortedDist[0]?.[1] || 0;
   document.getElementById('map-title').textContent = role === 'buyer' ? 'Buyer map' : 'Seller map';
   document.getElementById('map-scale-note').textContent = role === 'buyer' ? 'Blue = higher confidence' : 'Red = higher confidence';
   renderRoleMap('#active-map', role, dist, topCode, topProb);
@@ -566,20 +566,11 @@ function switchMapRole(role, btn){
   if (S.currentIdx >= 0 && S.lastCountry) renderCountry(S.lastCountry);
 }
 
-async function switchEmo(dim, btn) {
+function switchEmo(dim, btn) {
   S.dim = dim;
   document.querySelectorAll('.emo-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  if (S.currentIdx < 0) return;
-  document.getElementById('spin').style.display='block';
-  try {
-    const res = await fetch('/api/step',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({idx:S.currentIdx,turns:S.turns,emotion_dim:dim,buyer_weights:S.bw,seller_weights:S.sw})
-    });
-    const data = await res.json();
-    updateEmoChart();
-  } finally { document.getElementById('spin').style.display='none'; }
+  updateEmoChart();
 }
 
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
