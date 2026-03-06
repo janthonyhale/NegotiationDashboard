@@ -108,7 +108,7 @@ function renderSolutionSpace(outcomes, pareto){
   const dots=outcomes.map((o,i)=>{
     const deal=`Refund ${o.refund_label}; Buyer review removed ${o.buyer_review?'Yes':'No'}; Seller review removed ${o.seller_review?'Yes':'No'}; Seller apology ${o.seller_apology?'Yes':'No'}; Buyer apology ${o.buyer_apology?'Yes':'No'}`;
     const title = `${deal} | Buyer utility ${o.buyer_util}, Seller utility ${o.seller_util}`;
-    return `<circle data-i="${i}" data-deal="${deal.replace(/"/g,'&quot;')}" data-bu="${o.buyer_util}" data-su="${o.seller_util}" cx="${x(o.buyer_util)}" cy="${y(o.seller_util)}" r="3.4" fill="#28466a" opacity="0.72" stroke="transparent" stroke-width="8"><title>${title}</title></circle>`;
+    return `<circle class="deal-dot" data-i="${i}" data-deal="${deal.replace(/"/g,'&quot;')}" data-bu="${o.buyer_util}" data-su="${o.seller_util}" cx="${x(o.buyer_util)}" cy="${y(o.seller_util)}" r="3.8" fill="#28466a" opacity="0.72" stroke="transparent" stroke-width="10"><title>${title}</title></circle>`;
   }).join('');
 
   const px=[...pareto].sort((a,b)=>a.buyer_util-b.buyer_util);
@@ -120,13 +120,13 @@ function renderSolutionSpace(outcomes, pareto){
   if(fs.length>=2){
     const first=fs[0], last=fs[fs.length-1];
     const poly=[...fs.map(p=>`${x(p.buyer_util)},${y(p.seller_util)}`),`${x(last.buyer_util)},${y(Math.max(0,100-last.buyer_util))}`,`${x(first.buyer_util)},${y(Math.max(0,100-first.buyer_util))}`].join(' ');
-    shade=`<polygon points="${poly}" fill="rgba(34,211,165,0.16)"/>`;
+    shade=`<polygon points="${poly}" fill="rgba(34,211,165,0.16)" style="pointer-events:none"/>`;
   }
 
   host.innerHTML=`<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%">
     <line x1="${m.l}" y1="${h-m.b}" x2="${w-m.r}" y2="${h-m.b}" stroke="#4b607a"/>
     <line x1="${m.l}" y1="${m.t}" x2="${m.l}" y2="${h-m.b}" stroke="#4b607a"/>
-    ${dots}${shade}<path d="${reservationPath}" fill="none" stroke="#f59e0b" stroke-dasharray="5 4"/>
+    ${shade}${dots}<path d="${reservationPath}" fill="none" stroke="#f59e0b" stroke-dasharray="5 4"/>
     ${path?`<path d="${path}" fill="none" stroke="#22d3a5" stroke-width="2.4"/>`:''}${paretoPts}
     <text x="${w-220}" y="18" fill="#22d3a5" font-size="12" font-family="var(--mono)">Pareto Frontier</text>
     <text x="${w-255}" y="34" fill="#f59e0b" font-size="11" font-family="var(--mono)">Buyer100 ↔ Seller100 baseline</text>
@@ -135,6 +135,7 @@ function renderSolutionSpace(outcomes, pareto){
 
   const wrap = document.getElementById('chartWrap');
   host.querySelectorAll('circle[data-i]').forEach(c=>{
+    c.addEventListener('pointerenter', ()=>{ c.setAttribute('r','6.8'); c.setAttribute('opacity','0.95'); });
     c.addEventListener('pointermove', ev=>{
       if (!tip || !wrap) return;
       const rect = wrap.getBoundingClientRect();
@@ -143,7 +144,7 @@ function renderSolutionSpace(outcomes, pareto){
       tip.style.top=`${ev.clientY - rect.top + 12}px`;
       tip.innerHTML=`<div><b>Deal</b>: ${c.dataset.deal}</div><div>Buyer utility: <b>${c.dataset.bu}</b> · Seller utility: <b>${c.dataset.su}</b></div>`;
     });
-    c.addEventListener('pointerleave', ()=> { if (tip) tip.style.display='none'; });
+    c.addEventListener('pointerleave', ()=> { c.setAttribute('r','3.8'); c.setAttribute('opacity','0.72'); if (tip) tip.style.display='none'; });
   });
 }
 

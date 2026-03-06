@@ -89,6 +89,7 @@ def compute_pareto(outcomes):
 EMO_KEYS = {
     'anger':      ['angry','furious','frustrated','unacceptable','ridiculous','demand','insist','refuse','absurd','outrageous','never','scam','lied','terrible','worst'],
     'fear':       ['worried','concerned','anxious','risk','uncertain','doubt','afraid','nervous','unsure','hesitant','danger','scared','apprehensive'],
+    'sadness':    ['sad','disappointed','upset','heartbroken','regret','sorry to hear','depressed','unhappy','let down','hurt'],
     'joy':        ['great','excellent','happy','pleased','wonderful','perfect','agree','deal','good','fantastic','love','glad','thrilled','excited','satisfied','appreciate','thank'],
     'surprise':   ['wow','unexpected','surprising','shocked','amazed','incredible','unbelievable','suddenly','wait','actually','really','seriously'],
     'compassion': ['understand','sorry','apologize','empathize','appreciate your','i see','i hear','difficult','hard for you','must be','feel for'],
@@ -148,7 +149,7 @@ def score_emo(text):
     # Normalize so they sum to ~1 but cap each
     for k in s: s[k] = round(s[k] / total * min(total, 1.5), 3)
     # Add valence
-    neg = s['anger'] + s['fear']
+    neg = s['anger'] + s['fear'] + s.get('sadness', 0)
     pos = s['joy'] + s['compassion']
     s['valence'] = round(max(-1, min(1, pos - neg)), 3)
     return s
@@ -236,32 +237,25 @@ def extract_pre_dispute_justifications(path, ext):
     return defaults
 
 def llm_emotion_scores(text):
-    """Use GPT-4o for emotion recognition when OPENAI_API_KEY is available.
+    """Use GPT-4o emotion classification when OPENAI_API_KEY is available.
     Falls back to keyword heuristic on error/missing key.
     """
     api_key = os.getenv('OPENAI_API_KEY')
     if not api_key:
         return score_emo(text)
 
-    prompt = (
-        "Provide a concise 2-3 sentence operational summary of the dispute shown so far (only observed turns). "
-        "Incorporate: (1) emotional trajectory, (2) country prediction priors as uncertain distributions, and "
-        "(3) IRP framing (Interests, Rights, Power signals). "
-        "Do not treat classifier outputs as certain facts; nearby/other regions remain possible. "
-        "Keep it practical and neutral for a negotiation dashboard.\n\n"
-        f"Risk snapshot: {json.dumps(risk_snapshot)}\n"
-        f"Country snapshot: {json.dumps(country_snapshot)}\n"
-        f"Observed turns:\n{transcript_excerpt}"
-    )
+    system_prompt = """You are a good emotion classification tool. Your task is to classify the emotion of the last speaker based on the contextual dialogue.
+Your output should be a JSON object with an 'emotion' field, categorizing the dialogue with a score for each: joy, anger, fear, sadness, surprise, compassion, or neutral.
+These scores should sum to one. If an utterance is neutral, then neutral must be one with every other label set to zero."""
 
     payload = {
         "model": "gpt-4o",
         "messages": [
-            {"role":"system","content":"You are an emotion classifier for negotiation transcripts."},
-            {"role":"user","content": prompt}
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": f"This is the context: {text}. What is the emotion of the current speaker?"}
         ],
         "temperature": 0,
-        "response_format": {"type":"json_object"}
+        "response_format": {"type": "json_object"}
     }
     req = urllib.request.Request(
         'https://api.openai.com/v1/chat/completions',
@@ -277,18 +271,30 @@ def llm_emotion_scores(text):
             data = json.loads(resp.read().decode('utf-8'))
         content = data['choices'][0]['message']['content']
         obj = json.loads(content)
+        emo = obj.get('emotion', obj)
         out = {
-            'anger': float(obj.get('anger',0)),
-            'fear': float(obj.get('fear',0)),
-            'joy': float(obj.get('joy',0)),
-            'surprise': float(obj.get('surprise',0)),
-            'compassion': float(obj.get('compassion',0)),
-            'neutral': float(obj.get('neutral',0)),
-            'valence': float(obj.get('valence',0)),
+            'joy': float(emo.get('joy',0)),
+            'anger': float(emo.get('anger',0)),
+            'fear': float(emo.get('fear',0)),
+            'sadness': float(emo.get('sadness',0)),
+            'surprise': float(emo.get('surprise',0)),
+            'compassion': float(emo.get('compassion',0)),
+            'neutral': float(emo.get('neutral',0)),
         }
-        for k in ['anger','fear','joy','surprise','compassion','neutral']:
+        for k in out:
             out[k] = max(0.0, min(1.0, out[k]))
-        out['valence'] = max(-1.0, min(1.0, out['valence']))
+
+        total = sum(out.values())
+        if total <= 0:
+            return score_emo(text)
+        out = {k: round(v / total, 3) for k, v in out.items()}
+        if out['neutral'] >= 0.999:
+            out = {k: 0.0 for k in out}
+            out['neutral'] = 1.0
+
+        neg = out['anger'] + out['fear'] + out['sadness']
+        pos = out['joy'] + out['compassion']
+        out['valence'] = round(max(-1, min(1, pos - neg)), 3)
         return out
     except Exception:
         return score_emo(text)
