@@ -128,6 +128,9 @@ function renderSolutionSpace(outcomes, pareto){
     <line x1="${m.l}" y1="${m.t}" x2="${m.l}" y2="${h-m.b}" stroke="#4b607a"/>
     ${shade}${dots}<path d="${reservationPath}" fill="none" stroke="#f59e0b" stroke-dasharray="5 4"/>
     ${path?`<path d="${path}" fill="none" stroke="#22d3a5" stroke-width="2.4"/>`:''}${paretoPts}
+    <text x="${(m.l + w - m.r)/2 - 62}" y="${h-10}" fill="#94a3b8" font-size="11" font-family="var(--mono)">Buyer utility →</text>
+    <text x="16" y="${m.t + 8}" fill="#94a3b8" font-size="11" font-family="var(--mono)">Seller</text>
+    <text x="16" y="${m.t + 22}" fill="#94a3b8" font-size="11" font-family="var(--mono)">utility ↑</text>
     <text x="${w-220}" y="18" fill="#22d3a5" font-size="12" font-family="var(--mono)">Pareto Frontier</text>
     <text x="${w-255}" y="34" fill="#f59e0b" font-size="11" font-family="var(--mono)">Buyer100 ↔ Seller100 baseline</text>
   </svg>`;

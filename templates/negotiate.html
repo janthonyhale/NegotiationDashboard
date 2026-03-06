@@ -270,7 +270,8 @@ const COUNTRY_CODE_MAP = {
   'u.s.':'US','us':'US','usa':'US','united states':'US',
   'u.k.':'GB','uk':'GB','great britain':'GB','united kingdom':'GB',
   'germany':'DE','china':'CN','india':'IN','japan':'JP','france':'FR',
-  'australia':'AU','canada':'CA','brazil':'BR','mexico':'MX','south africa':'ZA'
+  'australia':'AU','canada':'CA','brazil':'BR','mexico':'MX','south africa':'ZA',
+  'united states of america':'US',"people's republic of china":'CN','republic of india':'IN'
 };
 let S = { turns:[], currentIdx:-1, dim:'joy', mapRole:'buyer', currentMapDist:{}, country:null, lastCountry:null, bw:{}, sw:{}, activeMap:null, opSummaries:[] };
 
@@ -416,8 +417,9 @@ function addBubble(t, idx) {
     </div>`;
   // Remove 'current' from previous bubble
   document.querySelectorAll('.bubble.current').forEach(b=>b.classList.remove('current'));
-  document.getElementById('dialogue').appendChild(wrap);
-  wrap.scrollIntoView({behavior:'smooth',block:'nearest'});
+  const dialogueEl = document.getElementById('dialogue');
+  dialogueEl.appendChild(wrap);
+  dialogueEl.scrollTo({ top: dialogueEl.scrollHeight, behavior: 'smooth' });
 }
 
 function updateEmoChart() {
@@ -526,7 +528,11 @@ function renderRoleMap(selector, role, dist, topCode, topProb){
   if (S.activeMap) S.activeMap.destroy();
 
   const values = {};
-  Object.entries(dist || {}).forEach(([code, val])=>{ values[code] = Number(val) || 0; });
+  Object.entries(dist || {}).forEach(([code, val])=>{
+    const score = Math.max(0, Math.min(1, Number(val) || 0));
+    values[String(code || '').toUpperCase()] = score;
+    values[String(code || '').toLowerCase()] = score;
+  });
 
   S.activeMap = new jsVectorMap({
     selector,
@@ -538,12 +544,14 @@ function renderRoleMap(selector, role, dist, topCode, topProb){
       hover:{fillOpacity:1, strokeWidth:0.8, cursor:'pointer'}
     },
     backgroundColor:'#0a1520',
-    selectedRegions: topCode ? [topCode] : [],
+    selectedRegions: topCode ? [String(topCode).toUpperCase()] : [],
     selectedRegionsStyle:{fill: palette[3]},
     series:{
       regions:[{
         values,
-        scale: palette,
+        scale: [palette[0], palette[1], palette[2], palette[3]],
+        min: 0,
+        max: 1,
         normalizeFunction:'linear',
         attribute:'fill'
       }]
@@ -594,6 +602,13 @@ function renderCountry(countrySnap){
   document.getElementById('map-title').textContent = role === 'buyer' ? 'Buyer map' : 'Seller map';
   document.getElementById('map-scale-note').textContent = role === 'buyer' ? 'Blue = higher confidence' : 'Red = higher confidence';
   renderRoleMap('#active-map', role, dist, topCode, topProb);
+  if (S.activeMap && topCode) {
+    try {
+      const up = String(topCode).toUpperCase();
+      S.activeMap.update({series:{regions:[{values:{[up]: Math.max(0.6, Number(topProb) || 0.6)}}]}});
+      S.activeMap.setSelectedRegions([up]);
+    } catch (_) {}
+  }
 }
 
 function switchMapRole(role, btn){
