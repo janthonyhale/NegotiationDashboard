@@ -109,7 +109,10 @@ def parse_file(path, ext):
                 line = line.strip()
                 if not line: continue
                 obj = json.loads(line)
-                turns.append({'idx':i,'speaker':obj.get('speaker','Unknown'),'text':obj.get('text',''),'ts':None,'meta':{}})
+                if not obj.get('speaker') and not obj.get('text'):
+                    # Allow metadata/header rows in JSONL without treating them as dialogue turns.
+                    continue
+                turns.append({'idx':len(turns),'speaker':obj.get('speaker','Unknown'),'text':obj.get('text',''),'ts':None,'meta':{}})
     elif ext == 'json':
         with open(path) as f: data = json.load(f)
         items = data if isinstance(data,list) else data.get('turns', data.get('messages',[data]))
@@ -235,6 +238,52 @@ def extract_pre_dispute_justifications(path, ext):
     except Exception:
         pass
     return defaults
+
+
+def _normalize_weight_payload(raw, defaults):
+    out = dict(defaults)
+    if not isinstance(raw, dict):
+        return out
+    aliases = {
+        'refund': 'refund',
+        'buyer_review': 'buyer_review',
+        'seller_review': 'seller_review',
+        'seller_apology': 'seller_apology',
+        'receive_apology': 'seller_apology',
+        'buyer_apology': 'buyer_apology',
+    }
+    for k, v in raw.items():
+        key = aliases.get(str(k).strip(), str(k).strip())
+        if key not in out:
+            continue
+        try:
+            out[key] = max(0, min(100, int(float(v))))
+        except Exception:
+            continue
+    return out
+
+
+def extract_preference_weights(path, ext):
+    bw = dict(DEFAULT_BUYER_WEIGHTS)
+    sw = dict(DEFAULT_SELLER_WEIGHTS)
+    try:
+        if ext == 'json':
+            with open(path) as f:
+                data = json.load(f)
+        elif ext == 'jsonl':
+            with open(path) as f:
+                first = f.readline().strip()
+            data = json.loads(first) if first else {}
+        else:
+            data = {}
+        if isinstance(data, dict):
+            raw_b = data.get('buyer_weights', data.get('buyer_preferences'))
+            raw_s = data.get('seller_weights', data.get('seller_preferences'))
+            bw = _normalize_weight_payload(raw_b, DEFAULT_BUYER_WEIGHTS)
+            sw = _normalize_weight_payload(raw_s, DEFAULT_SELLER_WEIGHTS)
+    except Exception:
+        pass
+    return bw, sw
 
 def llm_emotion_scores(text):
     """Use GPT-4o emotion classification when OPENAI_API_KEY is available.
@@ -417,27 +466,118 @@ def estimate_risk(turns_so_far):
     return {'score':round(float(score),3),'label':label,
             'negative_signals':int(total_neg),'threats':int(total_threat)}
 
-def get_advisor(turns_so_far, current_turn):
-    risk    = estimate_risk(turns_so_far)
-    anger   = current_turn['emotions'].get('anger', 0)
-    fear    = current_turn['emotions'].get('fear', 0)
-    should  = risk['score'] > 0.35 or anger > 0.4 or fear > 0.4
-    success = round(max(0.05, 1 - risk['score'] - anger*0.3), 2)
-    walkaway= round(min(0.95, risk['score'] + anger*0.2), 2)
-    reasons = []
-    if anger > 0.3:               reasons.append('Elevated anger detected')
-    if fear  > 0.3:               reasons.append('Anxiety signals present')
-    if risk['threats'] > 0:       reasons.append('Legal threat language used')
-    if risk['negative_signals']>1:reasons.append('Multiple rejection signals')
-    SUGG = {
-        'Elevated anger detected':    'Acknowledge frustration; name the emotion before the issue.',
-        'Anxiety signals present':    'Slow down; clarify each party\'s core concern explicitly.',
-        'Legal threat language used': 'Redirect: "Let\'s see if we can resolve this here first."',
-        'Multiple rejection signals': 'Propose a structured break; then introduce a new option.',
+def llm_intervention_assessment(turns_so_far, prior_intervention_turns=None):
+    api_key = os.getenv('OPENAI_API_KEY')
+    prior_intervention_turns = prior_intervention_turns or []
+    reasons_allowed = {
+        'Escalation of Conflict',
+        'Impasse',
+        'Miscommunication',
+        'Unreasonable demands',
+        'Invocation',
+        'None',
     }
-    suggestion = SUGG.get(reasons[0], 'Progress is constructive. Encourage continued dialogue.') if reasons else 'No intervention needed. Talks are progressing well.'
-    return {'should_intervene':should,'action':'Intervene' if should else 'Observe',
-            'success_odds':success,'walkaway_odds':walkaway,'reasons':reasons,'suggestion':suggestion}
+
+    if not turns_so_far:
+        return {
+            'rating': 1,
+            'reason': 'None',
+            'statement': 'I will continue to observe while you work toward a solution.',
+            'should_intervene': False,
+        }
+
+    transcript = '\n'.join(
+        f"Turn {i+1} - {t.get('speaker','Unknown')}: {t.get('text','')}"
+        for i, t in enumerate(turns_so_far)
+    )
+
+    def fallback_assessment():
+        risk = estimate_risk(turns_so_far)
+        rating = 1
+        reason = 'None'
+        if risk['threats'] > 0:
+            rating, reason = 5, 'Escalation of Conflict'
+        elif risk['negative_signals'] >= 5:
+            rating, reason = 4, 'Impasse'
+        elif risk['score'] >= 0.45:
+            rating, reason = 3, 'Miscommunication'
+        statement = 'I recommend each side restate one concrete, feasible next step before continuing.' if rating >= 4 else 'Please continue negotiating directly; I will stay available if needed.'
+        return {
+            'rating': rating,
+            'reason': reason,
+            'statement': statement,
+            'should_intervene': rating >= 4,
+        }
+
+    if not api_key:
+        return fallback_assessment()
+
+    prompt = """Imagine you are playing the role of a mediator in a buyer/seller purchase dispute. Your goal is to allow participants to resolve their dispute on their own if possible, but to intervene if necessary. Some reasons to intervene include:
+1. Escalation of Conflict: if the conversation becomes heated with parties resorting to personal attacks or hostile language
+2. Impasse: when parties reach a deadlock and are unable to move forward
+3. Miscommunication: if there are signs that the parties are misunderstanding each other’s points
+4. Unreasonable demands: If one party is making unreasonable demands that the other party can’t possibly meet.
+5. Invocation: If one party asks the mediator to interject. 
+
+You will be given the conversation so far. Rate the situation on a scale from 1 to 5 with 1 meaning definitely don’t intervene and 5 meaning definitely intervene. Provide (a) the rating on if to intervene, (b) the reason to intervene, from the list above, and (c) a one sentence statement you might tell the parties at this point. 
+
+You do not need to intervene every turn, and should consider how recently you've intervened before making a decision.
+
+Any score over a seven will trigger an intervention, and your message will be sent to both the buyer and seller."""
+
+    payload = {
+        "model": "gpt-4o",
+        "messages": [
+            {"role": "system", "content": prompt},
+            {"role": "user", "content": f"Conversation so far:\n{transcript}\n\nRecent intervention turns: {prior_intervention_turns}. Return JSON with fields rating, reason, statement."}
+        ],
+        "temperature": 0,
+        "response_format": {"type": "json_object"}
+    }
+    req = urllib.request.Request(
+        'https://api.openai.com/v1/chat/completions',
+        data=json.dumps(payload).encode('utf-8'),
+        headers={
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {api_key}'
+        },
+        method='POST'
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=12) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+        content = data['choices'][0]['message']['content']
+        obj = json.loads(content)
+        rating = int(float(obj.get('rating', 1)))
+        rating = max(1, min(5, rating))
+        reason = str(obj.get('reason', 'None')).strip() or 'None'
+        if reason not in reasons_allowed:
+            reason = 'None'
+        statement = str(obj.get('statement', '')).strip() or 'I will continue monitoring while you negotiate directly.'
+        return {
+            'rating': rating,
+            'reason': reason,
+            'statement': statement,
+            'should_intervene': rating >= 4,
+        }
+    except Exception:
+        return fallback_assessment()
+
+
+def get_advisor(turns_so_far, current_turn):
+    prior_intervention_turns = []
+    for i, t in enumerate(turns_so_far[:-1]):
+        adv = t.get('advisor') if isinstance(t, dict) else None
+        if isinstance(adv, dict) and adv.get('should_intervene'):
+            prior_intervention_turns.append(i + 1)
+    assessment = llm_intervention_assessment(turns_so_far, prior_intervention_turns)
+    return {
+        'should_intervene': bool(assessment.get('should_intervene')),
+        'action': 'Intervene' if assessment.get('should_intervene') else 'Observe',
+        'rating': int(assessment.get('rating', 1)),
+        'reason': assessment.get('reason', 'None'),
+        'statement': assessment.get('statement', ''),
+    }
 
 # ── Country Prediction ────────────────────────────────────────────────────────
 COUNTRY_SVG = {
@@ -665,9 +805,8 @@ def api_upload():
         if not turns: return jsonify({'error':'No turns found in file'}),400
         turns = enrich(turns)
         pre_justifications = extract_pre_dispute_justifications(path, ext)
-        # Default KODIS weights
-        bw = DEFAULT_BUYER_WEIGHTS
-        sw = DEFAULT_SELLER_WEIGHTS
+        # Load preferences from uploaded metadata when present; fallback to defaults.
+        bw, sw = extract_preference_weights(path, ext)
         outcomes = generate_all_outcomes(bw, sw)
         pareto   = compute_pareto(outcomes)
         pareto_img = make_pareto_plot(outcomes, pareto, title='Pre-Negotiation: KODIS Solution Space')
@@ -709,6 +848,7 @@ def api_step():
 
     risk  = estimate_risk(turns_so_far)
     adv   = get_advisor(turns_so_far, cur)
+    cur['advisor'] = adv
     emo_img = make_emotion_plot(turns_so_far, dim)
     buyer_c = predict_country_with_model(turns_so_far, 'Buyer')
     seller_c = predict_country_with_model(turns_so_far, 'Seller')
