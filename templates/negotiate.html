@@ -115,7 +115,7 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
 
 .map-title{font-family:var(--mono);font-size:0.62rem;letter-spacing:0.8px;text-transform:uppercase;color:var(--muted);padding:2px 4px;}
 .map-scale-note{font-family:var(--mono);font-size:0.56rem;color:#8da2bf;padding:0 4px 3px 4px;}
-#active-map{width:100%;height:100%;min-height:360px;}
+#active-map{width:100%;height:100%;min-height:380px;}
 
 /* Risk */
 .risk-card{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:10px 12px;margin-bottom:10px;}
@@ -275,6 +275,21 @@ const COUNTRY_CODE_MAP = {
 };
 let S = { turns:[], currentIdx:-1, dim:'joy', mapRole:'buyer', currentMapDist:{}, country:null, lastCountry:null, bw:{}, sw:{}, activeMap:null, opSummaries:[] };
 
+function scrollDialogueToBottom(){
+  const dialogueEl = document.getElementById('dialogue');
+  if (!dialogueEl) return;
+  dialogueEl.scrollTop = dialogueEl.scrollHeight;
+  requestAnimationFrame(()=>{ dialogueEl.scrollTop = dialogueEl.scrollHeight; });
+  setTimeout(()=>{ dialogueEl.scrollTop = dialogueEl.scrollHeight; }, 60);
+}
+
+function scrollDialogueToBottomSmooth(){
+  const dialogueEl = document.getElementById('dialogue');
+  if (!dialogueEl) return;
+  dialogueEl.scrollTo({ top: dialogueEl.scrollHeight, behavior: 'smooth' });
+  setTimeout(scrollDialogueToBottom, 180);
+}
+
 function init() {
   const raw = sessionStorage.getItem('nd');
   if (!raw) { location.href='/'; return; }
@@ -398,7 +413,10 @@ function syncBubbleEmotions(idx){
   const turn = S.turns[idx] || {};
   const chips = renderEmotionChips(turn.emotions || {});
   const bubble = document.querySelector(`#bubble-${idx} .bubble-emos`);
-  if (bubble) bubble.innerHTML = chips;
+  if (bubble) {
+    bubble.innerHTML = chips;
+    if (idx === S.currentIdx) scrollDialogueToBottom();
+  }
 }
 
 function addBubble(t, idx) {
@@ -419,7 +437,7 @@ function addBubble(t, idx) {
   document.querySelectorAll('.bubble.current').forEach(b=>b.classList.remove('current'));
   const dialogueEl = document.getElementById('dialogue');
   dialogueEl.appendChild(wrap);
-  dialogueEl.scrollTo({ top: dialogueEl.scrollHeight, behavior: 'smooth' });
+  scrollDialogueToBottomSmooth();
 }
 
 function updateEmoChart() {
@@ -531,7 +549,6 @@ function renderRoleMap(selector, role, dist, topCode, topProb){
   Object.entries(dist || {}).forEach(([code, val])=>{
     const score = Math.max(0, Math.min(1, Number(val) || 0));
     values[String(code || '').toUpperCase()] = score;
-    values[String(code || '').toLowerCase()] = score;
   });
 
   S.activeMap = new jsVectorMap({
@@ -558,13 +575,13 @@ function renderRoleMap(selector, role, dist, topCode, topProb){
     },
     markers:[],
     onRegionTooltipShow(event, tooltip, code){
-      const pct = Math.round((values[code] || 0) * 100);
+      const pct = Math.round((values[String(code || '').toUpperCase()] || 0) * 100);
       tooltip.text(`${tooltip.text()} · ${pct}%`);
       tooltip.css({backgroundColor:'rgba(75,96,122,0.95)', color:'#fff'});
     },
     onLoaded(map){
       try {
-        map.setFocus({scale:0.62, lat:12, lng:0, animate:false});
+        map.setFocus({scale:1, lat:10, lng:0, animate:false});
       } catch (_) {}
     }
   });
@@ -601,11 +618,12 @@ function renderCountry(countrySnap){
   const topProb = sortedDist[0]?.[1] || 0;
   document.getElementById('map-title').textContent = role === 'buyer' ? 'Buyer map' : 'Seller map';
   document.getElementById('map-scale-note').textContent = role === 'buyer' ? 'Blue = higher confidence' : 'Red = higher confidence';
-  renderRoleMap('#active-map', role, dist, topCode, topProb);
+  const normalizedDist = normalizeDist(dist);
+  renderRoleMap('#active-map', role, normalizedDist, topCode, topProb);
   if (S.activeMap && topCode) {
     try {
       const up = String(topCode).toUpperCase();
-      S.activeMap.update({series:{regions:[{values:{[up]: Math.max(0.6, Number(topProb) || 0.6)}}]}});
+      S.activeMap.update({series:{regions:[{values:{[up]: Math.max(0.6, Number(normalizedDist[up] ?? normalizedDist[topCode] ?? topProb) || 0.6)}}]}});
       S.activeMap.setSelectedRegions([up]);
     } catch (_) {}
   }
