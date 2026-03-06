@@ -14,21 +14,24 @@ nav{display:flex;align-items:center;padding:11px 24px;border-bottom:1px solid va
 .steps{display:flex;margin-left:auto}.step{padding:4px 14px;font-size:.6rem;font-family:var(--mono);color:var(--muted);border:1px solid var(--border);border-right:none;background:var(--surface)}
 .step:first-child{border-radius:5px 0 0 5px}.step:last-child{border-right:1px solid var(--border);border-radius:0 5px 5px 0}.step.active{color:var(--teal);border-color:var(--teal)}.step.done{color:var(--accent)}
 .btn-nav{padding:6px 18px;border-radius:6px;font-size:.78rem;font-weight:600;border:1px solid var(--teal);background:var(--teal);color:#07090f;cursor:pointer}
-.body{flex:1;display:grid;grid-template-columns:320px 1fr;overflow:hidden}
-.left-panel{border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
-.right-panel{display:flex;flex-direction:column;overflow:hidden}
-.panel-head{padding:10px 16px;border-bottom:1px solid var(--border);font-size:.58rem;font-family:var(--mono);letter-spacing:1.2px;text-transform:uppercase;color:var(--muted)}
-.panel-body,.right-body{overflow:auto;padding:14px}
+
+.body{flex:1;display:grid;grid-template-columns:1fr 1.65fr 1fr;gap:10px;padding:10px;overflow:hidden}
+.col{background:var(--card);border:1px solid var(--border);border-radius:11px;display:flex;flex-direction:column;overflow:hidden;min-height:0}
+.col-head{padding:10px 12px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:.58rem;letter-spacing:1px;color:var(--muted);text-transform:uppercase}
+.col-body{padding:12px;overflow:auto;min-height:0}
+
 .pref-table,.just-table{width:100%;border-collapse:collapse;font-size:.72rem}
 .pref-table th,.pref-table td,.just-table th,.just-table td{padding:8px 6px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
 .pref-table th,.just-table th{font-family:var(--mono);font-size:.58rem;color:var(--muted);text-transform:uppercase}
 .pref-table td:nth-child(2){color:#bfdbfe;font-family:var(--mono)}
 .pref-table td:nth-child(3){color:#fecaca;font-family:var(--mono)}
-.page-title{font-family:var(--serif);font-size:1.9rem;margin:2px 0 4px}.page-sub{font-size:.8rem;color:var(--text2)}
-.card{background:var(--card);border:1px solid var(--border);border-radius:11px;overflow:hidden;margin-top:14px}
-.card-head{padding:9px 14px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:.58rem;color:var(--muted);display:flex;justify-content:space-between}
-#chartWrap{position:relative}#pareto-chart{display:none;width:100%;height:420px;background:#0a1520}
-.chart-tip{position:absolute;pointer-events:none;background:#0b1220;border:1px solid #24364f;border-radius:6px;padding:6px 8px;font-size:11px;color:#dbeafe;max-width:300px;display:none;z-index:10}
+
+.page-title{font-family:var(--serif);font-size:1.55rem;margin:2px 0 4px}
+.page-sub{font-size:.8rem;color:var(--text2);margin-bottom:8px}
+#chartWrap{position:relative}
+#pareto-chart{display:none;width:100%;height:460px;background:#0a1520;border:1px solid var(--border);border-radius:8px}
+#pareto-ph{padding:40px;text-align:center;color:var(--muted);font-size:.78rem}
+.chart-tip{position:absolute;pointer-events:none;background:#0b1220;border:1px solid #24364f;border-radius:6px;padding:6px 8px;font-size:11px;color:#dbeafe;max-width:320px;display:none;z-index:10}
 </style>
 </head>
 <body>
@@ -38,36 +41,34 @@ nav{display:flex;align-items:center;padding:11px 24px;border-bottom:1px solid va
   <button class="btn-nav" onclick="location.href='/negotiate'">Begin Negotiation →</button>
 </nav>
 <div class="body">
-  <div class="left-panel">
-    <div class="panel-head">KODIS Preferences (Locked)</div>
-    <div class="panel-body">
+  <section class="col">
+    <div class="col-head">Preferences (Locked)</div>
+    <div class="col-body">
       <p style="font-size:.72rem;color:var(--text2);margin-bottom:10px">Submitted KODIS preferences are shown once for reference.</p>
       <table class="pref-table" id="pref-table"></table>
       <p style="font-size:.65rem;color:var(--muted);margin-top:8px;font-family:var(--mono)">These values are fixed from the uploaded session.</p>
     </div>
-  </div>
-  <div class="right-panel">
-    <div class="panel-head">Solution Space Analysis</div>
-    <div class="right-body">
+  </section>
+
+  <section class="col">
+    <div class="col-head">Solution Space</div>
+    <div class="col-body">
       <div class="page-title">KODIS Solution Space</div>
       <div class="page-sub" id="fname-sub">—</div>
-
-      <div class="card">
-        <div class="card-head">Pareto Frontier & Integrative Potential <span style="color:var(--teal)">Shaded = value-creating zone</span></div>
-        <div id="pareto-ph" style="padding:60px;text-align:center;color:var(--muted);font-size:.78rem">Loading…</div>
-        <div id="chartWrap">
-          <div id="pareto-chart"></div>
-          <div id="chart-tip" class="chart-tip"></div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-head">Pre-Dispute Justifications</div>
-        <div style="padding:10px 12px"><table class="just-table" id="just-table"></table></div>
+      <div id="pareto-ph">Loading…</div>
+      <div id="chartWrap">
+        <div id="pareto-chart"></div>
+        <div id="chart-tip" class="chart-tip"></div>
       </div>
     </div>
-  </div>
-  </div>
+  </section>
+
+  <section class="col">
+    <div class="col-head">Justifications</div>
+    <div class="col-body">
+      <table class="just-table" id="just-table"></table>
+    </div>
+  </section>
 </div>
 <script>
 const ISSUES = [
@@ -101,13 +102,14 @@ function renderSolutionSpace(outcomes, pareto){
   const ph=document.getElementById('pareto-ph');
   const tip=document.getElementById('chart-tip');
   if(!host||!outcomes?.length)return;
-  const w=host.clientWidth||760,h=host.clientHeight||420,m={l:54,r:20,t:22,b:40};
+  const w=host.clientWidth||860,h=host.clientHeight||460,m={l:54,r:20,t:22,b:40};
   const x=v=>m.l+(v/100)*(w-m.l-m.r), y=v=>h-m.b-(v/100)*(h-m.t-m.b);
 
   const dots=outcomes.map((o,i)=>{
     const deal=`Refund ${o.refund_label}; Buyer review removed ${o.buyer_review?'Yes':'No'}; Seller review removed ${o.seller_review?'Yes':'No'}; Seller apology ${o.seller_apology?'Yes':'No'}; Buyer apology ${o.buyer_apology?'Yes':'No'}`;
     return `<circle data-i="${i}" data-deal="${deal.replace(/"/g,'&quot;')}" data-bu="${o.buyer_util}" data-su="${o.seller_util}" cx="${x(o.buyer_util)}" cy="${y(o.seller_util)}" r="3" fill="#28466a" opacity="0.58"/>`;
   }).join('');
+
   const px=[...pareto].sort((a,b)=>a.buyer_util-b.buyer_util);
   const path=px.map((p,i)=>`${i?'L':'M'} ${x(p.buyer_util).toFixed(1)} ${y(p.seller_util).toFixed(1)}`).join(' ');
   const paretoPts=px.map(p=>`<circle cx="${x(p.buyer_util)}" cy="${y(p.seller_util)}" r="4" fill="#22d3a5"/>`).join('');
@@ -143,9 +145,14 @@ function renderSolutionSpace(outcomes, pareto){
 (function init(){
   const raw=sessionStorage.getItem('nd');
   if(!raw){ location.href='/'; return; }
-  D=JSON.parse(raw); BW={...D.buyer_weights}; SW={...D.seller_weights}; JUST=D.pre_justifications||{};
+  D=JSON.parse(raw);
+  BW={...D.buyer_weights};
+  SW={...D.seller_weights};
+  JUST=D.pre_justifications||{};
   document.getElementById('fname-sub').textContent=`File: ${D.filename}  |  ${D.turns.length} turns`;
-  buildPrefTable(); buildJustTable(); renderSolutionSpace(D.outcomes, D.pareto);
+  buildPrefTable();
+  buildJustTable();
+  renderSolutionSpace(D.outcomes, D.pareto);
 })();
 </script>
 </body>
