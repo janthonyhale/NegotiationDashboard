@@ -109,7 +109,10 @@ def parse_file(path, ext):
                 line = line.strip()
                 if not line: continue
                 obj = json.loads(line)
-                turns.append({'idx':i,'speaker':obj.get('speaker','Unknown'),'text':obj.get('text',''),'ts':None,'meta':{}})
+                if not obj.get('speaker') and not obj.get('text'):
+                    # Allow metadata/header rows in JSONL without treating them as dialogue turns.
+                    continue
+                turns.append({'idx':len(turns),'speaker':obj.get('speaker','Unknown'),'text':obj.get('text',''),'ts':None,'meta':{}})
     elif ext == 'json':
         with open(path) as f: data = json.load(f)
         items = data if isinstance(data,list) else data.get('turns', data.get('messages',[data]))
@@ -235,6 +238,52 @@ def extract_pre_dispute_justifications(path, ext):
     except Exception:
         pass
     return defaults
+
+
+def _normalize_weight_payload(raw, defaults):
+    out = dict(defaults)
+    if not isinstance(raw, dict):
+        return out
+    aliases = {
+        'refund': 'refund',
+        'buyer_review': 'buyer_review',
+        'seller_review': 'seller_review',
+        'seller_apology': 'seller_apology',
+        'receive_apology': 'seller_apology',
+        'buyer_apology': 'buyer_apology',
+    }
+    for k, v in raw.items():
+        key = aliases.get(str(k).strip(), str(k).strip())
+        if key not in out:
+            continue
+        try:
+            out[key] = max(0, min(100, int(float(v))))
+        except Exception:
+            continue
+    return out
+
+
+def extract_preference_weights(path, ext):
+    bw = dict(DEFAULT_BUYER_WEIGHTS)
+    sw = dict(DEFAULT_SELLER_WEIGHTS)
+    try:
+        if ext == 'json':
+            with open(path) as f:
+                data = json.load(f)
+        elif ext == 'jsonl':
+            with open(path) as f:
+                first = f.readline().strip()
+            data = json.loads(first) if first else {}
+        else:
+            data = {}
+        if isinstance(data, dict):
+            raw_b = data.get('buyer_weights', data.get('buyer_preferences'))
+            raw_s = data.get('seller_weights', data.get('seller_preferences'))
+            bw = _normalize_weight_payload(raw_b, DEFAULT_BUYER_WEIGHTS)
+            sw = _normalize_weight_payload(raw_s, DEFAULT_SELLER_WEIGHTS)
+    except Exception:
+        pass
+    return bw, sw
 
 def llm_emotion_scores(text):
     """Use GPT-4o emotion classification when OPENAI_API_KEY is available.
@@ -665,9 +714,8 @@ def api_upload():
         if not turns: return jsonify({'error':'No turns found in file'}),400
         turns = enrich(turns)
         pre_justifications = extract_pre_dispute_justifications(path, ext)
-        # Default KODIS weights
-        bw = DEFAULT_BUYER_WEIGHTS
-        sw = DEFAULT_SELLER_WEIGHTS
+        # Load preferences from uploaded metadata when present; fallback to defaults.
+        bw, sw = extract_preference_weights(path, ext)
         outcomes = generate_all_outcomes(bw, sw)
         pareto   = compute_pareto(outcomes)
         pareto_img = make_pareto_plot(outcomes, pareto, title='Pre-Negotiation: KODIS Solution Space')
