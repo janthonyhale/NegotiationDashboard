@@ -115,7 +115,7 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
 
 .map-title{font-family:var(--mono);font-size:0.62rem;letter-spacing:0.8px;text-transform:uppercase;color:var(--muted);padding:2px 4px;}
 .map-scale-note{font-family:var(--mono);font-size:0.56rem;color:#8da2bf;padding:0 4px 3px 4px;}
-#active-map{width:100%;height:100%;min-height:260px;}
+#active-map{width:100%;height:100%;min-height:300px;}
 .country-row{display:flex;gap:6px;padding:6px 8px;}
 .ctry{flex:1;background:var(--surface);border-radius:6px;padding:7px 8px;}
 .ctry.buyer{border-left:2px solid var(--accent);}
@@ -477,6 +477,50 @@ function normalizeDist(dist){
   return out;
 }
 
+
+function renderRoleMap(selector, role, dist, topCode, topProb){
+  const palette = role === 'buyer'
+    ? ['#20334a','#1f4f7d','#2f6fb4','#4f91ff']
+    : ['#3c1f2f','#6a2742','#a4355a','#f43f5e'];
+  if (S.activeMap) S.activeMap.destroy();
+
+  const values = {};
+  Object.entries(dist || {}).forEach(([code, val])=>{ values[code] = Number(val) || 0; });
+
+  S.activeMap = new jsVectorMap({
+    selector,
+    map:'world',
+    zoomButtons:false,
+    zoomOnScroll:false,
+    regionStyle:{
+      initial:{fill:'#334155', stroke:'#253a55', strokeWidth:0.6},
+      hover:{fillOpacity:1, strokeWidth:0.8, cursor:'pointer'}
+    },
+    backgroundColor:'#0a1520',
+    selectedRegions: topCode ? [topCode] : [],
+    selectedRegionsStyle:{fill: palette[3]},
+    series:{
+      regions:[{
+        values,
+        scale: palette,
+        normalizeFunction:'linear',
+        attribute:'fill'
+      }]
+    },
+    markers:[],
+    onRegionTooltipShow(event, tooltip, code){
+      const pct = Math.round((values[code] || 0) * 100);
+      tooltip.text(`${tooltip.text()} · ${pct}%`);
+      tooltip.css({backgroundColor:'rgba(75,96,122,0.95)', color:'#fff'});
+    },
+    onLoaded(map){
+      try {
+        map.setFocus({scale:0.86, animate:false});
+      } catch (_) {}
+    }
+  });
+}
+
 function renderCountry(countrySnap){
   if (S.currentIdx < 0 || !countrySnap){
     document.getElementById('ctry-buyer').textContent = '—';
@@ -485,12 +529,7 @@ function renderCountry(countrySnap){
     document.getElementById('ctry-seller-conf').textContent = '—';
     document.getElementById('map-title').textContent = S.mapRole === 'buyer' ? 'Buyer map' : 'Seller map';
     document.getElementById('map-scale-note').textContent = 'Turn 0 · awaiting first exchange';
-    if (S.activeMap) S.activeMap.destroy();
-    S.activeMap = new jsVectorMap({
-      selector:'#active-map', map:'world', zoomButtons:false, backgroundColor:'#0a1520', markers:[],
-      regionStyle:{initial:{fill:'#3b4559', stroke:'#253a55', strokeWidth:0.6},hover:{fill:'#3b4559',fillOpacity:1,strokeWidth:0.8,cursor:'pointer'}},
-      onRegionTooltipShow(event, tooltip){ tooltip.text(`${tooltip.text()} · 0%`); tooltip.css({backgroundColor:'rgba(75,96,122,0.95)', color:'#fff'});}
-    });
+    renderRoleMap('#active-map', S.mapRole, {}, null, 0);
     updateEmoChart();
     return;
   }
