@@ -5,214 +5,147 @@
 <title>NegotiationLens — Pre-Analysis</title>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#07090f;--surface:#0c1018;--card:#0e1521;--border:#1a2333;--teal:#22d3a5;--accent:#4f91ff;--red:#f43f5e;--amber:#f59e0b;--muted:#4b607a;--text:#e2e8f0;--text2:#94a3b8;--serif:'Instrument Serif',serif;--sans:'Instrument Sans',sans-serif;--mono:'JetBrains Mono',monospace;}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--sans);}
-body{display:flex;flex-direction:column;}
-nav{display:flex;align-items:center;padding:11px 24px;border-bottom:1px solid var(--border);flex-shrink:0;gap:12px;}
-.logo{font-family:var(--serif);font-size:1.15rem;letter-spacing:-0.5px;}.logo span{color:var(--teal);}
-.steps{display:flex;margin-left:auto;}
-.step{padding:4px 14px;font-size:0.6rem;font-family:var(--mono);color:var(--muted);border:1px solid var(--border);border-right:none;background:var(--surface);}
-.step:first-child{border-radius:5px 0 0 5px;}.step:last-child{border-right:1px solid var(--border);border-radius:0 5px 5px 0;}
-.step.active{color:var(--teal);border-color:var(--teal);background:rgba(34,211,165,0.06);}
-.step.done{color:var(--accent);border-color:rgba(79,145,255,0.25);}
-.btn-nav{padding:6px 18px;border-radius:6px;font-size:0.78rem;font-weight:600;cursor:pointer;border:1px solid var(--teal);background:var(--teal);color:#07090f;margin-left:12px;font-family:var(--sans);}
-.btn-nav:hover{opacity:0.85;}
-/* Layout */
-.body{flex:1;overflow-y:auto;display:grid;grid-template-columns:300px 1fr;gap:0;overflow:hidden;}
-.left-panel{border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
-.right-panel{display:flex;flex-direction:column;overflow:hidden;}
-.panel-head{padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;font-size:0.58rem;font-family:var(--mono);letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:8px;}
-.dot{width:5px;height:5px;border-radius:50%;}
-.panel-body{flex:1;overflow-y:auto;padding:14px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
-/* Weights */
-.weights-section{margin-bottom:18px;}
-.ws-title{font-size:0.65rem;font-family:var(--mono);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;padding-bottom:5px;border-bottom:1px solid var(--border);}
-.ws-title.buyer{color:var(--accent);}.ws-title.seller{color:var(--red);}
-.issue-row{margin-bottom:10px;}
-.issue-label{display:flex;justify-content:space-between;align-items:center;font-size:0.72rem;color:var(--text2);margin-bottom:4px;}
-.issue-val{font-family:var(--mono);font-size:0.65rem;color:var(--teal);}
-input[type=range]{width:100%;height:4px;border-radius:2px;background:var(--border);outline:none;cursor:pointer;accent-color:var(--teal);}
-.update-btn{width:100%;padding:7px;border-radius:6px;font-family:var(--sans);font-size:0.75rem;font-weight:600;cursor:pointer;border:1px solid var(--teal);background:rgba(34,211,165,0.08);color:var(--teal);margin-top:6px;transition:all 0.15s;}
-.update-btn:hover{background:var(--teal);color:#07090f;}
-/* Right: pareto + info */
-.right-body{flex:1;overflow-y:auto;padding:16px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
-.page-header{margin-bottom:20px;}
-.eyebrow{font-family:var(--mono);font-size:0.58rem;letter-spacing:2.5px;color:var(--teal);text-transform:uppercase;margin-bottom:6px;}
-.page-title{font-family:var(--serif);font-size:1.9rem;letter-spacing:-0.5px;margin-bottom:4px;}
-.page-sub{font-size:0.8rem;color:var(--text2);}
-.card{background:var(--card);border:1px solid var(--border);border-radius:11px;overflow:hidden;margin-bottom:16px;}
-.card-head{padding:9px 14px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:0.58rem;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:center;}
-.card img{width:100%;display:block;}
-/* Stats row */
-.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
-.stat{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:11px 13px;}
-.stat-label{font-family:var(--mono);font-size:0.55rem;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
-.stat-val{font-family:var(--serif);font-size:1.6rem;line-height:1;}
-.stat-val.teal{color:var(--teal);}.stat-val.blue{color:var(--accent);}.stat-val.amber{color:var(--amber);}
-/* Spinner */
-.spin{width:14px;height:14px;border-radius:50%;border:2px solid var(--border);border-top-color:var(--teal);animation:spin 0.7s linear infinite;display:none;}
-@keyframes spin{to{transform:rotate(360deg);}}
+:root{--bg:#07090f;--surface:#0c1018;--card:#0e1521;--border:#1a2333;--teal:#22d3a5;--accent:#4f91ff;--red:#f43f5e;--muted:#4b607a;--text:#e2e8f0;--text2:#94a3b8;--mono:'JetBrains Mono',monospace;--sans:'Instrument Sans',sans-serif;--serif:'Instrument Serif',serif;}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--sans)}
+body{display:flex;flex-direction:column}
+nav{display:flex;align-items:center;padding:11px 24px;border-bottom:1px solid var(--border);gap:12px}
+.logo{font-family:var(--serif);font-size:1.15rem}.logo span{color:var(--teal)}
+.steps{display:flex;margin-left:auto}.step{padding:4px 14px;font-size:.6rem;font-family:var(--mono);color:var(--muted);border:1px solid var(--border);border-right:none;background:var(--surface)}
+.step:first-child{border-radius:5px 0 0 5px}.step:last-child{border-right:1px solid var(--border);border-radius:0 5px 5px 0}.step.active{color:var(--teal);border-color:var(--teal)}.step.done{color:var(--accent)}
+.btn-nav{padding:6px 18px;border-radius:6px;font-size:.78rem;font-weight:600;border:1px solid var(--teal);background:var(--teal);color:#07090f;cursor:pointer}
+.body{flex:1;display:grid;grid-template-columns:320px 1fr;overflow:hidden}
+.left-panel{border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.right-panel{display:flex;flex-direction:column;overflow:hidden}
+.panel-head{padding:10px 16px;border-bottom:1px solid var(--border);font-size:.58rem;font-family:var(--mono);letter-spacing:1.2px;text-transform:uppercase;color:var(--muted)}
+.panel-body,.right-body{overflow:auto;padding:14px}
+.pref-table,.just-table{width:100%;border-collapse:collapse;font-size:.72rem}
+.pref-table th,.pref-table td,.just-table th,.just-table td{padding:8px 6px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+.pref-table th,.just-table th{font-family:var(--mono);font-size:.58rem;color:var(--muted);text-transform:uppercase}
+.pref-table td:nth-child(2){color:#bfdbfe;font-family:var(--mono)}
+.pref-table td:nth-child(3){color:#fecaca;font-family:var(--mono)}
+.page-title{font-family:var(--serif);font-size:1.9rem;margin:2px 0 4px}.page-sub{font-size:.8rem;color:var(--text2)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:11px;overflow:hidden;margin-top:14px}
+.card-head{padding:9px 14px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:.58rem;color:var(--muted);display:flex;justify-content:space-between}
+#chartWrap{position:relative}#pareto-chart{display:none;width:100%;height:420px;background:#0a1520}
+.chart-tip{position:absolute;pointer-events:none;background:#0b1220;border:1px solid #24364f;border-radius:6px;padding:6px 8px;font-size:11px;color:#dbeafe;max-width:300px;display:none;z-index:10}
 </style>
 </head>
 <body>
 <nav>
   <div class="logo">Negotiation<span>Lens</span></div>
-  <div class="steps">
-    <div class="step done">01 Upload</div><div class="step active">02 Pre-Analysis</div>
-    <div class="step">03 Negotiate</div><div class="step">04 Summary</div>
-  </div>
+  <div class="steps"><div class="step done">01 Upload</div><div class="step active">02 Pre-Analysis</div><div class="step">03 Negotiate</div><div class="step">04 Summary</div></div>
   <button class="btn-nav" onclick="location.href='/negotiate'">Begin Negotiation →</button>
 </nav>
-
 <div class="body">
-  <!-- Left: weight sliders -->
   <div class="left-panel">
-    <div class="panel-head"><div class="dot" style="background:var(--teal)"></div>KODIS Preference Weights</div>
+    <div class="panel-head">KODIS Preferences (Locked)</div>
     <div class="panel-body">
-      <p style="font-size:0.72rem;color:var(--text2);line-height:1.55;margin-bottom:14px">Submitted KODIS preferences are locked for traceability. Review-only values are shown below.</p>
-      <div class="weights-section">
-        <div class="ws-title buyer">Buyer Weights</div>
-        <div id="buyer-sliders"></div>
-      </div>
-      <div class="weights-section">
-        <div class="ws-title seller">Seller Weights</div>
-        <div id="seller-sliders"></div>
-      </div>
-      <button class="update-btn" disabled style="opacity:0.55;cursor:not-allowed">🔒 Preferences Locked</button>
-      <div style="font-size:0.65rem;color:var(--muted);margin-top:7px;font-family:var(--mono)">Weights are fixed from the uploaded session and cannot be edited here.</div>
-      <div style="display:flex;justify-content:center;margin-top:10px"><div class="spin" id="wspin"></div></div>
+      <p style="font-size:.72rem;color:var(--text2);margin-bottom:10px">Submitted KODIS preferences are shown once for reference.</p>
+      <table class="pref-table" id="pref-table"></table>
+      <p style="font-size:.65rem;color:var(--muted);margin-top:8px;font-family:var(--mono)">These values are fixed from the uploaded session.</p>
     </div>
   </div>
-
-  <!-- Right: visualizations -->
   <div class="right-panel">
-    <div class="panel-head"><div class="dot" style="background:var(--accent)"></div>Solution Space Analysis &nbsp;<div class="spin" id="rspin"></div></div>
+    <div class="panel-head">Solution Space Analysis</div>
     <div class="right-body">
-      <div class="page-header">
-        <div class="eyebrow">Step 02 — Pre-Negotiation</div>
-        <div class="page-title">KODIS Solution Space</div>
-        <div class="page-sub" id="fname-sub">—</div>
-      </div>
+      <div class="page-title">KODIS Solution Space</div>
+      <div class="page-sub" id="fname-sub">—</div>
 
-      <div class="stats-row">
-        <div class="stat"><div class="stat-label">Total Turns</div><div class="stat-val blue" id="st-turns">—</div></div>
-        <div class="stat"><div class="stat-label">Pareto Solutions</div><div class="stat-val teal" id="st-pareto">—</div></div>
-        <div class="stat"><div class="stat-label">Total Outcomes</div><div class="stat-val amber" id="st-outcomes">—</div></div>
+      <div class="card">
+        <div class="card-head">Pareto Frontier & Integrative Potential <span style="color:var(--teal)">Shaded = value-creating zone</span></div>
+        <div id="pareto-ph" style="padding:60px;text-align:center;color:var(--muted);font-size:.78rem">Loading…</div>
+        <div id="chartWrap">
+          <div id="pareto-chart"></div>
+          <div id="chart-tip" class="chart-tip"></div>
+        </div>
       </div>
 
       <div class="card">
-        <div class="card-head">Pareto Frontier — KODIS Solution Space<span style="color:var(--teal)">Efficient outcomes highlighted</span></div>
-        <div id="pareto-ph" style="padding:60px;text-align:center;color:var(--muted);font-size:0.78rem">Loading…</div>
-        <div id="pareto-chart" style="display:none;width:100%;height:420px;background:#0a1520"></div>
-      </div>
-
-      <div class="card">
-        <div class="card-head">Issue Summary</div>
-        <div style="padding:12px 14px" id="issues-table">—</div>
+        <div class="card-head">Pre-Dispute Justifications</div>
+        <div style="padding:10px 12px"><table class="just-table" id="just-table"></table></div>
       </div>
     </div>
   </div>
 </div>
-
 <script>
 const ISSUES = [
-  {key:'refund',        label:'Refund',               desc:'Full/Half/None'},
-  {key:'buyer_review',  label:'Buyer Review Removed',  desc:'Remove buyer\'s review'},
-  {key:'seller_review', label:'Seller Review Removed', desc:'Remove seller\'s review'},
-  {key:'seller_apology',label:'Seller Apologizes',     desc:'Seller offers apology'},
-  {key:'buyer_apology', label:'Buyer Apologizes',      desc:'Buyer offers apology'},
+  {key:'refund', label:'Refund'},
+  {key:'buyer_review', label:'Keep Buyer Review'},
+  {key:'seller_review', label:'Remove Seller Review'},
+  {key:'receive_apology', label:'Receive apology'},
 ];
+let D=null, BW={}, SW={}, JUST={};
 
-let D = null;
-let BW = {}, SW = {};
-let pendingUpdate = null;
-
-function init() {
-  const raw = sessionStorage.getItem('nd');
-  if (!raw) { location.href='/'; return; }
-  D = JSON.parse(raw);
-  BW = {...D.buyer_weights};
-  SW = {...D.seller_weights};
-  document.getElementById('fname-sub').textContent = `File: ${D.filename}  |  ${D.turns.length} turns`;
-  document.getElementById('st-turns').textContent   = D.turns.length;
-  document.getElementById('st-pareto').textContent  = D.pareto.length;
-  document.getElementById('st-outcomes').textContent= D.outcomes.length;
-  buildSliders('buyer-sliders', BW, 'buyer');
-  buildSliders('seller-sliders', SW, 'seller');
-  renderSolutionSpace(D.outcomes, D.pareto);
-  buildIssuesTable();
+function prefValue(side, key){
+  if (key === 'receive_apology') return side==='buyer' ? (BW['seller_apology'] ?? 0) : (SW['buyer_apology'] ?? 0);
+  return side==='buyer' ? (BW[key] ?? 0) : (SW[key] ?? 0);
 }
 
-function buildSliders(containerId, weights, role) {
-  const el = document.getElementById(containerId);
-  el.innerHTML = ISSUES.map(iss => `
-    <div class="issue-row">
-      <div class="issue-label">
-        <span>${iss.label}</span>
-        <span class="issue-val" id="${role}-val-${iss.key}">${weights[iss.key] ?? 0}</span>
-      </div>
-      <input type="range" min="0" max="100" value="${weights[iss.key] ?? 0}"
-             disabled>
-    </div>`).join('');
+function buildPrefTable(){
+  const el=document.getElementById('pref-table');
+  el.innerHTML = `<tr><th>Issue</th><th>Buyer</th><th>Seller</th></tr>` + ISSUES.map(iss=>`<tr><td>${iss.label}</td><td>${prefValue('buyer',iss.key)}</td><td>${prefValue('seller',iss.key)}</td></tr>`).join('');
 }
 
-function updateVal(){}
-function scheduleUpdateWeights(){}
-async function updateWeights(){}
+function buildJustTable(){
+  const el=document.getElementById('just-table');
+  el.innerHTML = `<tr><th>Issue</th><th>Buyer justification</th><th>Seller justification</th></tr>` + ISSUES.map(iss=>{
+    const j = JUST[iss.key] || {};
+    return `<tr><td>${iss.label}</td><td>${j.buyer || '—'}</td><td>${j.seller || '—'}</td></tr>`;
+  }).join('');
+}
 
-function renderSolutionSpace(outcomes, pareto) {
-  const host = document.getElementById('pareto-chart');
-  const ph = document.getElementById('pareto-ph');
-  if (!host || !outcomes || !outcomes.length) return;
-  const w = host.clientWidth || 760;
-  const h = host.clientHeight || 420;
-  const m = {l:54,r:20,t:22,b:40};
-  const x = v => m.l + (v/100) * (w-m.l-m.r);
-  const y = v => h-m.b - (v/100) * (h-m.t-m.b);
+function renderSolutionSpace(outcomes, pareto){
+  const host=document.getElementById('pareto-chart');
+  const ph=document.getElementById('pareto-ph');
+  const tip=document.getElementById('chart-tip');
+  if(!host||!outcomes?.length)return;
+  const w=host.clientWidth||760,h=host.clientHeight||420,m={l:54,r:20,t:22,b:40};
+  const x=v=>m.l+(v/100)*(w-m.l-m.r), y=v=>h-m.b-(v/100)*(h-m.t-m.b);
 
-  const dots = outcomes.map(o => `<circle cx="${x(o.buyer_util)}" cy="${y(o.seller_util)}" r="3" fill="#28466a" opacity="0.68"/>`).join('');
-  const px = [...pareto].sort((a,b)=>a.buyer_util-b.buyer_util);
-  const path = px.map((p,i)=> `${i?'L':'M'} ${x(p.buyer_util).toFixed(1)} ${y(p.seller_util).toFixed(1)}`).join(' ');
-  const paretoPts = px.map(p => `<circle cx="${x(p.buyer_util)}" cy="${y(p.seller_util)}" r="4" fill="#22d3a5"/>`).join('');
-
-  let grid='';
-  for(let i=0;i<=5;i++){
-    const xv = i*20; const yv = i*20;
-    grid += `<line x1="${x(xv)}" y1="${m.t}" x2="${x(xv)}" y2="${h-m.b}" stroke="rgba(79,96,122,0.25)"/>`;
-    grid += `<line x1="${m.l}" y1="${y(yv)}" x2="${w-m.r}" y2="${y(yv)}" stroke="rgba(79,96,122,0.25)"/>`;
-    grid += `<text x="${x(xv)-8}" y="${h-14}" fill="#8ea5c1" font-size="11" font-family="var(--mono)">${xv}</text>`;
-    grid += `<text x="16" y="${y(yv)+4}" fill="#8ea5c1" font-size="11" font-family="var(--mono)">${yv}</text>`;
+  const dots=outcomes.map((o,i)=>{
+    const deal=`Refund ${o.refund_label}; Buyer review removed ${o.buyer_review?'Yes':'No'}; Seller review removed ${o.seller_review?'Yes':'No'}; Seller apology ${o.seller_apology?'Yes':'No'}; Buyer apology ${o.buyer_apology?'Yes':'No'}`;
+    return `<circle data-i="${i}" data-deal="${deal.replace(/"/g,'&quot;')}" data-bu="${o.buyer_util}" data-su="${o.seller_util}" cx="${x(o.buyer_util)}" cy="${y(o.seller_util)}" r="3" fill="#28466a" opacity="0.58"/>`;
+  }).join('');
+  const px=[...pareto].sort((a,b)=>a.buyer_util-b.buyer_util);
+  const path=px.map((p,i)=>`${i?'L':'M'} ${x(p.buyer_util).toFixed(1)} ${y(p.seller_util).toFixed(1)}`).join(' ');
+  const paretoPts=px.map(p=>`<circle cx="${x(p.buyer_util)}" cy="${y(p.seller_util)}" r="4" fill="#22d3a5"/>`).join('');
+  const reservationPath=`M ${x(0)} ${y(100)} L ${x(100)} ${y(0)}`;
+  const fs=px.filter(p=>(p.buyer_util+p.seller_util)>=100);
+  let shade='';
+  if(fs.length>=2){
+    const first=fs[0], last=fs[fs.length-1];
+    const poly=[...fs.map(p=>`${x(p.buyer_util)},${y(p.seller_util)}`),`${x(last.buyer_util)},${y(Math.max(0,100-last.buyer_util))}`,`${x(first.buyer_util)},${y(Math.max(0,100-first.buyer_util))}`].join(' ');
+    shade=`<polygon points="${poly}" fill="rgba(34,211,165,0.16)"/>`;
   }
 
-  host.innerHTML = `<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%">
-    ${grid}
-    <line x1="${m.l}" y1="${h-m.b}" x2="${w-m.r}" y2="${h-m.b}" stroke="#4b607a" stroke-width="1.3"/>
-    <line x1="${m.l}" y1="${m.t}" x2="${m.l}" y2="${h-m.b}" stroke="#4b607a" stroke-width="1.3"/>
-    ${dots}
-    ${path ? `<path d="${path}" fill="none" stroke="#22d3a5" stroke-width="2.6"/>` : ''}
-    ${paretoPts}
-    <text x="${w-180}" y="18" fill="#22d3a5" font-size="12" font-family="var(--mono)">Pareto Frontier</text>
-    <text x="${w/2-65}" y="${h-6}" fill="#8ea5c1" font-size="11" font-family="var(--mono)">Buyer Utility</text>
-    <text x="10" y="18" fill="#8ea5c1" font-size="11" font-family="var(--mono)">Seller Utility</text>
+  host.innerHTML=`<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%">
+    <line x1="${m.l}" y1="${h-m.b}" x2="${w-m.r}" y2="${h-m.b}" stroke="#4b607a"/>
+    <line x1="${m.l}" y1="${m.t}" x2="${m.l}" y2="${h-m.b}" stroke="#4b607a"/>
+    ${dots}${shade}<path d="${reservationPath}" fill="none" stroke="#f59e0b" stroke-dasharray="5 4"/>
+    ${path?`<path d="${path}" fill="none" stroke="#22d3a5" stroke-width="2.4"/>`:''}${paretoPts}
+    <text x="${w-220}" y="18" fill="#22d3a5" font-size="12" font-family="var(--mono)">Pareto Frontier</text>
+    <text x="${w-255}" y="34" fill="#f59e0b" font-size="11" font-family="var(--mono)">Buyer100 ↔ Seller100 baseline</text>
   </svg>`;
-  ph.style.display='none';
-  host.style.display='block';
+  ph.style.display='none'; host.style.display='block';
+
+  host.querySelectorAll('circle[data-i]').forEach(c=>{
+    c.addEventListener('mousemove', ev=>{
+      tip.style.display='block';
+      tip.style.left=`${ev.offsetX+12}px`; tip.style.top=`${ev.offsetY+12}px`;
+      tip.innerHTML=`<div><b>Deal</b>: ${c.dataset.deal}</div><div>Buyer utility: <b>${c.dataset.bu}</b> · Seller utility: <b>${c.dataset.su}</b></div>`;
+    });
+    c.addEventListener('mouseleave', ()=> tip.style.display='none');
+  });
 }
 
-function buildIssuesTable() {
-  const rows = ISSUES.map(iss=>`
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:0.78rem;">
-      <span style="color:var(--text2)">${iss.label}</span>
-      <span style="font-family:var(--mono);font-size:0.65rem;display:flex;gap:14px">
-        <span style="color:var(--accent)">B: ${BW[iss.key]??0}</span>
-        <span style="color:var(--red)">S: ${SW[iss.key]??0}</span>
-      </span>
-    </div>`).join('');
-  document.getElementById('issues-table').innerHTML = rows + `<div style="font-size:0.65rem;color:var(--muted);margin-top:8px;font-family:var(--mono)">Higher weight = issue matters more to that party</div>`;
-}
-
-init();
+(function init(){
+  const raw=sessionStorage.getItem('nd');
+  if(!raw){ location.href='/'; return; }
+  D=JSON.parse(raw); BW={...D.buyer_weights}; SW={...D.seller_weights}; JUST=D.pre_justifications||{};
+  document.getElementById('fname-sub').textContent=`File: ${D.filename}  |  ${D.turns.length} turns`;
+  buildPrefTable(); buildJustTable(); renderSolutionSpace(D.outcomes, D.pareto);
+})();
 </script>
 </body>
 </html>
