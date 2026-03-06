@@ -27,7 +27,7 @@ KODIS_ISSUES = {
     'refund':          {'label': 'Refund',              'options': ['Full (100%)', 'Half (50%)', 'None (0%)'],  'values': [1.0, 0.5, 0.0]},
     'buyer_review':    {'label': 'Buyer Review Removed', 'options': ['Yes', 'No'],                              'values': [1.0, 0.0]},
     'seller_review':   {'label': 'Seller Review Removed','options': ['Yes', 'No'],                              'values': [1.0, 0.0]},
-    'seller_apology':  {'label': 'Seller Apologizes',   'options': ['Yes', 'No'],                              'values': [1.0, 0.0]},
+    'seller_apology':  {'label': 'Receive Apology',    'options': ['Yes', 'No'],                              'values': [1.0, 0.0]},
     'buyer_apology':   {'label': 'Buyer Apologizes',    'options': ['Yes', 'No'],                              'values': [1.0, 0.0]},
 }
 
@@ -162,6 +162,78 @@ def enrich(turns):
     return turns
 
 
+
+
+
+def _default_pre_dispute_justifications():
+    return {
+        'refund': {
+            'buyer': 'The buyer argues the item/service failed expectations and requests compensation to restore fairness.',
+            'seller': 'The seller argues full compensation may be disproportionate to responsibility or policy constraints.'
+        },
+        'buyer_review': {
+            'buyer': 'The buyer argues their review is a truthful account and should remain visible.',
+            'seller': 'The seller argues buyer-review removal may be warranted if statements are inaccurate or harmful.'
+        },
+        'seller_review': {
+            'buyer': "The buyer argues the seller's review is unfairly punitive and should be removed.",
+            'seller': 'The seller argues their review reflects legitimate transaction concerns and should remain.'
+        },
+        'receive_apology': {
+            'buyer': 'The buyer seeks acknowledgment of harm and a sincere apology as relational repair.',
+            'seller': 'The seller may resist apologizing if they believe fault is disputed, while still seeking closure.'
+        },
+    }
+
+
+def _normalize_justification_payload(raw):
+    out = _default_pre_dispute_justifications()
+    if not isinstance(raw, dict):
+        return out
+    aliases = {
+        'refund': 'refund',
+        'buyer_review': 'buyer_review',
+        'seller_review': 'seller_review',
+        'seller_apology': 'receive_apology',
+        'buyer_apology': 'receive_apology',
+        'receive_apology': 'receive_apology',
+        'apology': 'receive_apology',
+    }
+    for k, v in raw.items():
+        key = aliases.get(str(k).strip(), str(k).strip())
+        if key not in out or not isinstance(v, dict):
+            continue
+        b = v.get('buyer')
+        s = v.get('seller')
+        if isinstance(b, str) and b.strip():
+            out[key]['buyer'] = b.strip()
+        if isinstance(s, str) and s.strip():
+            out[key]['seller'] = s.strip()
+    return out
+
+
+def extract_pre_dispute_justifications(path, ext):
+    defaults = _default_pre_dispute_justifications()
+    try:
+        if ext == 'json':
+            with open(path) as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                for key in ['pre_dispute_justifications', 'justifications', 'issue_justifications']:
+                    if key in data:
+                        return _normalize_justification_payload(data.get(key))
+        elif ext == 'jsonl':
+            with open(path) as f:
+                first = f.readline().strip()
+            if first:
+                obj = json.loads(first)
+                if isinstance(obj, dict) and any(k in obj for k in ['pre_dispute_justifications', 'justifications', 'issue_justifications']):
+                    for key in ['pre_dispute_justifications', 'justifications', 'issue_justifications']:
+                        if key in obj:
+                            return _normalize_justification_payload(obj.get(key))
+    except Exception:
+        pass
+    return defaults
 
 def llm_emotion_scores(text):
     """Use GPT-4o for emotion recognition when OPENAI_API_KEY is available.
@@ -586,6 +658,7 @@ def api_upload():
         turns = parse_file(path, ext)
         if not turns: return jsonify({'error':'No turns found in file'}),400
         turns = enrich(turns)
+        pre_justifications = extract_pre_dispute_justifications(path, ext)
         # Default KODIS weights
         bw = DEFAULT_BUYER_WEIGHTS
         sw = DEFAULT_SELLER_WEIGHTS
@@ -600,6 +673,7 @@ def api_upload():
             'outcomes':outcomes,'pareto':pareto,
             'pareto_img':pareto_img,
             'country':{'buyer':buyer_c,'seller':seller_c},
+            'pre_justifications': pre_justifications,
         })
     except Exception as e:
         import traceback; traceback.print_exc()
