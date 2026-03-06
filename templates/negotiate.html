@@ -115,7 +115,7 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
 
 .map-title{font-family:var(--mono);font-size:0.62rem;letter-spacing:0.8px;text-transform:uppercase;color:var(--muted);padding:2px 4px;}
 .map-scale-note{font-family:var(--mono);font-size:0.56rem;color:#8da2bf;padding:0 4px 3px 4px;}
-#active-map{width:100%;height:100%;min-height:320px;}
+#active-map{width:100%;height:100%;min-height:360px;}
 
 /* Risk */
 .risk-card{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:10px 12px;margin-bottom:10px;}
@@ -266,6 +266,12 @@ const COUNTRY_META = {
   ZA:{name:'South Africa', flag:'🇿🇦', coords:[-30,22]},
 };
 const BASE_COUNTRY_WEIGHTS = {US:0.34, CN:0.17, IN:0.11, DE:0.08, GB:0.08, BR:0.06, MX:0.09, ZA:0.07};
+const COUNTRY_CODE_MAP = {
+  'u.s.':'US','us':'US','usa':'US','united states':'US',
+  'u.k.':'GB','uk':'GB','great britain':'GB','united kingdom':'GB',
+  'germany':'DE','china':'CN','india':'IN','japan':'JP','france':'FR',
+  'australia':'AU','canada':'CA','brazil':'BR','mexico':'MX','south africa':'ZA'
+};
 let S = { turns:[], currentIdx:-1, dim:'joy', mapRole:'buyer', currentMapDist:{}, country:null, lastCountry:null, bw:{}, sw:{}, activeMap:null, opSummaries:[] };
 
 function init() {
@@ -277,6 +283,7 @@ function init() {
   S.bw      = D.buyer_weights || {};
   S.sw      = D.seller_weights || {};
   S.opSummaries = Array.isArray(D.op_summaries) ? D.op_summaries : [];
+  S.turns = S.turns.map(t => ({...t, emotions: undefined}));
   renderTxList();
   renderCountry();
   document.getElementById('btn-next').disabled = false;
@@ -376,6 +383,7 @@ function updateTxHighlights() {
 
 
 function renderEmotionChips(emos){
+  if (!emos || !Object.keys(emos).length) return "";
   return Object.entries(emos || {}).filter(([k])=>k!=='valence').map(([k,v])=>{
     const num = typeof v === 'number' ? v : Number(v || 0);
     let cls = '';
@@ -426,9 +434,9 @@ function updateEmoChart() {
   const sellerSeries = [];
   upto.forEach((t, i) => {
     const role = (t.speaker || '').toLowerCase();
-    const val = (t.emotions && typeof t.emotions[S.dim] === 'number') ? t.emotions[S.dim] : 0;
-    if (role === 'buyer') buyerSeries.push({x:i, y:val});
-    if (role === 'seller') sellerSeries.push({x:i, y:val});
+    const hasVal = t.emotions && typeof t.emotions[S.dim] === 'number';
+    if (role === 'buyer' && hasVal) buyerSeries.push({x:i, y:t.emotions[S.dim]});
+    if (role === 'seller' && hasVal) sellerSeries.push({x:i, y:t.emotions[S.dim]});
   });
 
   const baseW = host.clientWidth || 600;
@@ -548,7 +556,7 @@ function renderRoleMap(selector, role, dist, topCode, topProb){
     },
     onLoaded(map){
       try {
-        map.setFocus({scale:0.72, animate:false});
+        map.setFocus({scale:0.62, lat:12, lng:0, animate:false});
       } catch (_) {}
     }
   });
@@ -569,19 +577,15 @@ function renderCountry(countrySnap){
   const active = role === 'buyer' ? buyer : seller;
   const probs = active.probabilities || {};
   const dist = {};
-  const labelToCode = {
-    'u.s.':'US','us':'US','united states':'US',
-    'u.k.':'GB','uk':'GB','united kingdom':'GB',
-    'germany':'DE','china':'CN','japan':'JP','india':'IN','france':'FR',
-    'australia':'AU','canada':'CA','brazil':'BR','mexico':'MX','south africa':'ZA'
-  };
   Object.entries(probs).forEach(([k,v])=>{
-    const norm = String(k || '').trim().toLowerCase();
-    const c = labelToCode[norm];
+    const raw = String(k || '').trim();
+    const norm = raw.toLowerCase();
+    const c = COUNTRY_CODE_MAP[norm] || (/^[A-Z]{2}$/.test(raw) ? raw : null);
     if(c) dist[c]=Number(v)||0;
   });
   if (!Object.keys(dist).length && active.country){
-    const fallback = labelToCode[String(active.country).trim().toLowerCase()];
+    const ctry = String(active.country).trim();
+    const fallback = COUNTRY_CODE_MAP[ctry.toLowerCase()] || (/^[A-Z]{2}$/.test(ctry) ? ctry : null);
     if (fallback) dist[fallback] = Number(active.confidence || 0) || 0.5;
   }
   const sortedDist = Object.entries(dist).sort((a,b)=>b[1]-a[1]);
