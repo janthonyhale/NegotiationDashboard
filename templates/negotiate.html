@@ -163,24 +163,27 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
 .irp-chart{display:flex;flex-direction:column;gap:9px;min-height:0;overflow-y:auto;padding-right:3px;}
 .irp-row{border:1px solid var(--border);border-radius:7px;padding:7px;background:var(--surface);}
 .irp-row-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px;}
-.irp-role-name{font-family:var(--mono);font-size:0.65rem;color:var(--text2);}
-.irp-count-block{display:flex;flex-direction:column;align-items:flex-end;gap:4px;min-width:220px;}
-.irp-count-text{font-family:var(--mono);font-size:0.58rem;color:var(--text2);}
-.irp-count-bars{display:flex;gap:8px;align-items:flex-end;justify-content:flex-end;min-width:200px;}
+.irp-role-name{font-family:var(--mono);font-size:0.7rem;color:var(--text2);}
+.irp-row-main{display:grid;grid-template-columns:70% 30%;gap:8px;align-items:start;}
+.irp-count-block{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
+.irp-count-text{font-family:var(--mono);font-size:0.62rem;color:var(--text2);text-align:right;}
+.irp-count-bars{display:flex;gap:8px;align-items:flex-end;justify-content:flex-end;min-width:140px;}
 .irp-count-bar-wrap{display:flex;flex-direction:column;align-items:center;gap:2px;}
 .irp-count-bar{width:20px;min-height:6px;border-radius:4px 4px 2px 2px;border:1px solid #475569;background:#334155;}
 .irp-count-bar.interest{background:#065f46;border-color:#10b981;}
 .irp-count-bar.right{background:#1d4ed8;border-color:#3b82f6;}
 .irp-count-bar.power{background:#be123c;border-color:#f43f5e;}
 .irp-count-bar.recent{box-shadow:0 0 0 2px #f8fafc;}
-.irp-count-lbl{font-family:var(--mono);font-size:0.54rem;color:var(--muted);}
-.irp-timeline{display:flex;gap:8px;overflow-x:auto;padding-bottom:3px;max-height:34px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.irp-count-lbl{font-family:var(--mono);font-size:0.56rem;color:var(--muted);}
+.irp-timeline{display:flex;gap:8px;overflow-x:auto;overflow-y:visible;padding:4px 3px 5px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.irp-turn{display:flex;flex-direction:column;align-items:center;gap:2px;flex:0 0 auto;}
 .irp-dot{width:28px;height:28px;border-radius:50%;border:1px solid #475569;background:#475569;flex:0 0 auto;opacity:0.95;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:0.64rem;color:#e2e8f0;font-weight:600;}
 .irp-dot.interest{background:#10b981;border-color:#34d399;}
 .irp-dot.right{background:#3b82f6;border-color:#60a5fa;}
 .irp-dot.power{background:#f43f5e;border-color:#fb7185;}
 .irp-dot.na{background:#64748b;border-color:#94a3b8;opacity:0.55;}
 .irp-dot.recent{box-shadow:0 0 0 2px #f8fafc;}
+.irp-xlbl{font-family:var(--mono);font-size:0.52rem;color:var(--muted);line-height:1;}
 .irp-legend{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;}
 .irp-legend-item{display:flex;align-items:center;gap:4px;font-family:var(--mono);font-size:0.58rem;color:var(--muted);}
 .irp-legend-swatch{width:10px;height:10px;border-radius:50%;border:1px solid #475569;background:#64748b;}
@@ -517,12 +520,15 @@ function renderIRPChart(){
     buyer:{interest:0,right:0,power:0,na:0},
     seller:{interest:0,right:0,power:0,na:0}
   };
+  const firstSpeakerRole = String((upto[0] || {}).speaker || '').toLowerCase();
   const recentByRole = {buyer:null, seller:null};
+  const recentTurnByRole = {buyer:-1, seller:-1};
   for (let i = upto.length - 1; i >= 0; i -= 1) {
     const role = String(upto[i].speaker || '').toLowerCase();
     if (!recentByRole[role]) {
       const raw = String(upto[i].irp || '').toLowerCase();
       recentByRole[role] = IRP_KEYS.includes(raw) ? raw : 'na';
+      recentTurnByRole[role] = i;
     }
   }
 
@@ -540,9 +546,9 @@ function renderIRPChart(){
         key = IRP_KEYS.includes(raw) ? raw : 'na';
         counts[roleName][key] += 1;
       }
-      const recentClass = idx === upto.length - 1 ? 'recent' : '';
+      const recentClass = idx === recentTurnByRole[roleName] ? 'recent' : '';
       const label = key === 'interest' ? 'I' : key === 'right' ? 'R' : key === 'power' ? 'P' : '';
-      return `<div class="irp-dot ${key} ${recentClass}" title="Turn ${idx+1}: ${turnRole === roleName ? key.toUpperCase() : 'NA'}">${label}</div>`;
+      return `<div class="irp-turn"><div class="irp-dot ${key} ${recentClass}" title="Turn ${idx+1}: ${turnRole === roleName ? key.toUpperCase() : 'NA'}">${label}</div><div class="irp-xlbl">T${idx+1}</div></div>`;
     }).join('');
 
     const countMax = Math.max(1, counts[roleName].interest, counts[roleName].right, counts[roleName].power);
@@ -552,12 +558,15 @@ function renderIRPChart(){
       return `<div class="irp-count-bar-wrap"><div class="irp-count-bar ${k} ${recentClass}" style="height:${h}px" title="${k.toUpperCase()}: ${counts[roleName][k]}"></div><div class="irp-count-lbl">${k[0].toUpperCase()} ${counts[roleName][k]}</div></div>`;
     }).join('');
     const countText = `Interest: ${counts[roleName].interest} · Right: ${counts[roleName].right} · Power: ${counts[roleName].power}`;
+    const offsetPx = firstSpeakerRole && firstSpeakerRole !== roleName ? 18 : 0;
     return `<div class="irp-row">
       <div class="irp-row-head">
         <div class="irp-role-name">${label}</div>
+      </div>
+      <div class="irp-row-main">
+        <div class="irp-timeline" style="padding-left:${offsetPx}px">${timeline || '<div class="irp-role-name">No turns yet.</div>'}</div>
         <div class="irp-count-block"><div class="irp-count-text">${countText}</div><div class="irp-count-bars">${countBars}</div></div>
       </div>
-      <div class="irp-timeline">${timeline || '<div class="irp-role-name">No turns yet.</div>'}</div>
     </div>`;
   };
   host.innerHTML = rowHtml('buyer') + rowHtml('seller');
@@ -710,6 +719,7 @@ function renderRoleMap(selector, role, dist, topCode, topProb){
     },
     onLoaded(map){
       try {
+        map.update({series:{regions:[{values}]}});
         map.setFocus({scale:0.9, lat:14, lng:0, animate:false});
       } catch (_) {}
     }
