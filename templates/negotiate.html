@@ -158,29 +158,31 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
 .irp-tag.interest{border-color:rgba(34,211,165,0.6);color:#6ee7b7;}
 .irp-tag.right{border-color:rgba(79,145,255,0.55);color:#93c5fd;}
 .irp-tag.power{border-color:rgba(244,63,94,0.6);color:#fda4af;}
-.irp-panel{border-top:1px solid var(--border);padding:8px 12px 12px;background:rgba(10,21,32,0.7);height:40vh;min-height:300px;display:flex;flex-direction:column;}
-.irp-title{font-family:var(--mono);font-size:0.6rem;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;}
+.irp-panel{border-top:1px solid var(--border);padding:8px 12px 12px;background:rgba(10,21,32,0.7);height:34vh;min-height:245px;display:flex;flex-direction:column;}
+.irp-title{font-family:var(--mono);font-size:0.68rem;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;}
 .irp-chart{display:flex;flex-direction:column;gap:9px;min-height:0;overflow-y:auto;padding-right:3px;}
 .irp-row{border:1px solid var(--border);border-radius:7px;padding:7px;background:var(--surface);}
-.irp-row-head{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:6px;}
-.irp-role-name{font-family:var(--mono);font-size:0.57rem;color:var(--text2);}
-.irp-count-bars{display:flex;gap:6px;align-items:flex-end;justify-content:flex-end;min-width:180px;}
+.irp-row-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px;}
+.irp-role-name{font-family:var(--mono);font-size:0.65rem;color:var(--text2);}
+.irp-count-block{display:flex;flex-direction:column;align-items:flex-end;gap:4px;min-width:220px;}
+.irp-count-text{font-family:var(--mono);font-size:0.58rem;color:var(--text2);}
+.irp-count-bars{display:flex;gap:8px;align-items:flex-end;justify-content:flex-end;min-width:200px;}
 .irp-count-bar-wrap{display:flex;flex-direction:column;align-items:center;gap:2px;}
-.irp-count-bar{width:18px;min-height:6px;border-radius:4px 4px 2px 2px;border:1px solid #475569;background:#334155;}
+.irp-count-bar{width:20px;min-height:6px;border-radius:4px 4px 2px 2px;border:1px solid #475569;background:#334155;}
 .irp-count-bar.interest{background:#065f46;border-color:#10b981;}
 .irp-count-bar.right{background:#1d4ed8;border-color:#3b82f6;}
 .irp-count-bar.power{background:#be123c;border-color:#f43f5e;}
 .irp-count-bar.recent{box-shadow:0 0 0 2px #f8fafc;}
-.irp-count-lbl{font-family:var(--mono);font-size:0.5rem;color:var(--muted);}
-.irp-timeline{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
-.irp-dot{width:36px;height:36px;border-radius:50%;border:1px solid #475569;background:#475569;flex:0 0 auto;opacity:0.95;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:0.72rem;color:#e2e8f0;font-weight:600;}
+.irp-count-lbl{font-family:var(--mono);font-size:0.54rem;color:var(--muted);}
+.irp-timeline{display:flex;gap:8px;overflow-x:auto;padding-bottom:3px;max-height:34px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.irp-dot{width:28px;height:28px;border-radius:50%;border:1px solid #475569;background:#475569;flex:0 0 auto;opacity:0.95;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:0.64rem;color:#e2e8f0;font-weight:600;}
 .irp-dot.interest{background:#10b981;border-color:#34d399;}
 .irp-dot.right{background:#3b82f6;border-color:#60a5fa;}
 .irp-dot.power{background:#f43f5e;border-color:#fb7185;}
 .irp-dot.na{background:#64748b;border-color:#94a3b8;opacity:0.55;}
 .irp-dot.recent{box-shadow:0 0 0 2px #f8fafc;}
 .irp-legend{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;}
-.irp-legend-item{display:flex;align-items:center;gap:4px;font-family:var(--mono);font-size:0.5rem;color:var(--muted);}
+.irp-legend-item{display:flex;align-items:center;gap:4px;font-family:var(--mono);font-size:0.58rem;color:var(--muted);}
 .irp-legend-swatch{width:10px;height:10px;border-radius:50%;border:1px solid #475569;background:#64748b;}
 .irp-legend-swatch.interest{background:#10b981;border-color:#34d399;}
 .irp-legend-swatch.right{background:#3b82f6;border-color:#60a5fa;}
@@ -526,7 +528,11 @@ function renderIRPChart(){
 
   const rowHtml = (roleName) => {
     const label = roleName === 'buyer' ? 'Buyer' : 'Seller';
-    const timeline = upto.map((turn, idx) => {
+    const roleTurns = upto
+      .map((turn, idx)=>({turn, idx}))
+      .filter(({turn}) => String(turn.speaker || '').toLowerCase() === roleName);
+
+    const timeline = roleTurns.map(({turn, idx}) => {
       const turnRole = String(turn.speaker || '').toLowerCase();
       let key = 'na';
       if (turnRole === roleName) {
@@ -545,10 +551,11 @@ function renderIRPChart(){
       const recentClass = recentByRole[roleName] === k ? 'recent' : '';
       return `<div class="irp-count-bar-wrap"><div class="irp-count-bar ${k} ${recentClass}" style="height:${h}px" title="${k.toUpperCase()}: ${counts[roleName][k]}"></div><div class="irp-count-lbl">${k[0].toUpperCase()} ${counts[roleName][k]}</div></div>`;
     }).join('');
+    const countText = `Interest: ${counts[roleName].interest} · Right: ${counts[roleName].right} · Power: ${counts[roleName].power}`;
     return `<div class="irp-row">
       <div class="irp-row-head">
         <div class="irp-role-name">${label}</div>
-        <div class="irp-count-bars">${countBars}</div>
+        <div class="irp-count-block"><div class="irp-count-text">${countText}</div><div class="irp-count-bars">${countBars}</div></div>
       </div>
       <div class="irp-timeline">${timeline || '<div class="irp-role-name">No turns yet.</div>'}</div>
     </div>`;
