@@ -102,6 +102,26 @@ def allowed(fn):
 
 # ── Parsing ───────────────────────────────────────────────────────────────────
 def parse_file(path, ext):
+    def extract_irp_label(obj):
+        if not isinstance(obj, dict):
+            return None
+        raw = obj.get('irp_label', obj.get('irp', obj.get('IRP')))
+        if raw is None and isinstance(obj.get('meta'), dict):
+            raw = obj['meta'].get('irp_label', obj['meta'].get('irp'))
+        if raw is None:
+            return None
+        val = str(raw).strip()
+        if not val:
+            return None
+        low = val.lower()
+        if low.startswith('interest'):
+            return 'Interest'
+        if low.startswith('right'):
+            return 'Right'
+        if low.startswith('power'):
+            return 'Power'
+        return val[:1].upper() + val[1:]
+
     turns = []
     if ext == 'jsonl':
         with open(path) as f:
@@ -112,18 +132,24 @@ def parse_file(path, ext):
                 if not obj.get('speaker') and not obj.get('text'):
                     # Allow metadata/header rows in JSONL without treating them as dialogue turns.
                     continue
-                turns.append({'idx':len(turns),'speaker':obj.get('speaker','Unknown'),'text':obj.get('text',''),'ts':None,'meta':{}})
+                irp_label = extract_irp_label(obj)
+                meta = {'irp_label': irp_label} if irp_label else {}
+                turns.append({'idx':len(turns),'speaker':obj.get('speaker','Unknown'),'text':obj.get('text',''),'ts':None,'meta':meta})
     elif ext == 'json':
         with open(path) as f: data = json.load(f)
         items = data if isinstance(data,list) else data.get('turns', data.get('messages',[data]))
         for i,obj in enumerate(items):
+            irp_label = extract_irp_label(obj)
+            meta = {'irp_label': irp_label} if irp_label else {}
             turns.append({'idx':i,'speaker':obj.get('speaker',obj.get('role','Unknown')),
-                          'text':obj.get('text',obj.get('content','')),'ts':None,'meta':{}})
+                          'text':obj.get('text',obj.get('content','')),'ts':None,'meta':meta})
     elif ext == 'txt':
         with open(path) as f: content = f.read()
-        pat = re.compile(r'^(Buyer|Seller|Mediator)\s*:\s*(.+)', re.M|re.I)
+        pat = re.compile(r'^(Buyer|Seller|Mediator)(?:\s*[\[(]\s*(Interest|Power|Right)\s*[\])])?\s*:\s*(.+)', re.M|re.I)
         for i,m in enumerate(pat.finditer(content)):
-            turns.append({'idx':i,'speaker':m.group(1).capitalize(),'text':m.group(2).strip(),'ts':None,'meta':{}})
+            irp_label = m.group(2).capitalize() if m.group(2) else None
+            meta = {'irp_label': irp_label} if irp_label else {}
+            turns.append({'idx':i,'speaker':m.group(1).capitalize(),'text':m.group(3).strip(),'ts':None,'meta':meta})
         if not turns:
             for i,line in enumerate(content.strip().split('\n')):
                 line=line.strip()
@@ -135,7 +161,9 @@ def parse_file(path, ext):
             for i,row in enumerate(reader):
                 speaker = row.get('speaker',row.get('Speaker',row.get('role','Unknown')))
                 text    = row.get('text',row.get('Text',row.get('content','')))
-                turns.append({'idx':i,'speaker':speaker,'text':text,'ts':None,'meta':{}})
+                irp_label = extract_irp_label(row)
+                meta = {'irp_label': irp_label} if irp_label else {}
+                turns.append({'idx':i,'speaker':speaker,'text':text,'ts':None,'meta':meta})
     return turns
 
 def score_emo(text):
@@ -869,7 +897,7 @@ def api_post_summary():
     turns = data.get('turns', [])
     bw    = data.get('buyer_weights', DEFAULT_BUYER_WEIGHTS)
     sw    = data.get('seller_weights', DEFAULT_SELLER_WEIGHTS)
-    dim   = data.get('emotion_dim', 'joy')
+    dim   = data.get('emotion_dim', 'anger')
     final_outcome = data.get('final_outcome')
 
     turns_enriched = enrich(turns) if turns and 'emotions' not in turns[0] else turns
@@ -893,6 +921,8 @@ def api_post_summary():
         'emotion_img': emo_img,
         'post_img': post_img,
         'final_outcome': match,
+        'outcomes': outcomes,
+        'pareto': pareto,
     })
 
 @app.route('/api/export_pdf', methods=['POST'])
