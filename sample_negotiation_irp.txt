@@ -1,0 +1,8 @@
+Buyer (Interest): I need a working laptop for my classes this week, so a quick replacement or refund would help.
+Seller (Right): Our posted warranty terms require us to verify whether damage happened in shipping or after delivery.
+Buyer (Right): I believe I am entitled to coverage because the package arrived with visible dents and I sent photos.
+Seller (Power): If we cannot resolve this directly, I can only proceed through our formal claims process.
+Buyer (Power): If this is denied, I may pursue a chargeback and file a complaint.
+Seller (Interest): I want to keep you as a customer, so I can offer a partial refund plus expedited repair.
+Buyer (Interest): I can accept that if you also remove the negative seller note tied to this dispute.
+Seller (Interest): Agreed, we can settle with a half refund and mutual review removals.
