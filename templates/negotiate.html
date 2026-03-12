@@ -158,20 +158,33 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
 .irp-tag.interest{border-color:rgba(34,211,165,0.6);color:#6ee7b7;}
 .irp-tag.right{border-color:rgba(79,145,255,0.55);color:#93c5fd;}
 .irp-tag.power{border-color:rgba(244,63,94,0.6);color:#fda4af;}
-.irp-panel{border-top:1px solid var(--border);padding:8px 12px 12px;background:rgba(10,21,32,0.7);height:33vh;min-height:220px;display:flex;flex-direction:column;}
+.irp-panel{border-top:1px solid var(--border);padding:8px 12px 12px;background:rgba(10,21,32,0.7);height:40vh;min-height:300px;display:flex;flex-direction:column;}
 .irp-title{font-family:var(--mono);font-size:0.6rem;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;}
 .irp-chart{display:flex;flex-direction:column;gap:9px;min-height:0;overflow-y:auto;padding-right:3px;}
 .irp-row{border:1px solid var(--border);border-radius:7px;padding:7px;background:var(--surface);}
 .irp-row-head{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:6px;}
 .irp-role-name{font-family:var(--mono);font-size:0.57rem;color:var(--text2);}
-.irp-counts{font-family:var(--mono);font-size:0.52rem;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
-.irp-timeline{display:flex;gap:6px;overflow-x:auto;padding-bottom:3px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
-.irp-dot{width:12px;height:12px;border-radius:50%;border:1px solid #475569;background:#475569;flex:0 0 auto;opacity:0.9;}
+.irp-count-bars{display:flex;gap:6px;align-items:flex-end;justify-content:flex-end;min-width:180px;}
+.irp-count-bar-wrap{display:flex;flex-direction:column;align-items:center;gap:2px;}
+.irp-count-bar{width:18px;min-height:6px;border-radius:4px 4px 2px 2px;border:1px solid #475569;background:#334155;}
+.irp-count-bar.interest{background:#065f46;border-color:#10b981;}
+.irp-count-bar.right{background:#1d4ed8;border-color:#3b82f6;}
+.irp-count-bar.power{background:#be123c;border-color:#f43f5e;}
+.irp-count-bar.recent{box-shadow:0 0 0 2px #f8fafc;}
+.irp-count-lbl{font-family:var(--mono);font-size:0.5rem;color:var(--muted);}
+.irp-timeline{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.irp-dot{width:36px;height:36px;border-radius:50%;border:1px solid #475569;background:#475569;flex:0 0 auto;opacity:0.95;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:0.72rem;color:#e2e8f0;font-weight:600;}
 .irp-dot.interest{background:#10b981;border-color:#34d399;}
 .irp-dot.right{background:#3b82f6;border-color:#60a5fa;}
 .irp-dot.power{background:#f43f5e;border-color:#fb7185;}
 .irp-dot.na{background:#64748b;border-color:#94a3b8;opacity:0.55;}
 .irp-dot.recent{box-shadow:0 0 0 2px #f8fafc;}
+.irp-legend{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;}
+.irp-legend-item{display:flex;align-items:center;gap:4px;font-family:var(--mono);font-size:0.5rem;color:var(--muted);}
+.irp-legend-swatch{width:10px;height:10px;border-radius:50%;border:1px solid #475569;background:#64748b;}
+.irp-legend-swatch.interest{background:#10b981;border-color:#34d399;}
+.irp-legend-swatch.right{background:#3b82f6;border-color:#60a5fa;}
+.irp-legend-swatch.power{background:#f43f5e;border-color:#fb7185;}
 </style>
 </head>
 <body>
@@ -204,6 +217,12 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
     </div>
     <div class="irp-panel">
       <div class="irp-title">IRP Running Count (Interest / Right / Power)</div>
+      <div class="irp-legend">
+        <div class="irp-legend-item"><span class="irp-legend-swatch interest"></span>Interest</div>
+        <div class="irp-legend-item"><span class="irp-legend-swatch right"></span>Right</div>
+        <div class="irp-legend-item"><span class="irp-legend-swatch power"></span>Power</div>
+        <div class="irp-legend-item"><span class="irp-legend-swatch"></span>NA</div>
+      </div>
       <div class="irp-chart" id="irp-chart"></div>
     </div>
   </div>
@@ -298,7 +317,6 @@ const COUNTRY_CODE_MAP = {
 };
 let S = { turns:[], currentIdx:-1, dim:'anger', mapRole:'buyer', currentMapDist:{}, country:null, lastCountry:null, bw:{}, sw:{}, activeMap:null, opSummaries:[] };
 const IRP_KEYS = ['interest','right','power'];
-const IRP_DISPLAY_KEYS = ['interest','right','power','na'];
 
 function classifyIRP(text=''){
   const t = String(text || '').toLowerCase();
@@ -497,8 +515,14 @@ function renderIRPChart(){
     buyer:{interest:0,right:0,power:0,na:0},
     seller:{interest:0,right:0,power:0,na:0}
   };
-  const recent = upto[upto.length - 1] || {};
-  const recentRole = String(recent.speaker || '').toLowerCase();
+  const recentByRole = {buyer:null, seller:null};
+  for (let i = upto.length - 1; i >= 0; i -= 1) {
+    const role = String(upto[i].speaker || '').toLowerCase();
+    if (!recentByRole[role]) {
+      const raw = String(upto[i].irp || '').toLowerCase();
+      recentByRole[role] = IRP_KEYS.includes(raw) ? raw : 'na';
+    }
+  }
 
   const rowHtml = (roleName) => {
     const label = roleName === 'buyer' ? 'Buyer' : 'Seller';
@@ -511,16 +535,22 @@ function renderIRPChart(){
         counts[roleName][key] += 1;
       }
       const recentClass = idx === upto.length - 1 ? 'recent' : '';
-      return `<div class="irp-dot ${key} ${recentClass}" title="Turn ${idx+1}: ${turnRole === roleName ? key.toUpperCase() : 'NA'}"></div>`;
+      const label = key === 'interest' ? 'I' : key === 'right' ? 'R' : key === 'power' ? 'P' : '';
+      return `<div class="irp-dot ${key} ${recentClass}" title="Turn ${idx+1}: ${turnRole === roleName ? key.toUpperCase() : 'NA'}">${label}</div>`;
     }).join('');
 
-    const countText = IRP_DISPLAY_KEYS.map((k)=>`${k.toUpperCase()}: ${counts[roleName][k]}`).join(' · ');
+    const countMax = Math.max(1, counts[roleName].interest, counts[roleName].right, counts[roleName].power);
+    const countBars = IRP_KEYS.map((k)=>{
+      const h = Math.max(6, Math.round((counts[roleName][k] / countMax) * 40));
+      const recentClass = recentByRole[roleName] === k ? 'recent' : '';
+      return `<div class="irp-count-bar-wrap"><div class="irp-count-bar ${k} ${recentClass}" style="height:${h}px" title="${k.toUpperCase()}: ${counts[roleName][k]}"></div><div class="irp-count-lbl">${k[0].toUpperCase()} ${counts[roleName][k]}</div></div>`;
+    }).join('');
     return `<div class="irp-row">
       <div class="irp-row-head">
         <div class="irp-role-name">${label}</div>
-        <div class="irp-counts">${countText}</div>
+        <div class="irp-count-bars">${countBars}</div>
       </div>
-      <div class="irp-timeline">${timeline || '<div class="irp-counts">No turns yet.</div>'}</div>
+      <div class="irp-timeline">${timeline || '<div class="irp-role-name">No turns yet.</div>'}</div>
     </div>`;
   };
   host.innerHTML = rowHtml('buyer') + rowHtml('seller');
