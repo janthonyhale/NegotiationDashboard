@@ -65,6 +65,7 @@ nav{display:flex;align-items:center;padding:11px 22px;border-bottom:1px solid va
 .plot-head{padding:9px 14px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:0.56rem;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:center;}
 .plot-card img{width:100%;display:block;}
 .plot-ph{padding:50px;text-align:center;color:var(--muted);font-size:0.75rem;}
+.plot-host{height:330px;background:#0a1520;}
 
 /* Full-width card */
 .fw-card{background:var(--card);border:1px solid var(--border);border-radius:11px;overflow:hidden;margin-bottom:18px;}
@@ -138,6 +139,7 @@ nav{display:flex;align-items:center;padding:11px 22px;border-bottom:1px solid va
       </div>
       <div class="plot-card">
         <div class="plot-head">Post-Negotiation — Agreement Marked<span id="agree-badge" style="color:var(--teal)"></span></div>
+        <div id="post-chart" class="plot-host"></div>
         <img id="post-img" src="" style="display:none">
         <div class="plot-ph" id="post-ph">Computing…</div>
       </div>
@@ -162,7 +164,19 @@ nav{display:flex;align-items:center;padding:11px 22px;border-bottom:1px solid va
 <div id="toast"></div>
 
 <script>
-let S = { turns:[], bw:{}, sw:{}, filename:'', preImg:'', postImg:'', emoImg:'', finalOutcome:null, opSummaries:[] };
+let S = { turns:[], bw:{}, sw:{}, filename:'', preImg:'', postImg:'', emoImg:'', finalOutcome:null, opSummaries:[], outcomes:[], pareto:[] };
+const IRP_KEYS = ['interest','right','power'];
+
+function classifyIRP(text=''){
+  const t = String(text || '').toLowerCase();
+  const score = {
+    interest: /(need|prefer|would like|important|value|concern|help|solution|can we|work with)/.test(t) ? 2 : 0,
+    right: /(fair|policy|rule|contract|terms|warranty|should|entitled|legal|right|evidence|proof)/.test(t) ? 2 : 0,
+    power: /(final|must|demand|or else|lawyer|court|chargeback|report|refuse|walk away|non-negotiable|insist)/.test(t) ? 2 : 0,
+  };
+  if ((score.interest + score.right + score.power) === 0) score.interest = 1;
+  return IRP_KEYS.reduce((a,b)=>score[a] >= score[b] ? a : b);
+}
 
 async function init() {
   const raw = sessionStorage.getItem('nd');
@@ -181,9 +195,10 @@ async function init() {
 
   document.getElementById('tx-body').innerHTML = S.turns.map(t=>{
     const role = t.speaker.toLowerCase();
+    const irp = (t.meta && t.meta.irp_label ? String(t.meta.irp_label).toLowerCase() : classifyIRP(t.text));
     return `<div class="tx-turn">
       <span class="tx-role ${role}">${t.speaker}</span>
-      <span class="tx-text">${esc(t.text)}</span>
+      <span class="tx-text">[${irp[0].toUpperCase() + irp.slice(1)}] ${esc(t.text)}</span>
     </div>`;
   }).join('');
 
@@ -197,7 +212,7 @@ async function init() {
         buyer_weights: S.bw,
         seller_weights: S.sw,
         final_outcome: detected,
-        emotion_dim: 'joy'
+        emotion_dim: 'anger'
       })
     });
     if (!res.ok) throw new Error('Failed to compute summary');
@@ -205,6 +220,8 @@ async function init() {
     S.emoImg = data.emotion_img;
     S.postImg = data.post_img;
     S.finalOutcome = data.final_outcome || detected;
+    S.outcomes = Array.isArray(data.outcomes) ? data.outcomes : [];
+    S.pareto = Array.isArray(data.pareto) ? data.pareto : [];
 
     showContent(data.risk, S.finalOutcome);
     document.getElementById('btn-pdf').disabled = false;
@@ -277,12 +294,43 @@ function showContent(risk, finalOutcome) {
   }
 
   document.getElementById('post-img').src  = 'data:image/png;base64,' + S.postImg;
-  document.getElementById('post-img').style.display = 'block';
+  document.getElementById('post-img').style.display = 'none';
   document.getElementById('post-ph').style.display  = 'none';
+  renderPostSolutionSpace(S.outcomes, S.pareto, finalOutcome);
 
   document.getElementById('emo-img').src  = 'data:image/png;base64,' + S.emoImg;
   document.getElementById('emo-img').style.display = 'block';
   document.getElementById('emo-ph').style.display  = 'none';
+}
+
+function renderPostSolutionSpace(outcomes, pareto, finalOutcome){
+  const host = document.getElementById('post-chart');
+  if (!host || !outcomes?.length) return;
+  const w = host.clientWidth || 520;
+  const h = host.clientHeight || 330;
+  const m = {l:42,r:14,t:16,b:34};
+  const x=v=>m.l+(v/100)*(w-m.l-m.r), y=v=>h-m.b-(v/100)*(h-m.t-m.b);
+  const dots = outcomes.map(o=>`<circle cx="${x(o.buyer_util)}" cy="${y(o.seller_util)}" r="2.6" fill="#2f4b6f" opacity="0.65"/>`).join('');
+  const px = [...(pareto || [])].sort((a,b)=>a.buyer_util-b.buyer_util);
+  const path = px.map((p,i)=>`${i?'L':'M'} ${x(p.buyer_util).toFixed(1)} ${y(p.seller_util).toFixed(1)}`).join(' ');
+  let marker='';
+  if (finalOutcome) {
+    marker = `<circle cx="${x(finalOutcome.buyer_util)}" cy="${y(finalOutcome.seller_util)}" r="6" fill="none" stroke="#22d3a5" stroke-width="2.2"/><circle cx="${x(finalOutcome.buyer_util)}" cy="${y(finalOutcome.seller_util)}" r="2.8" fill="#22d3a5"/>`;
+  } else {
+    const suggested = outcomes.reduce((best, o)=> !best || (o.buyer_util + o.seller_util) > (best.buyer_util + best.seller_util) ? o : best, null);
+    if (suggested) {
+      marker = `<text x="${x(suggested.buyer_util)-7}" y="${y(suggested.seller_util)+6}" fill="#fbbf24" font-size="18">★</text>`;
+    }
+  }
+  host.innerHTML = `<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%">
+    <line x1="${m.l}" y1="${h-m.b}" x2="${w-m.r}" y2="${h-m.b}" stroke="#4b607a"/>
+    <line x1="${m.l}" y1="${m.t}" x2="${m.l}" y2="${h-m.b}" stroke="#4b607a"/>
+    ${dots}
+    ${path ? `<path d="${path}" fill="none" stroke="#22d3a5" stroke-width="2"/>` : ''}
+    ${marker}
+    <text x="${w/2-46}" y="${h-8}" fill="#94a3b8" font-size="10">Buyer utility</text>
+    <text x="8" y="14" fill="#94a3b8" font-size="10">Seller utility</text>
+  </svg>`;
 }
 
 async function exportPDF() {
