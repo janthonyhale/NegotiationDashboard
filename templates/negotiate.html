@@ -559,7 +559,8 @@ function renderIRPChart(){
       return `<div class="irp-count-bar-wrap"><div class="irp-count-num">${counts[roleName][k]}</div><div class="irp-count-bar ${k} ${recentClass}" style="height:${h}px" title="${k.toUpperCase()}: ${counts[roleName][k]}"></div><div class="irp-count-lbl">${k[0].toUpperCase()}</div></div>`;
     }).join('');
     const countText = `Counts`;
-    const offsetPx = firstSpeakerRole && firstSpeakerRole !== roleName ? 24 : 0;
+<!--    const offsetPx = firstSpeakerRole && firstSpeakerRole !== roleName ? 24 : 0;-->
+    const offsetPx = firstSpeakerRole && firstSpeakerRole !== roleName ? 52 : 28;
     return `<div class="irp-row">
       <div class="irp-row-head">
         <div class="irp-role-name">${label}</div>
@@ -677,67 +678,94 @@ function normalizeDist(dist){
 }
 
 
-function renderRoleMap(selector, role, dist, topCode, topProb){
+function renderRoleMap(selector, role, dist, topCode, topProb){function renderRoleMap(selector, role, dist, topCode){
   const palette = role === 'buyer'
     ? ['#dbeafe','#93c5fd','#60a5fa','#2563eb']
     : ['#fee2e2','#fca5a5','#f87171','#dc2626'];
-  if (S.activeMap) S.activeMap.destroy();
+
+  if (S.activeMap) {
+    S.activeMap.destroy();
+    S.activeMap = null;
+  }
 
   const values = {};
-  Object.entries(dist || {}).forEach(([code, val])=>{
-    const score = Math.max(0, Math.min(1, Number(val) || 0));
-    const up = String(code || '').toUpperCase();
-    values[up] = score;
-    values[up.toLowerCase()] = score;
+  Object.entries(dist || {}).forEach(([code, val]) => {
+    const up = String(code || '').trim().toUpperCase();
+    if (/^[A-Z]{2}$/.test(up)) {
+      values[up] = Math.max(0, Math.min(1, Number(val) || 0));
+    }
   });
 
   S.activeMap = new jsVectorMap({
     selector,
-    map:'world',
-    zoomButtons:false,
-    zoomOnScroll:false,
-    regionStyle:{
-      initial:{fillOpacity:1, stroke:'#253a55', strokeWidth:0.6},
-      hover:{fillOpacity:1, strokeWidth:0.8, cursor:'pointer'}
+    map: 'world',
+    zoomButtons: false,
+    zoomOnScroll: false,
+    backgroundColor: '#0a1520',
+    regionStyle: {
+      initial: {
+        fill: '#1b2a3d',   // important: give non-data countries a default fill
+        fillOpacity: 1,
+        stroke: '#253a55',
+        strokeWidth: 0.6
+      },
+      hover: {
+        fillOpacity: 1,
+        strokeWidth: 0.8,
+        cursor: 'pointer'
+      }
     },
-    backgroundColor:'#0a1520',
     selectedRegions: topCode ? [String(topCode).toUpperCase()] : [],
-    selectedRegionsStyle:{fill: palette[3]},
-    series:{
-      regions:[{
-        values,
-        scale: [palette[0], palette[1], palette[2], palette[3]],
+    selectedRegionsStyle: {
+      fill: palette[3]
+    },
+    series: {
+      regions: [{
+        attribute: 'fill',
+        scale: palette,
+        values: values,
         min: 0,
         max: 1,
-        normalizeFunction:'linear',
-        attribute:'fill'
+        normalizeFunction: 'linear'
       }]
     },
-    markers:[],
     onRegionTooltipShow(event, tooltip, code){
-      const pct = Math.round((values[String(code || '').toUpperCase()] || 0) * 100);
+      const pct = Math.round((values[String(code).toUpperCase()] || 0) * 100);
       tooltip.text(`${tooltip.text()} · ${pct}%`);
-      tooltip.css({backgroundColor:'rgba(75,96,122,0.95)', color:'#fff'});
+      tooltip.css({
+        backgroundColor: 'rgba(75,96,122,0.95)',
+        color: '#fff'
+      });
     },
     onLoaded(map){
       try {
-        if (map.series && map.series.regions && map.series.regions[0] && map.series.regions[0].setValues) {
-          map.series.regions[0].setValues(values);
-        }
-        if (map.update) {
-          map.update({series:{regions:[{values}]}});
-        }
-        map.setFocus({scale:0.9, lat:14, lng:0, animate:false});
+        map.setFocus({ scale: 0.9, lat: 14, lng: 0, animate: false });
       } catch (_) {}
     }
   });
 
+  // safer than update(...)
   try {
-    if (S.activeMap && S.activeMap.series && S.activeMap.series.regions && S.activeMap.series.regions[0] && S.activeMap.series.regions[0].setValues) {
+    if (S.activeMap?.series?.regions?.[0]) {
       S.activeMap.series.regions[0].setValues(values);
     }
+    if (topCode) {
+      S.activeMap.setSelectedRegions([String(topCode).toUpperCase()]);
+    }
   } catch (_) {}
+}
 
+function normalizeCountryCode(raw){
+  const s = String(raw || '').trim();
+  if (!s) return null;
+
+  const lower = s.toLowerCase();
+  if (COUNTRY_CODE_MAP[lower]) return COUNTRY_CODE_MAP[lower];
+
+  const upper = s.toUpperCase();
+  if (/^[A-Z]{2}$/.test(upper)) return upper;
+
+  return null;
 }
 
 function renderCountry(countrySnap){
@@ -755,17 +783,14 @@ function renderCountry(countrySnap){
   const active = role === 'buyer' ? buyer : seller;
   const probs = active.probabilities || {};
   const dist = {};
-  Object.entries(probs).forEach(([k,v])=>{
-    const raw = String(k || '').trim();
-    const norm = raw.toLowerCase();
-    const c = COUNTRY_CODE_MAP[norm] || (/^[A-Z]{2}$/.test(raw) ? raw : null);
-    if(c) dist[c]=Number(v)||0;
-  });
-  if (!Object.keys(dist).length && active.country){
-    const ctry = String(active.country).trim();
-    const fallback = COUNTRY_CODE_MAP[ctry.toLowerCase()] || (/^[A-Z]{2}$/.test(ctry) ? ctry : null);
-    if (fallback) dist[fallback] = Number(active.confidence || 0) || 0.5;
-  }
+  Object.entries(probs).forEach(([k, v]) => {
+  const c = normalizeCountryCode(k);
+  if (c) dist[c] = Number(v) || 0;
+});
+  if (!Object.keys(dist).length && active.country) {
+  const fallback = normalizeCountryCode(active.country);
+  if (fallback) dist[fallback] = Number(active.confidence || 0) || 0.5;
+}
   const sortedDist = Object.entries(dist).sort((a,b)=>b[1]-a[1]);
   const topCode = sortedDist[0]?.[0] || null;
   const topProb = sortedDist[0]?.[1] || 0;
@@ -773,13 +798,6 @@ function renderCountry(countrySnap){
   document.getElementById('map-scale-note').textContent = role === 'buyer' ? 'Blue = higher confidence' : 'Red = higher confidence';
   const normalizedDist = normalizeDist(dist);
   renderRoleMap('#active-map', role, normalizedDist, topCode, topProb);
-  if (S.activeMap && topCode) {
-    try {
-      const up = String(topCode).toUpperCase();
-      S.activeMap.update({series:{regions:[{values:{[up]: Math.max(0.6, Number(normalizedDist[up] ?? normalizedDist[topCode] ?? topProb) || 0.6)}}]}});
-      S.activeMap.setSelectedRegions([up]);
-    } catch (_) {}
-  }
 }
 
 function switchMapRole(role, btn){
