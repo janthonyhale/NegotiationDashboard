@@ -166,7 +166,8 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
 .irp-role-name{font-family:var(--mono);font-size:0.76rem;color:var(--text2);}
 .irp-row-main{display:grid;grid-template-columns:60% 40%;gap:10px;align-items:start;min-height:0;flex:1;}
 .irp-count-block{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
-.irp-count-text{font-family:var(--mono);font-size:0.68rem;color:var(--text2);text-align:right;}
+.irp-count-text{font-family:var(--mono);font-size:0.7rem;color:var(--text2);text-align:right;display:flex;gap:10px;justify-content:flex-end;min-width:140px;}
+.irp-count-num{font-family:var(--mono);font-size:0.72rem;color:#e2e8f0;line-height:1;}
 .irp-count-bars{display:flex;gap:8px;align-items:flex-end;justify-content:flex-end;min-width:140px;}
 .irp-count-bar-wrap{display:flex;flex-direction:column;align-items:center;gap:2px;}
 .irp-count-bar{width:20px;min-height:6px;border-radius:4px 4px 2px 2px;border:1px solid #475569;background:#334155;}
@@ -174,8 +175,8 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
 .irp-count-bar.right{background:#1d4ed8;border-color:#3b82f6;}
 .irp-count-bar.power{background:#be123c;border-color:#f43f5e;}
 .irp-count-bar.recent{box-shadow:0 0 0 2px #f8fafc;}
-.irp-count-lbl{font-family:var(--mono);font-size:0.62rem;color:var(--muted);}
-.irp-timeline{display:flex;gap:8px;overflow-x:auto;overflow-y:visible;padding:6px 6px 7px 14px;height:68px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.irp-count-lbl{font-family:var(--mono);font-size:0.72rem;color:var(--muted);font-weight:600;}
+.irp-timeline{display:flex;gap:8px;overflow-x:auto;overflow-y:visible;padding:6px 6px 7px 24px;height:68px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
 .irp-turn{display:flex;flex-direction:column;align-items:center;gap:2px;flex:0 0 auto;}
 .irp-dot{width:30px;height:30px;border-radius:50%;border:1px solid #475569;background:#475569;flex:0 0 auto;opacity:0.95;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:0.72rem;color:#e2e8f0;font-weight:600;}
 .irp-dot.interest{background:#10b981;border-color:#34d399;}
@@ -183,7 +184,7 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
 .irp-dot.power{background:#f43f5e;border-color:#fb7185;}
 .irp-dot.na{background:#64748b;border-color:#94a3b8;opacity:0.55;}
 .irp-dot.recent{box-shadow:0 0 0 2px #f8fafc;}
-.irp-xlbl{font-family:var(--mono);font-size:0.62rem;color:var(--muted);line-height:1;}
+.irp-xlbl{font-family:var(--mono);font-size:0.68rem;color:var(--muted);line-height:1;}
 .irp-legend{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;}
 .irp-legend-item{display:flex;align-items:center;gap:4px;font-family:var(--mono);font-size:0.66rem;color:var(--muted);}
 .irp-legend-swatch{width:10px;height:10px;border-radius:50%;border:1px solid #475569;background:#64748b;}
@@ -555,9 +556,9 @@ function renderIRPChart(){
     const countBars = IRP_KEYS.map((k)=>{
       const h = Math.max(6, Math.round((counts[roleName][k] / countMax) * 40));
       const recentClass = recentByRole[roleName] === k ? 'recent' : '';
-      return `<div class="irp-count-bar-wrap"><div class="irp-count-bar ${k} ${recentClass}" style="height:${h}px" title="${k.toUpperCase()}: ${counts[roleName][k]}"></div><div class="irp-count-lbl">${k[0].toUpperCase()} ${counts[roleName][k]}</div></div>`;
+      return `<div class="irp-count-bar-wrap"><div class="irp-count-num">${counts[roleName][k]}</div><div class="irp-count-bar ${k} ${recentClass}" style="height:${h}px" title="${k.toUpperCase()}: ${counts[roleName][k]}"></div><div class="irp-count-lbl">${k[0].toUpperCase()}</div></div>`;
     }).join('');
-    const countText = `Interest: ${counts[roleName].interest} · Right: ${counts[roleName].right} · Power: ${counts[roleName].power}`;
+    const countText = `Counts`;
     const offsetPx = firstSpeakerRole && firstSpeakerRole !== roleName ? 18 : 0;
     return `<div class="irp-row">
       <div class="irp-row-head">
@@ -723,10 +724,19 @@ function renderRoleMap(selector, role, dist, topCode, topProb){
         if (map.series && map.series.regions && map.series.regions[0] && map.series.regions[0].setValues) {
           map.series.regions[0].setValues(values);
         }
+        if (map.update) {
+          map.update({series:{regions:[{values}]}});
+        }
         map.setFocus({scale:0.9, lat:14, lng:0, animate:false});
       } catch (_) {}
     }
   });
+
+  try {
+    if (S.activeMap && S.activeMap.series && S.activeMap.series.regions && S.activeMap.series.regions[0] && S.activeMap.series.regions[0].setValues) {
+      S.activeMap.series.regions[0].setValues(values);
+    }
+  } catch (_) {}
 
 }
 
