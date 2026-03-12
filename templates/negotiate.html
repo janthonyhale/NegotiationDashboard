@@ -176,7 +176,7 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
 .irp-count-bar.power{background:#be123c;border-color:#f43f5e;}
 .irp-count-bar.recent{box-shadow:0 0 0 2px #f8fafc;}
 .irp-count-lbl{font-family:var(--mono);font-size:0.72rem;color:var(--muted);font-weight:600;}
-.irp-timeline{display:flex;gap:8px;overflow-x:auto;overflow-y:visible;padding:6px 6px 7px 24px;height:68px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.irp-timeline{display:flex;gap:8px;overflow-x:auto;overflow-y:visible;padding:6px 8px 7px 36px;height:68px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;box-sizing:border-box;}
 .irp-turn{display:flex;flex-direction:column;align-items:center;gap:2px;flex:0 0 auto;}
 .irp-dot{width:30px;height:30px;border-radius:50%;border:1px solid #475569;background:#475569;flex:0 0 auto;opacity:0.95;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:0.72rem;color:#e2e8f0;font-weight:600;}
 .irp-dot.interest{background:#10b981;border-color:#34d399;}
@@ -559,7 +559,7 @@ function renderIRPChart(){
       return `<div class="irp-count-bar-wrap"><div class="irp-count-num">${counts[roleName][k]}</div><div class="irp-count-bar ${k} ${recentClass}" style="height:${h}px" title="${k.toUpperCase()}: ${counts[roleName][k]}"></div><div class="irp-count-lbl">${k[0].toUpperCase()}</div></div>`;
     }).join('');
     const countText = `Counts`;
-    const offsetPx = firstSpeakerRole && firstSpeakerRole !== roleName ? 18 : 0;
+    const offsetPx = firstSpeakerRole && firstSpeakerRole !== roleName ? 24 : 0;
     return `<div class="irp-row">
       <div class="irp-row-head">
         <div class="irp-role-name">${label}</div>
@@ -697,7 +697,7 @@ function renderRoleMap(selector, role, dist, topCode, topProb){
     zoomButtons:false,
     zoomOnScroll:false,
     regionStyle:{
-      initial:{fill:'#1f2937', fillOpacity:1, stroke:'#253a55', strokeWidth:0.6},
+      initial:{fillOpacity:1, stroke:'#253a55', strokeWidth:0.6},
       hover:{fillOpacity:1, strokeWidth:0.8, cursor:'pointer'}
     },
     backgroundColor:'#0a1520',
