@@ -158,19 +158,20 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
 .irp-tag.interest{border-color:rgba(34,211,165,0.6);color:#6ee7b7;}
 .irp-tag.right{border-color:rgba(79,145,255,0.55);color:#93c5fd;}
 .irp-tag.power{border-color:rgba(244,63,94,0.6);color:#fda4af;}
-.irp-panel{border-top:1px solid var(--border);padding:8px 12px 12px;background:rgba(10,21,32,0.7);}
+.irp-panel{border-top:1px solid var(--border);padding:8px 12px 12px;background:rgba(10,21,32,0.7);height:33vh;min-height:220px;display:flex;flex-direction:column;}
 .irp-title{font-family:var(--mono);font-size:0.6rem;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;}
-.irp-chart{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.irp-role{border:1px solid var(--border);border-radius:7px;padding:7px;background:var(--surface);}
-.irp-role-hd{font-family:var(--mono);font-size:0.57rem;color:var(--text2);margin-bottom:6px;}
-.irp-bars{display:flex;align-items:flex-end;justify-content:space-between;gap:5px;height:58px;}
-.irp-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;}
-.irp-bar{width:100%;max-width:26px;background:#334155;border:1px solid #475569;border-radius:4px 4px 2px 2px;min-height:4px;transition:all 0.2s;}
-.irp-bar.interest{background:#064e3b;border-color:#10b981;}
-.irp-bar.right{background:#1e3a8a;border-color:#3b82f6;}
-.irp-bar.power{background:#881337;border-color:#f43f5e;}
-.irp-bar.recent{box-shadow:0 0 0 2px #f8fafc;transform:translateY(-1px);}
-.irp-bar-lbl{font-size:0.52rem;font-family:var(--mono);color:var(--muted);}
+.irp-chart{display:flex;flex-direction:column;gap:9px;min-height:0;overflow-y:auto;padding-right:3px;}
+.irp-row{border:1px solid var(--border);border-radius:7px;padding:7px;background:var(--surface);}
+.irp-row-head{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:6px;}
+.irp-role-name{font-family:var(--mono);font-size:0.57rem;color:var(--text2);}
+.irp-counts{font-family:var(--mono);font-size:0.52rem;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
+.irp-timeline{display:flex;gap:6px;overflow-x:auto;padding-bottom:3px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.irp-dot{width:12px;height:12px;border-radius:50%;border:1px solid #475569;background:#475569;flex:0 0 auto;opacity:0.9;}
+.irp-dot.interest{background:#10b981;border-color:#34d399;}
+.irp-dot.right{background:#3b82f6;border-color:#60a5fa;}
+.irp-dot.power{background:#f43f5e;border-color:#fb7185;}
+.irp-dot.na{background:#64748b;border-color:#94a3b8;opacity:0.55;}
+.irp-dot.recent{box-shadow:0 0 0 2px #f8fafc;}
 </style>
 </head>
 <body>
@@ -297,6 +298,7 @@ const COUNTRY_CODE_MAP = {
 };
 let S = { turns:[], currentIdx:-1, dim:'anger', mapRole:'buyer', currentMapDist:{}, country:null, lastCountry:null, bw:{}, sw:{}, activeMap:null, opSummaries:[] };
 const IRP_KEYS = ['interest','right','power'];
+const IRP_DISPLAY_KEYS = ['interest','right','power','na'];
 
 function classifyIRP(text=''){
   const t = String(text || '').toLowerCase();
@@ -307,6 +309,17 @@ function classifyIRP(text=''){
   };
   if ((score.interest + score.right + score.power) === 0) score.interest = 1;
   return IRP_KEYS.reduce((a,b)=>score[a] >= score[b] ? a : b);
+}
+
+function getTurnIRP(turn){
+  const raw = turn?.meta?.irp_label || turn?.irp_label || turn?.irp;
+  if (raw) {
+    const v = String(raw).trim().toLowerCase();
+    if (v.startsWith('interest')) return 'interest';
+    if (v.startsWith('right')) return 'right';
+    if (v.startsWith('power')) return 'power';
+  }
+  return classifyIRP(turn?.text || '');
 }
 
 function scrollDialogueToBottom(){
@@ -333,7 +346,7 @@ function init() {
   S.bw      = D.buyer_weights || {};
   S.sw      = D.seller_weights || {};
   S.opSummaries = Array.isArray(D.op_summaries) ? D.op_summaries : [];
-  S.turns = S.turns.map(t => ({...t, emotions: undefined, irp: t.irp || classifyIRP(t.text)}));
+  S.turns = S.turns.map(t => ({...t, emotions: undefined, irp: getTurnIRP(t)}));
   renderTxList();
   renderCountry();
   document.getElementById('btn-next').disabled = false;
@@ -480,27 +493,37 @@ function renderIRPChart(){
   const host = document.getElementById('irp-chart');
   if (!host) return;
   const upto = S.currentIdx >= 0 ? S.turns.slice(0, S.currentIdx + 1) : [];
-  const counts = {buyer:{interest:0,right:0,power:0}, seller:{interest:0,right:0,power:0}};
-  upto.forEach(turn=>{
-    const role = (turn.speaker || '').toLowerCase();
-    if (!counts[role]) return;
-    const key = turn.irp || classifyIRP(turn.text);
-    if (counts[role][key] !== undefined) counts[role][key] += 1;
-  });
+  const counts = {
+    buyer:{interest:0,right:0,power:0,na:0},
+    seller:{interest:0,right:0,power:0,na:0}
+  };
   const recent = upto[upto.length - 1] || {};
   const recentRole = String(recent.speaker || '').toLowerCase();
-  const recentKey = recent.irp;
-  const roleCard = (roleName) => {
-    const vals = counts[roleName] || {interest:0,right:0,power:0};
-    const maxVal = Math.max(1, ...Object.values(vals));
+
+  const rowHtml = (roleName) => {
     const label = roleName === 'buyer' ? 'Buyer' : 'Seller';
-    return `<div class="irp-role"><div class="irp-role-hd">${label}</div><div class="irp-bars">${IRP_KEYS.map((key)=>{
-      const h = Math.max(6, Math.round((vals[key] / maxVal) * 46));
-      const recentClass = recentRole === roleName && recentKey === key ? 'recent' : '';
-      return `<div class="irp-bar-wrap"><div class="irp-bar ${key} ${recentClass}" style="height:${h}px" title="${key}: ${vals[key]}"></div><div class="irp-bar-lbl">${key[0].toUpperCase()}</div></div>`;
-    }).join('')}</div></div>`;
+    const timeline = upto.map((turn, idx) => {
+      const turnRole = String(turn.speaker || '').toLowerCase();
+      let key = 'na';
+      if (turnRole === roleName) {
+        const raw = String(turn.irp || '').toLowerCase();
+        key = IRP_KEYS.includes(raw) ? raw : 'na';
+        counts[roleName][key] += 1;
+      }
+      const recentClass = idx === upto.length - 1 ? 'recent' : '';
+      return `<div class="irp-dot ${key} ${recentClass}" title="Turn ${idx+1}: ${turnRole === roleName ? key.toUpperCase() : 'NA'}"></div>`;
+    }).join('');
+
+    const countText = IRP_DISPLAY_KEYS.map((k)=>`${k.toUpperCase()}: ${counts[roleName][k]}`).join(' · ');
+    return `<div class="irp-row">
+      <div class="irp-row-head">
+        <div class="irp-role-name">${label}</div>
+        <div class="irp-counts">${countText}</div>
+      </div>
+      <div class="irp-timeline">${timeline || '<div class="irp-counts">No turns yet.</div>'}</div>
+    </div>`;
   };
-  host.innerHTML = roleCard('buyer') + roleCard('seller');
+  host.innerHTML = rowHtml('buyer') + rowHtml('seller');
 }
 
 function updateEmoChart() {
