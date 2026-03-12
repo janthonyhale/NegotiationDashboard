@@ -121,9 +121,11 @@ def parse_file(path, ext):
                           'text':obj.get('text',obj.get('content','')),'ts':None,'meta':{}})
     elif ext == 'txt':
         with open(path) as f: content = f.read()
-        pat = re.compile(r'^(Buyer|Seller|Mediator)\s*:\s*(.+)', re.M|re.I)
+        pat = re.compile(r'^(Buyer|Seller|Mediator)(?:\s*[\[(]\s*(Interest|Power|Right)\s*[\])])?\s*:\s*(.+)', re.M|re.I)
         for i,m in enumerate(pat.finditer(content)):
-            turns.append({'idx':i,'speaker':m.group(1).capitalize(),'text':m.group(2).strip(),'ts':None,'meta':{}})
+            irp_label = m.group(2).capitalize() if m.group(2) else None
+            meta = {'irp_label': irp_label} if irp_label else {}
+            turns.append({'idx':i,'speaker':m.group(1).capitalize(),'text':m.group(3).strip(),'ts':None,'meta':meta})
         if not turns:
             for i,line in enumerate(content.strip().split('\n')):
                 line=line.strip()
@@ -869,7 +871,7 @@ def api_post_summary():
     turns = data.get('turns', [])
     bw    = data.get('buyer_weights', DEFAULT_BUYER_WEIGHTS)
     sw    = data.get('seller_weights', DEFAULT_SELLER_WEIGHTS)
-    dim   = data.get('emotion_dim', 'joy')
+    dim   = data.get('emotion_dim', 'anger')
     final_outcome = data.get('final_outcome')
 
     turns_enriched = enrich(turns) if turns and 'emotions' not in turns[0] else turns
@@ -893,6 +895,8 @@ def api_post_summary():
         'emotion_img': emo_img,
         'post_img': post_img,
         'final_outcome': match,
+        'outcomes': outcomes,
+        'pareto': pareto,
     })
 
 @app.route('/api/export_pdf', methods=['POST'])
