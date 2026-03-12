@@ -720,6 +720,7 @@ function renderRoleMap(selector, role, dist, topCode, topProb){
     },
     onLoaded(map){
       try {
+        map.update({series:{regions:[{values}]}});
         map.setFocus({scale:0.9, lat:14, lng:0, animate:false});
       } catch (_) {}
     }
