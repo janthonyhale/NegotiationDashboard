@@ -75,6 +75,7 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
 .bubble.current.buyer{border-color:rgba(79,145,255,0.5);box-shadow:0 2px 20px rgba(79,145,255,0.1);}
 .bubble.current.seller{border-color:rgba(244,63,94,0.4);box-shadow:0 2px 20px rgba(244,63,94,0.08);}
 .bubble-emos{display:flex;flex-wrap:wrap;gap:4px;margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06);}
+.translation-line{margin-top:8px;padding-top:6px;border-top:1px dashed rgba(148,163,184,0.3);font-size:0.74rem;color:#bfd0e6;}
 .emo-chip{font-size:0.58rem;font-family:var(--mono);padding:2px 7px;border-radius:4px;background:var(--surface);border:1px solid var(--border);color:var(--muted);}
 .emo-chip.hot{border-color:var(--amber);color:var(--amber);}
 .emo-chip.pos{border-color:var(--teal);color:var(--teal);}
@@ -206,6 +207,7 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
     <span class="pill" id="turn-pill">Turn 0 / 0</span>
     <button class="btn" id="btn-prev" disabled onclick="step(-1)">← Prev</button>
     <button class="btn" id="btn-next" disabled onclick="step(1)">Next →</button>
+    <button class="btn" id="btn-runall" disabled onclick="runAll()">⏭ Run All</button>
     <button class="btn primary" onclick="location.href='/post'">Summary →</button>
   </div>
 </nav>
@@ -321,7 +323,16 @@ const COUNTRY_CODE_MAP = {
   'australia':'AU','canada':'CA','brazil':'BR','mexico':'MX','south africa':'ZA',
   'united states of america':'US',"people's republic of china":'CN','republic of india':'IN'
 };
-let S = { turns:[], currentIdx:-1, dim:'anger', mapRole:'buyer', currentMapDist:{}, country:null, lastCountry:null, bw:{}, sw:{}, activeMap:null, opSummaries:[] };
+const CN_PROVINCE_CODE_MAP = {
+  'beijing':'CN-11','tianjin':'CN-12','hebei':'CN-13','shanxi':'CN-14','inner mongolia':'CN-15',
+  'liaoning':'CN-21','jilin':'CN-22','heilongjiang':'CN-23','shanghai':'CN-31','jiangsu':'CN-32',
+  'zhejiang':'CN-33','anhui':'CN-34','fujian':'CN-35','jiangxi':'CN-36','shandong':'CN-37',
+  'henan':'CN-41','hubei':'CN-42','hunan':'CN-43','guangdong':'CN-44','guangxi':'CN-45',
+  'hainan':'CN-46','chongqing':'CN-50','sichuan':'CN-51','guizhou':'CN-52','yunnan':'CN-53',
+  'tibet':'CN-54','shaanxi':'CN-61','gansu':'CN-62','qinghai':'CN-63','ningxia':'CN-64',
+  'xinjiang':'CN-65','hong kong':'CN-91','macau':'CN-92','taiwan':'CN-71'
+};
+let S = { turns:[], currentIdx:-1, dim:'anger', mapRole:'buyer', currentMapDist:{}, country:null, lastCountry:null, bw:{}, sw:{}, activeMap:null, opSummaries:[], language:'EN', processing:false, runAll:false, stepCache:{} };
 const IRP_KEYS = ['interest','right','power'];
 
 function classifyIRP(text=''){
@@ -370,12 +381,21 @@ function init() {
   S.bw      = D.buyer_weights || {};
   S.sw      = D.seller_weights || {};
   S.opSummaries = Array.isArray(D.op_summaries) ? D.op_summaries : [];
-  S.turns = S.turns.map(t => ({...t, emotions: undefined, irp: getTurnIRP(t)}));
+  S.language = (D.language || 'EN').toUpperCase();
+  S.turns = S.turns.map((t,i) => ({...t, irp: getTurnIRP(t)}));
+  S.stepCache = {};
+  S.turns.forEach((t, i)=>{
+    if (t && (t.advisor || t.emotions)) {
+      S.stepCache[i] = { advisor: t.advisor || null };
+    }
+  });
   renderTxList();
   renderCountry();
   document.getElementById('btn-next').disabled = false;
+  document.getElementById('btn-runall').disabled = false;
   document.getElementById('turn-pill').textContent = `Turn 0 / ${S.turns.length}`;
   renderIRPChart();
+  setNavProcessing(false);
 }
 
 function renderTxList() {
@@ -409,6 +429,29 @@ function setOperationalSummary(text){
   summaryEl.textContent = text || 'No operational summary available yet.';
 }
 
+function setNavProcessing(isBusy){
+  S.processing = isBusy;
+  const prevBtn = document.getElementById('btn-prev');
+  const nextBtn = document.getElementById('btn-next');
+  const runBtn = document.getElementById('btn-runall');
+  if (!prevBtn || !nextBtn || !runBtn) return;
+  if (isBusy){
+    prevBtn.disabled = true;
+    nextBtn.disabled = true;
+    runBtn.disabled = true;
+  } else {
+    if (S.runAll) {
+      prevBtn.disabled = true;
+      nextBtn.disabled = true;
+      runBtn.disabled = true;
+      return;
+    }
+    prevBtn.disabled = S.currentIdx <= 0;
+    nextBtn.disabled = S.currentIdx >= S.turns.length - 1;
+    runBtn.disabled = S.currentIdx >= S.turns.length - 1;
+  }
+}
+
 function persistSessionState(){
   const raw = sessionStorage.getItem('nd');
   if (!raw) return;
@@ -418,44 +461,115 @@ function persistSessionState(){
   sessionStorage.setItem('nd', JSON.stringify(base));
 }
 
+async function ensureStepData(idx) {
+  if (idx < 0 || idx >= S.turns.length) return null;
+  if (S.stepCache[idx]?.ready) return S.stepCache[idx];
+
+  const res = await fetch('/api/step',{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({idx, turns:S.turns, emotion_dim:S.dim, buyer_weights:S.bw, seller_weights:S.sw, language:S.language}),
+  });
+  const data = await res.json();
+
+  if (data.current_turn) {
+    S.turns[idx] = { ...S.turns[idx], ...data.current_turn, irp: S.turns[idx].irp };
+  }
+  if (data.current_turn && data.current_turn.emotions) {
+    S.turns[idx].emotions = data.current_turn.emotions;
+  }
+
+  const cacheItem = {
+    ready: true,
+    risk: data.risk || null,
+    advisor: data.advisor || null,
+    country: data.country || null,
+    operational_summary: data.operational_summary || '',
+  };
+  S.stepCache[idx] = cacheItem;
+
+  if (cacheItem.operational_summary) {
+    S.opSummaries = S.opSummaries.filter(item => Number(item.idx) !== idx);
+    S.opSummaries.push({idx, summary: cacheItem.operational_summary});
+    S.opSummaries.sort((a,b)=>Number(a.idx)-Number(b.idx));
+  }
+
+  return cacheItem;
+}
+
+function renderDialogueUpTo(idx){
+  const dialogueEl = document.getElementById('dialogue');
+  if (!dialogueEl) return;
+  if (idx < 0) {
+    dialogueEl.innerHTML = `<div class="placeholder-msg" id="dial-placeholder"><div class="ph-icon">💬</div><p>Step through turns to see the<br>dialogue unfold here</p></div>`;
+    renderIRPChart();
+    return;
+  }
+  dialogueEl.innerHTML = '';
+  for (let i=0;i<=idx;i+=1){
+    addBubble(S.turns[i], i, true);
+  }
+  scrollDialogueToBottom();
+}
+
+function applyCachedStepState(idx){
+  const c = S.stepCache[idx] || {};
+  if (c.country) { S.lastCountry = c.country; renderCountry(c.country); }
+  if (c.operational_summary) setOperationalSummary(c.operational_summary);
+  else setOperationalSummary('No operational summary available for this turn.');
+  if (c.risk) renderRisk(c.risk);
+  if (c.advisor) renderAdvisor(c.advisor);
+}
+
 async function step(dir) {
+  if (S.processing) return;
   const ni = S.currentIdx + dir;
   if (ni < 0 || ni >= S.turns.length) return;
+
   S.currentIdx = ni;
   updateTxHighlights();
-  document.getElementById('btn-prev').disabled = ni <= 0;
-  document.getElementById('btn-next').disabled = ni >= S.turns.length - 1;
+  setNavProcessing(true);
   document.getElementById('turn-pill').textContent = `Turn ${ni+1} / ${S.turns.length}`;
   document.getElementById('center-hint').textContent = `Turn ${ni+1} of ${S.turns.length}`;
-  addBubble(S.turns[ni], ni);
 
+  if (dir < 0) {
+    renderDialogueUpTo(ni);
+    applyCachedStepState(ni);
+    updateEmoChart();
+    setNavProcessing(false);
+    return;
+  }
+
+  renderDialogueUpTo(ni);
   document.getElementById('spin').style.display = 'block';
   setOperationalSummaryLoading();
   try {
-    const res = await fetch('/api/step',{
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({idx:ni, turns:S.turns, emotion_dim:S.dim, buyer_weights:S.bw, seller_weights:S.sw}),
-    });
-    const data = await res.json();
-    if (data.current_turn && data.current_turn.emotions) {
-      S.turns[ni].emotions = data.current_turn.emotions;
-      syncBubbleEmotions(ni);
-    }
-    if (data.country) { S.lastCountry = data.country; renderCountry(data.country); }
-    if (data.operational_summary) {
-      setOperationalSummary(data.operational_summary);
-      S.opSummaries = S.opSummaries.filter(item => Number(item.idx) !== ni);
-      S.opSummaries.push({idx: ni, summary: data.operational_summary});
-      S.opSummaries.sort((a,b)=>Number(a.idx)-Number(b.idx));
-    } else {
-      setOperationalSummary('No operational summary available for this turn.');
-    }
+    await ensureStepData(ni);
+    applyCachedStepState(ni);
     persistSessionState();
     updateEmoChart();
-    renderRisk(data.risk);
-    renderAdvisor(data.advisor);
-  } catch(e){ console.error(e); setOperationalSummary('Operational summary unavailable (analysis request failed).'); }
-  finally{ document.getElementById('spin').style.display='none'; }
+    syncBubbleEmotions(ni);
+  } catch(e){
+    console.error(e);
+    setOperationalSummary('Operational summary unavailable (analysis request failed).');
+  } finally {
+    document.getElementById('spin').style.display='none';
+    setNavProcessing(false);
+  }
+}
+
+async function runAll(){
+  if (S.processing || S.currentIdx >= S.turns.length - 1) return;
+  S.runAll = true;
+  setNavProcessing(true);
+  try {
+    while (S.currentIdx < S.turns.length - 1){
+      await step(1);
+      await new Promise(r=>setTimeout(r, 40));
+    }
+  } finally {
+    S.runAll = false;
+    setNavProcessing(false);
+  }
 }
 
 function updateTxHighlights() {
@@ -491,7 +605,7 @@ function syncBubbleEmotions(idx){
   }
 }
 
-function addBubble(t, idx) {
+function addBubble(t, idx, skipScroll=false) {
   const ph = document.getElementById('dial-placeholder');
   if (ph) ph.remove();
   const role = t.speaker.toLowerCase();
@@ -503,13 +617,14 @@ function addBubble(t, idx) {
     <div class="bubble-label ${role}">${t.speaker} · Turn ${idx}<span class="irp-tag ${t.irp}">${(t.irp || 'interest').toUpperCase()}</span></div>
     <div class="bubble ${role} current">
       ${esc(t.text)}
+      ${S.language === 'CN' ? `<div class="translation-line">EN: ${esc(t.translation || 'Translating...')}</div>` : ''}
       <div class="bubble-emos">${chips}</div>
     </div>`;
   // Remove 'current' from previous bubble
   document.querySelectorAll('.bubble.current').forEach(b=>b.classList.remove('current'));
   const dialogueEl = document.getElementById('dialogue');
   dialogueEl.appendChild(wrap);
-  scrollDialogueToBottomSmooth();
+  if (!skipScroll) scrollDialogueToBottomSmooth();
   renderIRPChart();
 }
 
@@ -678,10 +793,65 @@ function normalizeDist(dist){
 }
 
 
+
+const CN_PROVINCE_POINTS = {
+  'CN-11': {name:'Beijing', x:205, y:94}, 'CN-12': {name:'Tianjin', x:216, y:101},
+  'CN-13': {name:'Hebei', x:198, y:114}, 'CN-21': {name:'Liaoning', x:248, y:82},
+  'CN-31': {name:'Shanghai', x:232, y:156}, 'CN-32': {name:'Jiangsu', x:222, y:147},
+  'CN-33': {name:'Zhejiang', x:228, y:171}, 'CN-37': {name:'Shandong', x:230, y:122},
+  'CN-41': {name:'Henan', x:188, y:140}, 'CN-42': {name:'Hubei', x:176, y:160},
+  'CN-43': {name:'Hunan', x:172, y:181}, 'CN-44': {name:'Guangdong', x:182, y:214},
+  'CN-50': {name:'Chongqing', x:145, y:170}, 'CN-51': {name:'Sichuan', x:126, y:170},
+  'CN-53': {name:'Yunnan', x:110, y:220}, 'CN-61': {name:'Shaanxi', x:160, y:137},
+  'CN-65': {name:'Xinjiang', x:58, y:102}, 'CN-71': {name:'Taiwan', x:244, y:214}
+};
+
+function renderChinaProvinceMap(selector, dist, topCode, role){
+  const host = document.querySelector(selector);
+  if (!host) return;
+  const palette = role === 'buyer'
+    ? ['#dbeafe','#93c5fd','#60a5fa','#2563eb']
+    : ['#fee2e2','#fca5a5','#f87171','#dc2626'];
+
+  const shade = (v)=>{
+    const n = Math.max(0, Math.min(1, Number(v)||0));
+    if (n >= 0.75) return palette[3];
+    if (n >= 0.5) return palette[2];
+    if (n >= 0.25) return palette[1];
+    return palette[0];
+  };
+
+  const pts = Object.entries(CN_PROVINCE_POINTS).map(([code, meta])=>{
+    const v = Number((dist || {})[code] || 0);
+    const r = code === topCode ? 8 : (v > 0 ? 6 : 4.2);
+    const stroke = code === topCode ? '#22d3a5' : '#22344a';
+    const fill = v > 0 ? shade(v) : '#1b2a3d';
+    const pct = Math.round(v * 100);
+    return `<circle cx="${meta.x}" cy="${meta.y}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="${code===topCode?2:1}"><title>${meta.name} · ${pct}%</title></circle>`;
+  }).join('');
+
+  host.innerHTML = `<svg viewBox="0 0 300 260" width="100%" height="100%" aria-label="China province confidence map">
+    <rect x="0" y="0" width="300" height="260" rx="8" ry="8" fill="#0a1520" stroke="#132236"/>
+    <path d="M42,92 L78,76 L108,84 L135,72 L164,86 L196,82 L228,96 L250,120 L238,152 L248,190 L230,212 L198,228 L170,220 L142,228 L110,214 L90,194 L70,162 L58,132 Z"
+      fill="rgba(75,96,122,0.20)" stroke="#355070" stroke-width="1.2"/>
+    ${pts}
+  </svg>`;
+}
+
 function renderRoleMap(selector, role, dist, topCode, topProb){
   const palette = role === 'buyer'
     ? ['#dbeafe','#93c5fd','#60a5fa','#2563eb']
     : ['#fee2e2','#fca5a5','#f87171','#dc2626'];
+
+  const isCN = S.language === 'CN';
+  if (isCN) {
+    if (S.activeMap) {
+      S.activeMap.destroy();
+      S.activeMap = null;
+    }
+    renderChinaProvinceMap(selector, dist, topCode, role);
+    return;
+  }
 
   if (S.activeMap) {
     S.activeMap.destroy();
@@ -689,16 +859,25 @@ function renderRoleMap(selector, role, dist, topCode, topProb){
   }
 
   const values = {};
+  const useChinaMap = false;
   Object.entries(dist || {}).forEach(([code, val]) => {
-    const up = String(code || '').trim().toUpperCase();
-    if (/^[A-Z]{2}$/.test(up)) {
-      values[up] = Math.max(0, Math.min(1, Number(val) || 0));
+    const raw = String(code || '').trim();
+    const up = raw.toUpperCase();
+    const num = Math.max(0, Math.min(1, Number(val) || 0));
+    if (useChinaMap) {
+      if (/^CN-\d{2}$/.test(up)) values[up] = num;
+    } else if (isCN) {
+      values['CN'] = Math.max(num, values['CN'] || 0);
+      values['cn'] = values['CN'];
+    } else if (/^[A-Z]{2}$/.test(up)) {
+      values[up] = num;
+      values[up.toLowerCase()] = num;
     }
   });
 
   S.activeMap = new jsVectorMap({
     selector,
-    map: 'world',
+    map: useChinaMap ? 'china' : 'world',
     zoomButtons: false,
     zoomOnScroll: false,
     backgroundColor: '#0a1520',
@@ -715,7 +894,7 @@ function renderRoleMap(selector, role, dist, topCode, topProb){
         cursor: 'pointer'
       }
     },
-    selectedRegions: topCode ? [String(topCode).toUpperCase()] : [],
+    selectedRegions: topCode ? [useChinaMap ? String(topCode).toUpperCase() : (isCN ? 'CN' : String(topCode).toUpperCase())] : [],
     selectedRegionsStyle: {
       fill: palette[3]
     },
@@ -730,7 +909,9 @@ function renderRoleMap(selector, role, dist, topCode, topProb){
       }]
     },
     onRegionTooltipShow(event, tooltip, code){
-      const pct = Math.round((values[String(code).toUpperCase()] || 0) * 100);
+      const rawCode = String(code);
+      const lookup = rawCode.toUpperCase();
+      const pct = Math.round((values[lookup] || 0) * 100);
       tooltip.text(`${tooltip.text()} · ${pct}%`);
       tooltip.css({
         backgroundColor: 'rgba(75,96,122,0.95)',
@@ -738,9 +919,11 @@ function renderRoleMap(selector, role, dist, topCode, topProb){
       });
     },
     onLoaded(map){
-      try {
-        map.setFocus({ scale: 0.9, lat: 14, lng: 0, animate: false });
-      } catch (_) {}
+      if (!useChinaMap){
+        try {
+          map.setFocus({ scale: 0.9, lat: 14, lng: 0, animate: false });
+        } catch (_) {}
+      }
     }
   });
 
@@ -750,7 +933,7 @@ function renderRoleMap(selector, role, dist, topCode, topProb){
       S.activeMap.series.regions[0].setValues(values);
     }
     if (topCode) {
-      S.activeMap.setSelectedRegions([String(topCode).toUpperCase()]);
+      S.activeMap.setSelectedRegions([useChinaMap ? String(topCode).toUpperCase() : (isCN ? 'CN' : String(topCode).toUpperCase())]);
     }
   } catch (_) {}
 }
@@ -765,6 +948,7 @@ function normalizeCountryCode(raw){
   const upper = s.toUpperCase();
   if (/^[A-Z]{2}$/.test(upper)) return upper;
 
+  if (S.language === 'CN') return CN_PROVINCE_CODE_MAP[lower] || null;
   return null;
 }
 
@@ -795,7 +979,7 @@ function renderCountry(countrySnap){
   const topCode = sortedDist[0]?.[0] || null;
   const topProb = sortedDist[0]?.[1] || 0;
   document.getElementById('map-title').textContent = role === 'buyer' ? 'Buyer map' : 'Seller map';
-  document.getElementById('map-scale-note').textContent = role === 'buyer' ? 'Blue = higher confidence' : 'Red = higher confidence';
+  document.getElementById('map-scale-note').textContent = S.language==='CN' ? 'Chinese provinces by confidence' : (role === 'buyer' ? 'Blue = higher confidence' : 'Red = higher confidence');
   const normalizedDist = normalizeDist(dist);
   renderRoleMap('#active-map', role, normalizedDist, topCode, topProb);
 }
