@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsvectormap/dist/css/jsvectormap.min.css">
 <script src="https://cdn.jsdelivr.net/npm/jsvectormap"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsvectormap/dist/maps/world.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsvectormap/dist/maps/china.js"></script>
 <style>
 :root{--bg:#07090f;--surface:#0c1018;--card:#0e1521;--border:#1a2333;--teal:#22d3a5;--accent:#4f91ff;--red:#f43f5e;--amber:#f59e0b;--purple:#a78bfa;--muted:#4b607a;--text:#e2e8f0;--text2:#94a3b8;--serif:'Instrument Serif',serif;--sans:'Instrument Sans',sans-serif;--mono:'JetBrains Mono',monospace;}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -626,6 +627,7 @@ function addBubble(t, idx, skipScroll=false) {
   dialogueEl.appendChild(wrap);
   if (!skipScroll) scrollDialogueToBottomSmooth();
   renderIRPChart();
+  setNavProcessing(false);
 }
 
 function renderIRPChart(){
