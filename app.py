@@ -260,14 +260,19 @@ CN_PROVINCES = {
 def infer_cn_province_distribution(turns, role):
     role_turns = [str(t.get('text', '')) for t in turns if str(t.get('speaker', '')).lower() == role.lower()]
     text = ' '.join(role_turns).lower()
-    counts = {}
+
+    # Start with a light, uniform prior so every province can be visualized.
+    counts = {province: 0.2 for province in CN_PROVINCES.keys()}
     for province, aliases in CN_PROVINCES.items():
         hit = sum(text.count(alias.lower()) for alias in aliases)
         if hit > 0:
-            counts[province] = float(hit)
-    if not counts:
-        # Lightweight prior when no province cues are present.
-        counts = {'guangdong': 1.0, 'beijing': 0.9, 'shanghai': 0.9, 'sichuan': 0.7, 'zhejiang': 0.7}
+            counts[province] += float(hit) * 3.0
+
+    # Nudge major-language hubs slightly when no clear location cues exist.
+    if not any(v > 0.2 for v in counts.values()):
+        for hub in ['guangdong', 'beijing', 'shanghai', 'sichuan', 'zhejiang']:
+            counts[hub] += 0.8
+
     total = sum(counts.values()) or 1.0
     return {k: round(v / total, 6) for k, v in counts.items()}
 
@@ -735,7 +740,15 @@ COUNTRY_SVG = {
 }
 
 
-PREDICTOR = RegionPredictor(language='english', model_name='svm')
+def _safe_build_predictor(language):
+    try:
+        return RegionPredictor(language=language, model_name='svm')
+    except Exception:
+        return None
+
+
+PREDICTOR = _safe_build_predictor('english')
+PREDICTOR_ZH = _safe_build_predictor('chinese')
 
 COUNTRY_LABEL_MAP = {
     'U.S.':'United States','US':'United States','United States':'United States',
@@ -778,6 +791,8 @@ def predict_country_with_model(turns, role):
     if not role_turns:
         return _to_geo_payload('United States', 0.0, {})
     try:
+        if PREDICTOR is None:
+            return predict_country(turns, role)
         outputs = PREDICTOR.predict_batch(role_turns)
         if not outputs:
             return _to_geo_payload('United States', 0.0, {})
@@ -799,6 +814,39 @@ def predict_country_with_model(turns, role):
         return _to_geo_payload(pred, conf, averaged_probs)
     except Exception:
         return predict_country(turns, role)
+
+
+
+def predict_cn_region_with_model(turns, role):
+    role_turns = [t.get('text', '').strip() for t in turns if t.get('speaker') == role and t.get('text', '').strip()]
+    if not role_turns:
+        return {'country': 'China', 'confidence': 0.0, 'probabilities': {'North': 0.25, 'Central': 0.25, 'Wu_Min': 0.25, 'Xian_Yue': 0.25}}
+
+    if PREDICTOR_ZH is None:
+        # fallback to lightweight heuristic if chinese model is unavailable
+        probs = infer_cn_province_distribution(turns, role)
+        proxy = {
+            'North': probs.get('beijing', 0) + probs.get('tianjin', 0) + probs.get('hebei', 0) + probs.get('shandong', 0),
+            'Central': probs.get('henan', 0) + probs.get('hubei', 0) + probs.get('hunan', 0) + probs.get('sichuan', 0),
+            'Wu_Min': probs.get('shanghai', 0) + probs.get('jiangsu', 0) + probs.get('zhejiang', 0) + probs.get('fujian', 0),
+            'Xian_Yue': probs.get('guangdong', 0) + probs.get('guangxi', 0) + probs.get('hainan', 0) + probs.get('hong kong', 0),
+        }
+        total = sum(proxy.values()) or 1.0
+        normalized = {k: round(v / total, 6) for k, v in proxy.items()}
+        pred, conf = max(normalized.items(), key=lambda item: item[1])
+        return {'country': 'China', 'confidence': round(conf, 2), 'probabilities': normalized, 'region': pred}
+
+    outputs = PREDICTOR_ZH.predict_batch(role_turns)
+    combined = {}
+    for out in outputs:
+        for label, prob in (out.get('probabilities') or {}).items():
+            combined[label] = combined.get(label, 0.0) + float(prob)
+    count = len(outputs) or 1
+    averaged = {k: v / count for k, v in combined.items()}
+    total = sum(averaged.values()) or 1.0
+    normalized = {k: round(v / total, 6) for k, v in averaged.items()}
+    pred, conf = max(normalized.items(), key=lambda item: item[1])
+    return {'country': 'China', 'confidence': round(conf, 2), 'probabilities': normalized, 'region': pred}
 
 def predict_country(turns, role):
     text  = ' '.join(t['text'] for t in turns if t['speaker']==role).lower()
@@ -917,6 +965,31 @@ def make_all_emotions_plot(turns):
     plt.tight_layout()
     return fig_b64(fig)
 
+
+
+def extract_uploaded_bundle_metadata(path, ext):
+    meta = {}
+    if ext != 'json':
+        return meta
+    try:
+        with open(path, encoding='utf-8-sig', errors='replace') as f:
+            data = json.load(f)
+        if isinstance(data, dict):
+            if isinstance(data.get('op_summaries'), list):
+                meta['op_summaries'] = data.get('op_summaries')
+            if isinstance(data.get('step_cache'), dict):
+                meta['step_cache'] = data.get('step_cache')
+            if isinstance(data.get('country'), dict):
+                meta['country'] = data.get('country')
+            if isinstance(data.get('language'), str):
+                val = data.get('language', '').strip().upper()
+                if val in {'EN', 'CN'}:
+                    meta['language'] = val
+    except Exception:
+        return meta
+    return meta
+
+
 # ── Routes ────────────────────────────────────────────────────────────────────
 @app.route('/')
 def index(): return render_template('upload.html')
@@ -943,7 +1016,8 @@ def api_upload():
         turns = parse_file(path, ext)
         if not turns: return jsonify({'error':'No turns found in file'}),400
 
-        language = extract_dialogue_language(path, ext)
+        bundle_meta = extract_uploaded_bundle_metadata(path, ext)
+        language = bundle_meta.get('language', extract_dialogue_language(path, ext))
         has_cached = turns_have_cached_enrichment(turns)
         if not has_cached:
             turns = enrich(turns)
@@ -961,8 +1035,8 @@ def api_upload():
         pareto_img = make_pareto_plot(outcomes, pareto, title='Pre-Negotiation: KODIS Solution Space')
 
         if language == 'CN':
-            buyer_c = {'country':'China','confidence':1.0,'probabilities': infer_cn_province_distribution(turns, 'Buyer')}
-            seller_c = {'country':'China','confidence':1.0,'probabilities': infer_cn_province_distribution(turns, 'Seller')}
+            buyer_c = predict_cn_region_with_model(turns, 'Buyer')
+            seller_c = predict_cn_region_with_model(turns, 'Seller')
         else:
             buyer_c  = predict_country_with_model(turns,'Buyer')
             seller_c = predict_country_with_model(turns,'Seller')
@@ -975,6 +1049,8 @@ def api_upload():
             'pareto_img':pareto_img,
             'country':{'buyer':buyer_c,'seller':seller_c},
             'pre_justifications': pre_justifications,
+            'op_summaries': bundle_meta.get('op_summaries', []),
+            'step_cache': bundle_meta.get('step_cache', {}),
         })
     except Exception as e:
         import traceback; traceback.print_exc()
@@ -1011,8 +1087,8 @@ def api_step():
     cur['advisor'] = adv
     emo_img = make_emotion_plot(turns_so_far, dim)
     if language == 'CN':
-        buyer_c = {'country':'China','confidence':1.0,'probabilities': infer_cn_province_distribution(turns_so_far, 'Buyer')}
-        seller_c = {'country':'China','confidence':1.0,'probabilities': infer_cn_province_distribution(turns_so_far, 'Seller')}
+        buyer_c = predict_cn_region_with_model(turns_so_far, 'Buyer')
+        seller_c = predict_cn_region_with_model(turns_so_far, 'Seller')
     else:
         buyer_c = predict_country_with_model(turns_so_far, 'Buyer')
         seller_c = predict_country_with_model(turns_so_far, 'Seller')
@@ -1214,6 +1290,7 @@ def api_export_enriched():
         'op_summaries': data.get('op_summaries', []),
         'final_outcome': data.get('final_outcome'),
         'country': data.get('country', {}),
+        'step_cache': data.get('step_cache', {}),
     }
     buf = io.BytesIO(json.dumps(payload, ensure_ascii=False, indent=2).encode('utf-8'))
     buf.seek(0)

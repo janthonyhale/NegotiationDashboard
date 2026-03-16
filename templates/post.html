@@ -165,7 +165,7 @@ nav{display:flex;align-items:center;padding:11px 22px;border-bottom:1px solid va
 <div id="toast"></div>
 
 <script>
-let S = { turns:[], bw:{}, sw:{}, filename:'', preImg:'', postImg:'', emoImg:'', finalOutcome:null, opSummaries:[], outcomes:[], pareto:[], language:'EN', country:null, preJustifications:{} };
+let S = { turns:[], bw:{}, sw:{}, filename:'', preImg:'', postImg:'', emoImg:'', finalOutcome:null, opSummaries:[], outcomes:[], pareto:[], language:'EN', country:null, preJustifications:{}, stepCache:{} };
 const IRP_KEYS = ['interest','right','power'];
 
 function classifyIRP(text=''){
@@ -192,6 +192,7 @@ async function init() {
   S.language = (D.language || 'EN').toUpperCase();
   S.country = D.country || null;
   S.preJustifications = D.pre_justifications || {};
+  S.stepCache = D.step_cache || {};
 
   document.getElementById('pre-img').src = 'data:image/png;base64,' + S.preImg;
   document.getElementById('pre-img').style.display = 'block';
@@ -350,6 +351,7 @@ async function exportEnriched() {
         buyer_weights: S.bw, seller_weights: S.sw,
         op_summaries: S.opSummaries, final_outcome: S.finalOutcome,
         country: S.country, pre_justifications: S.preJustifications,
+        step_cache: S.stepCache,
       })
     });
     if (!res.ok) { toast('Export failed',true); return; }

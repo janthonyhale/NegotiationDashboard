@@ -324,14 +324,9 @@ const COUNTRY_CODE_MAP = {
   'australia':'AU','canada':'CA','brazil':'BR','mexico':'MX','south africa':'ZA',
   'united states of america':'US',"people's republic of china":'CN','republic of india':'IN'
 };
-const CN_PROVINCE_CODE_MAP = {
-  'beijing':'CN-11','tianjin':'CN-12','hebei':'CN-13','shanxi':'CN-14','inner mongolia':'CN-15',
-  'liaoning':'CN-21','jilin':'CN-22','heilongjiang':'CN-23','shanghai':'CN-31','jiangsu':'CN-32',
-  'zhejiang':'CN-33','anhui':'CN-34','fujian':'CN-35','jiangxi':'CN-36','shandong':'CN-37',
-  'henan':'CN-41','hubei':'CN-42','hunan':'CN-43','guangdong':'CN-44','guangxi':'CN-45',
-  'hainan':'CN-46','chongqing':'CN-50','sichuan':'CN-51','guizhou':'CN-52','yunnan':'CN-53',
-  'tibet':'CN-54','shaanxi':'CN-61','gansu':'CN-62','qinghai':'CN-63','ningxia':'CN-64',
-  'xinjiang':'CN-65','hong kong':'CN-91','macau':'CN-92','taiwan':'CN-71'
+const CN_REGION_CODE_MAP = {
+  'north':'north','central':'central','wu_min':'wu_min','xian_yue':'xian_yue',
+  'north_china':'north','central_china':'central','wu-min':'wu_min','xian-yue':'xian_yue'
 };
 let S = { turns:[], currentIdx:-1, dim:'anger', mapRole:'buyer', currentMapDist:{}, country:null, lastCountry:null, bw:{}, sw:{}, activeMap:null, opSummaries:[], language:'EN', processing:false, runAll:false, stepCache:{} };
 const IRP_KEYS = ['interest','right','power'];
@@ -382,12 +377,13 @@ function init() {
   S.bw      = D.buyer_weights || {};
   S.sw      = D.seller_weights || {};
   S.opSummaries = Array.isArray(D.op_summaries) ? D.op_summaries : [];
+  S.stepCache = (D.step_cache && typeof D.step_cache === 'object') ? D.step_cache : {};
   S.language = (D.language || 'EN').toUpperCase();
   S.turns = S.turns.map((t,i) => ({...t, irp: getTurnIRP(t)}));
-  S.stepCache = {};
   S.turns.forEach((t, i)=>{
-    if (t && (t.advisor || t.emotions)) {
-      S.stepCache[i] = { advisor: t.advisor || null };
+    if (t && (t.advisor || t.emotions || t.translation)) {
+      const prior = S.stepCache[i] || {};
+      S.stepCache[i] = { ...prior, advisor: prior.advisor || t.advisor || null };
     }
   });
   renderTxList();
@@ -459,12 +455,19 @@ function persistSessionState(){
   const base = JSON.parse(raw);
   base.turns = S.turns;
   base.op_summaries = S.opSummaries;
+  base.step_cache = S.stepCache;
   sessionStorage.setItem('nd', JSON.stringify(base));
 }
 
 async function ensureStepData(idx) {
   if (idx < 0 || idx >= S.turns.length) return null;
-  if (S.stepCache[idx]?.ready) return S.stepCache[idx];
+  const existing = S.stepCache[idx] || {};
+  const hasLocalSummary = S.opSummaries.some(item => Number(item.idx) === Number(idx) && item.summary);
+  const hasTurnData = Boolean(S.turns[idx]?.emotions || S.turns[idx]?.advisor);
+  if (existing.ready || (hasLocalSummary && hasTurnData)) {
+    S.stepCache[idx] = { ...existing, ready: true, advisor: existing.advisor || S.turns[idx]?.advisor || null };
+    return S.stepCache[idx];
+  }
 
   const res = await fetch('/api/step',{
     method:'POST', headers:{'Content-Type':'application/json'},
@@ -796,19 +799,14 @@ function normalizeDist(dist){
 
 
 
-const CN_PROVINCE_POINTS = {
-  'CN-11': {name:'Beijing', x:205, y:94}, 'CN-12': {name:'Tianjin', x:216, y:101},
-  'CN-13': {name:'Hebei', x:198, y:114}, 'CN-21': {name:'Liaoning', x:248, y:82},
-  'CN-31': {name:'Shanghai', x:232, y:156}, 'CN-32': {name:'Jiangsu', x:222, y:147},
-  'CN-33': {name:'Zhejiang', x:228, y:171}, 'CN-37': {name:'Shandong', x:230, y:122},
-  'CN-41': {name:'Henan', x:188, y:140}, 'CN-42': {name:'Hubei', x:176, y:160},
-  'CN-43': {name:'Hunan', x:172, y:181}, 'CN-44': {name:'Guangdong', x:182, y:214},
-  'CN-50': {name:'Chongqing', x:145, y:170}, 'CN-51': {name:'Sichuan', x:126, y:170},
-  'CN-53': {name:'Yunnan', x:110, y:220}, 'CN-61': {name:'Shaanxi', x:160, y:137},
-  'CN-65': {name:'Xinjiang', x:58, y:102}, 'CN-71': {name:'Taiwan', x:244, y:214}
+const CN_REGION_META = {
+  north: {name:'North', cx:190, cy:95},
+  central: {name:'Central', cx:165, cy:156},
+  wu_min: {name:'Wu_Min', cx:228, cy:168},
+  xian_yue: {name:'Xian_Yue', cx:190, cy:212},
 };
 
-function renderChinaProvinceMap(selector, dist, topCode, role){
+function renderChinaRegionMap(selector, dist, topCode, role){
   const host = document.querySelector(selector);
   if (!host) return;
   const palette = role === 'buyer'
@@ -817,26 +815,34 @@ function renderChinaProvinceMap(selector, dist, topCode, role){
 
   const shade = (v)=>{
     const n = Math.max(0, Math.min(1, Number(v)||0));
-    if (n >= 0.75) return palette[3];
-    if (n >= 0.5) return palette[2];
+    if (n >= 0.65) return palette[3];
+    if (n >= 0.45) return palette[2];
     if (n >= 0.25) return palette[1];
     return palette[0];
   };
 
-  const pts = Object.entries(CN_PROVINCE_POINTS).map(([code, meta])=>{
-    const v = Number((dist || {})[code] || 0);
-    const r = code === topCode ? 8 : (v > 0 ? 6 : 4.2);
-    const stroke = code === topCode ? '#22d3a5' : '#22344a';
-    const fill = v > 0 ? shade(v) : '#1b2a3d';
-    const pct = Math.round(v * 100);
-    return `<circle cx="${meta.x}" cy="${meta.y}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="${code===topCode?2:1}"><title>${meta.name} · ${pct}%</title></circle>`;
-  }).join('');
+  const p = {
+    north: Number((dist || {}).north || 0),
+    central: Number((dist || {}).central || 0),
+    wu_min: Number((dist || {}).wu_min || 0),
+    xian_yue: Number((dist || {}).xian_yue || 0),
+  };
 
-  host.innerHTML = `<svg viewBox="0 0 300 260" width="100%" height="100%" aria-label="China province confidence map">
+  host.innerHTML = `<svg viewBox="0 0 300 260" width="100%" height="100%" aria-label="China regional confidence map">
     <rect x="0" y="0" width="300" height="260" rx="8" ry="8" fill="#0a1520" stroke="#132236"/>
     <path d="M42,92 L78,76 L108,84 L135,72 L164,86 L196,82 L228,96 L250,120 L238,152 L248,190 L230,212 L198,228 L170,220 L142,228 L110,214 L90,194 L70,162 L58,132 Z"
       fill="rgba(75,96,122,0.20)" stroke="#355070" stroke-width="1.2"/>
-    ${pts}
+
+    <path d="M92,88 L132,70 L164,86 L198,82 L230,96 L240,118 L218,136 L186,132 L154,126 L126,122 L100,110 Z"
+      fill="${shade(p.north)}" stroke="${topCode==='north'?'#22d3a5':'#1f3349'}" stroke-width="${topCode==='north'?2:1.1}"/>
+    <path d="M100,112 L126,122 L154,126 L186,132 L218,136 L206,160 L176,170 L146,172 L118,166 L98,148 Z"
+      fill="${shade(p.central)}" stroke="${topCode==='central'?'#22d3a5':'#1f3349'}" stroke-width="${topCode==='central'?2:1.1}"/>
+    <path d="M206,136 L230,146 L234,168 L224,188 L204,196 L194,174 L206,160 Z"
+      fill="${shade(p.wu_min)}" stroke="${topCode==='wu_min'?'#22d3a5':'#1f3349'}" stroke-width="${topCode==='wu_min'?2:1.1}"/>
+    <path d="M118,166 L146,172 L176,170 L194,174 L204,196 L198,218 L168,220 L142,228 L112,214 L98,188 Z"
+      fill="${shade(p.xian_yue)}" stroke="${topCode==='xian_yue'?'#22d3a5':'#1f3349'}" stroke-width="${topCode==='xian_yue'?2:1.1}"/>
+
+    ${Object.entries(CN_REGION_META).map(([k,v])=>`<text x="${v.cx}" y="${v.cy}" fill="#e2e8f0" font-size="10" text-anchor="middle">${v.name} ${Math.round((p[k]||0)*100)}%</text>`).join('')}
   </svg>`;
 }
 
@@ -851,7 +857,7 @@ function renderRoleMap(selector, role, dist, topCode, topProb){
       S.activeMap.destroy();
       S.activeMap = null;
     }
-    renderChinaProvinceMap(selector, dist, topCode, role);
+    renderChinaRegionMap(selector, dist, topCode, role);
     return;
   }
 
@@ -872,8 +878,9 @@ function renderRoleMap(selector, role, dist, topCode, topProb){
       values['CN'] = Math.max(num, values['CN'] || 0);
       values['cn'] = values['CN'];
     } else if (/^[A-Z]{2}$/.test(up)) {
-      values[up] = num;
-      values[up.toLowerCase()] = num;
+      const visible = num > 0 ? Math.max(0.18, Math.sqrt(num)) : 0;
+      values[up] = visible;
+      values[up.toLowerCase()] = visible;
     }
   });
 
@@ -950,7 +957,12 @@ function normalizeCountryCode(raw){
   const upper = s.toUpperCase();
   if (/^[A-Z]{2}$/.test(upper)) return upper;
 
-  if (S.language === 'CN') return CN_PROVINCE_CODE_MAP[lower] || null;
+  if (S.language === 'CN') {
+    if (CN_REGION_CODE_MAP[lower]) return CN_REGION_CODE_MAP[lower];
+    if (lower === 'wu_min' || lower === 'wu-min') return 'wu_min';
+    if (lower === 'xian_yue' || lower === 'xian-yue') return 'xian_yue';
+    return null;
+  }
   return null;
 }
 
@@ -981,7 +993,7 @@ function renderCountry(countrySnap){
   const topCode = sortedDist[0]?.[0] || null;
   const topProb = sortedDist[0]?.[1] || 0;
   document.getElementById('map-title').textContent = role === 'buyer' ? 'Buyer map' : 'Seller map';
-  document.getElementById('map-scale-note').textContent = S.language==='CN' ? 'Chinese provinces by confidence' : (role === 'buyer' ? 'Blue = higher confidence' : 'Red = higher confidence');
+  document.getElementById('map-scale-note').textContent = S.language==='CN' ? 'Chinese regions (North/Central/Wu_Min/Xian_Yue)' : (role === 'buyer' ? 'Blue = higher confidence' : 'Red = higher confidence');
   const normalizedDist = normalizeDist(dist);
   renderRoleMap('#active-map', role, normalizedDist, topCode, topProb);
 }
