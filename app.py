@@ -124,7 +124,7 @@ def parse_file(path, ext):
 
     turns = []
     if ext == 'jsonl':
-        with open(path) as f:
+        with open(path, encoding='utf-8-sig', errors='replace') as f:
             for i, line in enumerate(f):
                 line = line.strip()
                 if not line: continue
@@ -136,7 +136,9 @@ def parse_file(path, ext):
                 meta = {'irp_label': irp_label} if irp_label else {}
                 turns.append({'idx':len(turns),'speaker':obj.get('speaker','Unknown'),'text':obj.get('text',''),'ts':None,'meta':meta})
     elif ext == 'json':
-        with open(path) as f: data = json.load(f)
+        with open(path, encoding='utf-8-sig', errors='replace') as f: data = json.load(f)
+        if isinstance(data, dict) and isinstance(data.get('turns'), list):
+            return data.get('turns', [])
         items = data if isinstance(data,list) else data.get('turns', data.get('messages',[data]))
         for i,obj in enumerate(items):
             irp_label = extract_irp_label(obj)
@@ -144,7 +146,7 @@ def parse_file(path, ext):
             turns.append({'idx':i,'speaker':obj.get('speaker',obj.get('role','Unknown')),
                           'text':obj.get('text',obj.get('content','')),'ts':None,'meta':meta})
     elif ext == 'txt':
-        with open(path) as f: content = f.read()
+        with open(path, encoding='utf-8-sig', errors='replace') as f: content = f.read()
         pat = re.compile(r'^(Buyer|Seller|Mediator)(?:\s*[\[(]\s*(Interest|Power|Right)\s*[\])])?\s*:\s*(.+)', re.M|re.I)
         for i,m in enumerate(pat.finditer(content)):
             irp_label = m.group(2).capitalize() if m.group(2) else None
@@ -156,7 +158,7 @@ def parse_file(path, ext):
                 if not line: continue
                 turns.append({'idx':i,'speaker':'Buyer' if i%2==0 else 'Seller','text':line,'ts':None,'meta':{}})
     elif ext == 'csv':
-        with open(path,newline='') as f:
+        with open(path, newline='', encoding='utf-8-sig', errors='replace') as f:
             reader = csv.DictReader(f)
             for i,row in enumerate(reader):
                 speaker = row.get('speaker',row.get('Speaker',row.get('role','Unknown')))
@@ -165,6 +167,114 @@ def parse_file(path, ext):
                 meta = {'irp_label': irp_label} if irp_label else {}
                 turns.append({'idx':i,'speaker':speaker,'text':text,'ts':None,'meta':meta})
     return turns
+
+
+def extract_dialogue_language(path, ext, fallback='EN'):
+    fallback = str(fallback or 'EN').upper()
+    try:
+        if ext == 'json':
+            with open(path, encoding='utf-8-sig', errors='replace') as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                raw = data.get('language', data.get('lang'))
+                if isinstance(raw, str):
+                    val = raw.strip().upper()
+                    if val in {'EN', 'CN'}:
+                        return val
+        elif ext == 'jsonl':
+            with open(path, encoding='utf-8-sig', errors='replace') as f:
+                first = f.readline().strip()
+            if first:
+                obj = json.loads(first)
+                if isinstance(obj, dict):
+                    raw = obj.get('language', obj.get('lang'))
+                    if isinstance(raw, str):
+                        val = raw.strip().upper()
+                        if val in {'EN', 'CN'}:
+                            return val
+        elif ext == 'csv':
+            with open(path, newline='', encoding='utf-8-sig', errors='replace') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    raw = row.get('language', row.get('lang'))
+                    if isinstance(raw, str):
+                        val = raw.strip().upper()
+                        if val in {'EN', 'CN'}:
+                            return val
+                    break
+        elif ext == 'txt':
+            with open(path, encoding='utf-8-sig', errors='replace') as f:
+                first = (f.readline() or '').strip()
+            m = re.match(r'^(language|lang)\s*[:=]\s*(EN|CN)\s*$', first, re.I)
+            if m:
+                return m.group(2).upper()
+    except Exception:
+        pass
+    return fallback
+
+
+def llm_translate_cn_to_en(text):
+    api_key = os.getenv('OPENAI_API_KEY')
+    if not text:
+        return ''
+    if not api_key:
+        return '[Translation unavailable: set OPENAI_API_KEY]'
+    payload = {
+        "model": "gpt-4.1-mini",
+        "messages": [
+            {"role": "system", "content": "Translate Simplified or Traditional Chinese into natural concise English. Return only the translation text."},
+            {"role": "user", "content": text}
+        ],
+        "temperature": 0
+    }
+    req = urllib.request.Request(
+        'https://api.openai.com/v1/chat/completions',
+        data=json.dumps(payload).encode('utf-8'),
+        headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {api_key}'},
+        method='POST'
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=12) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+        return (data['choices'][0]['message']['content'] or '').strip()
+    except Exception:
+        return '[Translation unavailable]'
+
+
+CN_PROVINCES = {
+    'beijing': ['beijing', '北京'], 'tianjin': ['tianjin', '天津'], 'hebei': ['hebei', '河北'],
+    'shanxi': ['shanxi', '山西'], 'inner mongolia': ['inner mongolia', 'neimenggu', '内蒙古'],
+    'liaoning': ['liaoning', '辽宁'], 'jilin': ['jilin', '吉林'], 'heilongjiang': ['heilongjiang', '黑龙江'],
+    'shanghai': ['shanghai', '上海'], 'jiangsu': ['jiangsu', '江苏'], 'zhejiang': ['zhejiang', '浙江'],
+    'anhui': ['anhui', '安徽'], 'fujian': ['fujian', '福建'], 'jiangxi': ['jiangxi', '江西'],
+    'shandong': ['shandong', '山东'], 'henan': ['henan', '河南'], 'hubei': ['hubei', '湖北'],
+    'hunan': ['hunan', '湖南'], 'guangdong': ['guangdong', '广东'], 'guangxi': ['guangxi', '广西'],
+    'hainan': ['hainan', '海南'], 'chongqing': ['chongqing', '重庆'], 'sichuan': ['sichuan', '四川'],
+    'guizhou': ['guizhou', '贵州'], 'yunnan': ['yunnan', '云南'], 'tibet': ['tibet', 'xizang', '西藏'],
+    'shaanxi': ['shaanxi', '陕西'], 'gansu': ['gansu', '甘肃'], 'qinghai': ['qinghai', '青海'],
+    'ningxia': ['ningxia', '宁夏'], 'xinjiang': ['xinjiang', '新疆'], 'hong kong': ['hong kong', '香港'],
+    'macau': ['macau', '澳门'], 'taiwan': ['taiwan', '台湾']
+}
+
+
+def infer_cn_province_distribution(turns, role):
+    role_turns = [str(t.get('text', '')) for t in turns if str(t.get('speaker', '')).lower() == role.lower()]
+    text = ' '.join(role_turns).lower()
+
+    # Start with a light, uniform prior so every province can be visualized.
+    counts = {province: 0.2 for province in CN_PROVINCES.keys()}
+    for province, aliases in CN_PROVINCES.items():
+        hit = sum(text.count(alias.lower()) for alias in aliases)
+        if hit > 0:
+            counts[province] += float(hit) * 3.0
+
+    # Nudge major-language hubs slightly when no clear location cues exist.
+    if not any(v > 0.2 for v in counts.values()):
+        for hub in ['guangdong', 'beijing', 'shanghai', 'sichuan', 'zhejiang']:
+            counts[hub] += 0.8
+
+    total = sum(counts.values()) or 1.0
+    return {k: round(v / total, 6) for k, v in counts.items()}
 
 def score_emo(text):
     tl = text.lower()
@@ -248,14 +358,14 @@ def extract_pre_dispute_justifications(path, ext):
     defaults = _default_pre_dispute_justifications()
     try:
         if ext == 'json':
-            with open(path) as f:
+            with open(path, encoding='utf-8-sig', errors='replace') as f:
                 data = json.load(f)
             if isinstance(data, dict):
                 for key in ['pre_dispute_justifications', 'justifications', 'issue_justifications']:
                     if key in data:
                         return _normalize_justification_payload(data.get(key))
         elif ext == 'jsonl':
-            with open(path) as f:
+            with open(path, encoding='utf-8-sig', errors='replace') as f:
                 first = f.readline().strip()
             if first:
                 obj = json.loads(first)
@@ -296,10 +406,10 @@ def extract_preference_weights(path, ext):
     sw = dict(DEFAULT_SELLER_WEIGHTS)
     try:
         if ext == 'json':
-            with open(path) as f:
+            with open(path, encoding='utf-8-sig', errors='replace') as f:
                 data = json.load(f)
         elif ext == 'jsonl':
-            with open(path) as f:
+            with open(path, encoding='utf-8-sig', errors='replace') as f:
                 first = f.readline().strip()
             data = json.loads(first) if first else {}
         else:
@@ -312,6 +422,18 @@ def extract_preference_weights(path, ext):
     except Exception:
         pass
     return bw, sw
+
+
+
+def turns_have_cached_enrichment(turns):
+    if not isinstance(turns, list) or not turns:
+        return False
+    for t in turns:
+        if not isinstance(t, dict):
+            continue
+        if t.get('emotions') and 'negative_signals' in t and 'threat_signals' in t:
+            return True
+    return False
 
 def llm_emotion_scores(text):
     """Use GPT-4o emotion classification when OPENAI_API_KEY is available.
@@ -326,7 +448,7 @@ Your output should be a JSON object with an 'emotion' field, categorizing the di
 These scores should sum to one. If an utterance is neutral, then neutral must be one with every other label set to zero."""
 
     payload = {
-        "model": "gpt-4o",
+        "model": "gpt-4.1",
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": f"This is the context: {text}. What is the emotion of the current speaker?"}
@@ -378,46 +500,42 @@ These scores should sum to one. If an utterance is neutral, then neutral must be
 
 
 def llm_operational_summary(turns_so_far, country_snapshot, risk_snapshot):
-    """Generate a concise IRP-aware operational summary for the current state."""
+    """Generate a succinct IRP-aware operational summary for the current state."""
     api_key = os.getenv('OPENAI_API_KEY')
     if not turns_so_far:
         return 'No turns processed yet. Step through the dialogue to generate an operational summary.'
 
-    buyer_country = (country_snapshot or {}).get('buyer', {}).get('country', 'Unknown')
-    seller_country = (country_snapshot or {}).get('seller', {}).get('country', 'Unknown')
-
     recent_turns = turns_so_far[-40:]
-    transcript_excerpt = '\n'.join(
+    transcript_excerpt = "\n".join(
         f"{t.get('speaker','Unknown')}: {t.get('text','')} | emo={t.get('emotions',{})}"
         for t in recent_turns
     )
 
     if not api_key:
         return (
-            f"IRP snapshot: risk is {risk_snapshot.get('label','Unknown')} ({risk_snapshot.get('score',0)}). "
-            f"Likely country priors are Buyer={buyer_country}, Seller={seller_country}. "
-            "Focus next on acknowledging emotions, clarifying interests, and proposing reciprocal concessions."
+            f"Risk is {risk_snapshot.get('label','Unknown')} ({risk_snapshot.get('score',0)}), with the dialogue still mixing rights and power claims over core interests. "
+            "Emotions remain active, so focus next on de-escalation and one concrete reciprocal package tied to shared interests."
         )
 
     prompt = (
-        "Provide a concise 2-3 sentence operational summary of the dispute shown so far (only observed turns). "
-        "Incorporate: (1) emotional trajectory, (2) country prediction priors as uncertain distributions, and "
-        "(3) IRP framing (Interests, Rights, Power signals). "
-        "Do not treat classifier outputs as certain facts; nearby/other regions remain possible. "
-        "Keep it practical and neutral for a negotiation dashboard.\n\n"
+        "Write an operational summary in at most TWO sentences. "
+        "Only highlight the most important facets of the dialogue so far. "
+        "Use signals from: integrative potential, dialogue history progression, emotional trajectory, and IRP balance (Interests/Rights/Power). "
+        "Keep it high-level, practical, and easy to understand for mediators. "
+        "Treat country predictions as uncertain priors (not facts).\n\n"
         f"Risk snapshot: {json.dumps(risk_snapshot)}\n"
         f"Country snapshot: {json.dumps(country_snapshot)}\n"
         f"Observed turns:\n{transcript_excerpt}"
     )
 
     payload = {
-        "model": "gpt-4o",
+        "model": "gpt-4.1",
         "messages": [
-            {"role": "system", "content": "You summarize negotiation states for mediators."},
+            {"role": "system", "content": "You summarize negotiation states for mediators in plain, crisp language."},
             {"role": "user", "content": prompt}
         ],
-        "temperature": 0.2,
-        "max_tokens": 140
+        "temperature": 0.1,
+        "max_tokens": 110
     }
     req = urllib.request.Request(
         'https://api.openai.com/v1/chat/completions',
@@ -434,11 +552,9 @@ def llm_operational_summary(turns_so_far, country_snapshot, risk_snapshot):
         return (data['choices'][0]['message']['content'] or '').strip()
     except Exception:
         return (
-            f"IRP snapshot: risk is {risk_snapshot.get('label','Unknown')} ({risk_snapshot.get('score',0)}). "
-            f"Likely country priors are Buyer={buyer_country}, Seller={seller_country}. "
-            "Focus next on acknowledging emotions, clarifying interests, and proposing reciprocal concessions."
+            f"Risk is {risk_snapshot.get('label','Unknown')} ({risk_snapshot.get('score',0)}), with the dialogue still mixing rights and power claims over core interests. "
+            "Emotions remain active, so focus next on de-escalation and one concrete reciprocal package tied to shared interests."
         )
-
 
 
 def llm_evolution_summary(op_summaries):
@@ -455,7 +571,7 @@ def llm_evolution_summary(op_summaries):
         return 'Operational summaries indicate shifting emotional intensity with intermittent convergence opportunities; uncertainty remained around cultural priors while risk signals fluctuated by turn.'
 
     payload = {
-        "model": "gpt-4o",
+        "model": "gpt-4.1",
         "messages": [
             {"role": "system", "content": "You synthesize negotiation timeline analyses."},
             {"role": "user", "content": (
@@ -554,7 +670,7 @@ You do not need to intervene every turn, and should consider how recently you've
 Any score over a seven will trigger an intervention, and your message will be sent to both the buyer and seller."""
 
     payload = {
-        "model": "gpt-4o",
+        "model": "gpt-4.1",
         "messages": [
             {"role": "system", "content": prompt},
             {"role": "user", "content": f"Conversation so far:\n{transcript}\n\nRecent intervention turns: {prior_intervention_turns}. Return JSON with fields rating, reason, statement."}
@@ -624,7 +740,15 @@ COUNTRY_SVG = {
 }
 
 
-PREDICTOR = RegionPredictor(language='english', model_name='svm')
+def _safe_build_predictor(language):
+    try:
+        return RegionPredictor(language=language, model_name='svm')
+    except Exception:
+        return None
+
+
+PREDICTOR = _safe_build_predictor('english')
+PREDICTOR_ZH = _safe_build_predictor('chinese')
 
 COUNTRY_LABEL_MAP = {
     'U.S.':'United States','US':'United States','United States':'United States',
@@ -667,6 +791,8 @@ def predict_country_with_model(turns, role):
     if not role_turns:
         return _to_geo_payload('United States', 0.0, {})
     try:
+        if PREDICTOR is None:
+            return predict_country(turns, role)
         outputs = PREDICTOR.predict_batch(role_turns)
         if not outputs:
             return _to_geo_payload('United States', 0.0, {})
@@ -688,6 +814,39 @@ def predict_country_with_model(turns, role):
         return _to_geo_payload(pred, conf, averaged_probs)
     except Exception:
         return predict_country(turns, role)
+
+
+
+def predict_cn_region_with_model(turns, role):
+    role_turns = [t.get('text', '').strip() for t in turns if t.get('speaker') == role and t.get('text', '').strip()]
+    if not role_turns:
+        return {'country': 'China', 'confidence': 0.0, 'probabilities': {'North': 0.25, 'Central': 0.25, 'Wu_Min': 0.25, 'Xian_Yue': 0.25}}
+
+    if PREDICTOR_ZH is None:
+        # fallback to lightweight heuristic if chinese model is unavailable
+        probs = infer_cn_province_distribution(turns, role)
+        proxy = {
+            'North': probs.get('beijing', 0) + probs.get('tianjin', 0) + probs.get('hebei', 0) + probs.get('shandong', 0),
+            'Central': probs.get('henan', 0) + probs.get('hubei', 0) + probs.get('hunan', 0) + probs.get('sichuan', 0),
+            'Wu_Min': probs.get('shanghai', 0) + probs.get('jiangsu', 0) + probs.get('zhejiang', 0) + probs.get('fujian', 0),
+            'Xian_Yue': probs.get('guangdong', 0) + probs.get('guangxi', 0) + probs.get('hainan', 0) + probs.get('hong kong', 0),
+        }
+        total = sum(proxy.values()) or 1.0
+        normalized = {k: round(v / total, 6) for k, v in proxy.items()}
+        pred, conf = max(normalized.items(), key=lambda item: item[1])
+        return {'country': 'China', 'confidence': round(conf, 2), 'probabilities': normalized, 'region': pred}
+
+    outputs = PREDICTOR_ZH.predict_batch(role_turns)
+    combined = {}
+    for out in outputs:
+        for label, prob in (out.get('probabilities') or {}).items():
+            combined[label] = combined.get(label, 0.0) + float(prob)
+    count = len(outputs) or 1
+    averaged = {k: v / count for k, v in combined.items()}
+    total = sum(averaged.values()) or 1.0
+    normalized = {k: round(v / total, 6) for k, v in averaged.items()}
+    pred, conf = max(normalized.items(), key=lambda item: item[1])
+    return {'country': 'China', 'confidence': round(conf, 2), 'probabilities': normalized, 'region': pred}
 
 def predict_country(turns, role):
     text  = ' '.join(t['text'] for t in turns if t['speaker']==role).lower()
@@ -806,6 +965,31 @@ def make_all_emotions_plot(turns):
     plt.tight_layout()
     return fig_b64(fig)
 
+
+
+def extract_uploaded_bundle_metadata(path, ext):
+    meta = {}
+    if ext != 'json':
+        return meta
+    try:
+        with open(path, encoding='utf-8-sig', errors='replace') as f:
+            data = json.load(f)
+        if isinstance(data, dict):
+            if isinstance(data.get('op_summaries'), list):
+                meta['op_summaries'] = data.get('op_summaries')
+            if isinstance(data.get('step_cache'), dict):
+                meta['step_cache'] = data.get('step_cache')
+            if isinstance(data.get('country'), dict):
+                meta['country'] = data.get('country')
+            if isinstance(data.get('language'), str):
+                val = data.get('language', '').strip().upper()
+                if val in {'EN', 'CN'}:
+                    meta['language'] = val
+    except Exception:
+        return meta
+    return meta
+
+
 # ── Routes ────────────────────────────────────────────────────────────────────
 @app.route('/')
 def index(): return render_template('upload.html')
@@ -831,22 +1015,42 @@ def api_upload():
     try:
         turns = parse_file(path, ext)
         if not turns: return jsonify({'error':'No turns found in file'}),400
-        turns = enrich(turns)
+
+        bundle_meta = extract_uploaded_bundle_metadata(path, ext)
+        language = bundle_meta.get('language', extract_dialogue_language(path, ext))
+        has_cached = turns_have_cached_enrichment(turns)
+        if not has_cached:
+            turns = enrich(turns)
+
+        if language == 'CN':
+            for t in turns:
+                txt = t.get('text', '')
+                if txt and not t.get('translation'):
+                    t['translation'] = llm_translate_cn_to_en(txt)
+
         pre_justifications = extract_pre_dispute_justifications(path, ext)
-        # Load preferences from uploaded metadata when present; fallback to defaults.
         bw, sw = extract_preference_weights(path, ext)
         outcomes = generate_all_outcomes(bw, sw)
         pareto   = compute_pareto(outcomes)
         pareto_img = make_pareto_plot(outcomes, pareto, title='Pre-Negotiation: KODIS Solution Space')
-        buyer_c  = predict_country_with_model(turns,'Buyer')
-        seller_c = predict_country_with_model(turns,'Seller')
+
+        if language == 'CN':
+            buyer_c = predict_cn_region_with_model(turns, 'Buyer')
+            seller_c = predict_cn_region_with_model(turns, 'Seller')
+        else:
+            buyer_c  = predict_country_with_model(turns,'Buyer')
+            seller_c = predict_country_with_model(turns,'Seller')
+
         return jsonify({
             'turns':turns,'filename':filename,
+            'language': language,
             'buyer_weights':bw,'seller_weights':sw,
             'outcomes':outcomes,'pareto':pareto,
             'pareto_img':pareto_img,
             'country':{'buyer':buyer_c,'seller':seller_c},
             'pre_justifications': pre_justifications,
+            'op_summaries': bundle_meta.get('op_summaries', []),
+            'step_cache': bundle_meta.get('step_cache', {}),
         })
     except Exception as e:
         import traceback; traceback.print_exc()
@@ -868,18 +1072,26 @@ def api_step():
     idx   = data.get('idx',0)
     turns = data.get('turns',[])
     dim   = data.get('emotion_dim','joy')
+    language = str(data.get('language', 'EN')).upper()
     if not turns or idx >= len(turns): return jsonify({'error':'Invalid'}),400
 
     cur = turns[idx]
-    cur['emotions'] = llm_emotion_scores(cur.get('text',''))
+    if not cur.get('emotions'):
+        cur['emotions'] = llm_emotion_scores(cur.get('text',''))
+    if language == 'CN' and cur.get('text') and not cur.get('translation'):
+        cur['translation'] = llm_translate_cn_to_en(cur.get('text',''))
     turns_so_far = turns[:idx+1]
 
     risk  = estimate_risk(turns_so_far)
-    adv   = get_advisor(turns_so_far, cur)
+    adv   = cur.get('advisor') or get_advisor(turns_so_far, cur)
     cur['advisor'] = adv
     emo_img = make_emotion_plot(turns_so_far, dim)
-    buyer_c = predict_country_with_model(turns_so_far, 'Buyer')
-    seller_c = predict_country_with_model(turns_so_far, 'Seller')
+    if language == 'CN':
+        buyer_c = predict_cn_region_with_model(turns_so_far, 'Buyer')
+        seller_c = predict_cn_region_with_model(turns_so_far, 'Seller')
+    else:
+        buyer_c = predict_country_with_model(turns_so_far, 'Buyer')
+        seller_c = predict_country_with_model(turns_so_far, 'Seller')
     country_snapshot = {'buyer':buyer_c,'seller':seller_c}
     op_summary = llm_operational_summary(turns_so_far, country_snapshot, risk)
     return jsonify({
@@ -900,7 +1112,7 @@ def api_post_summary():
     dim   = data.get('emotion_dim', 'anger')
     final_outcome = data.get('final_outcome')
 
-    turns_enriched = enrich(turns) if turns and 'emotions' not in turns[0] else turns
+    turns_enriched = enrich(turns) if not turns_have_cached_enrichment(turns) else turns
     risk = estimate_risk(turns_enriched)
     emo_img = make_emotion_plot(turns_enriched, dim) if turns_enriched else ''
     outcomes = generate_all_outcomes(bw, sw)
@@ -954,7 +1166,7 @@ def api_export_pdf():
         post_b64 = make_pareto_plot(outcomes, pareto, fo_dict, title='Post-Negotiation Solution Space')
 
     # Generate all-emotions chart
-    turns_enriched = enrich(turns) if turns and 'emotions' not in turns[0] else turns
+    turns_enriched = enrich(turns) if not turns_have_cached_enrichment(turns) else turns
     all_emo_b64 = make_all_emotions_plot(turns_enriched)
     if not emo_b64: emo_b64 = all_emo_b64
 
@@ -1062,6 +1274,27 @@ def api_export_pdf():
     doc.build(story)
     buf.seek(0)
     return send_file(buf,mimetype='application/pdf',as_attachment=True,download_name='negotiation_report.pdf')
+
+
+
+@app.route('/api/export_enriched', methods=['POST'])
+def api_export_enriched():
+    data = request.json or {}
+    turns = data.get('turns', [])
+    payload = {
+        'language': str(data.get('language', 'EN')).upper() if data.get('language') else 'EN',
+        'buyer_weights': data.get('buyer_weights', DEFAULT_BUYER_WEIGHTS),
+        'seller_weights': data.get('seller_weights', DEFAULT_SELLER_WEIGHTS),
+        'pre_dispute_justifications': data.get('pre_justifications', {}),
+        'turns': turns,
+        'op_summaries': data.get('op_summaries', []),
+        'final_outcome': data.get('final_outcome'),
+        'country': data.get('country', {}),
+        'step_cache': data.get('step_cache', {}),
+    }
+    buf = io.BytesIO(json.dumps(payload, ensure_ascii=False, indent=2).encode('utf-8'))
+    buf.seek(0)
+    return send_file(buf, mimetype='application/json', as_attachment=True, download_name='negotiation_enriched.json')
 
 if __name__=='__main__':
     os.makedirs('uploads',exist_ok=True)

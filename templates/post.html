@@ -100,6 +100,7 @@ nav{display:flex;align-items:center;padding:11px 22px;border-bottom:1px solid va
   <div class="nav-r">
     <div class="spin" id="spin"></div>
     <button class="btn back" onclick="location.href='/negotiate'">← Back</button>
+    <button class="btn" id="btn-json" disabled onclick="exportEnriched()">⬇ Download Enriched Dialogue</button>
     <button class="btn pdf" id="btn-pdf" disabled onclick="exportPDF()">⬇ Download PDF Report</button>
   </div>
 </nav>
@@ -164,7 +165,7 @@ nav{display:flex;align-items:center;padding:11px 22px;border-bottom:1px solid va
 <div id="toast"></div>
 
 <script>
-let S = { turns:[], bw:{}, sw:{}, filename:'', preImg:'', postImg:'', emoImg:'', finalOutcome:null, opSummaries:[], outcomes:[], pareto:[] };
+let S = { turns:[], bw:{}, sw:{}, filename:'', preImg:'', postImg:'', emoImg:'', finalOutcome:null, opSummaries:[], outcomes:[], pareto:[], language:'EN', country:null, preJustifications:{}, stepCache:{} };
 const IRP_KEYS = ['interest','right','power'];
 
 function classifyIRP(text=''){
@@ -188,6 +189,10 @@ async function init() {
   S.filename = D.filename;
   S.preImg   = D.pareto_img;
   S.opSummaries = Array.isArray(D.op_summaries) ? D.op_summaries : [];
+  S.language = (D.language || 'EN').toUpperCase();
+  S.country = D.country || null;
+  S.preJustifications = D.pre_justifications || {};
+  S.stepCache = D.step_cache || {};
 
   document.getElementById('pre-img').src = 'data:image/png;base64,' + S.preImg;
   document.getElementById('pre-img').style.display = 'block';
@@ -198,7 +203,7 @@ async function init() {
     const irp = (t.meta && t.meta.irp_label ? String(t.meta.irp_label).toLowerCase() : classifyIRP(t.text));
     return `<div class="tx-turn">
       <span class="tx-role ${role}">${t.speaker}</span>
-      <span class="tx-text">[${irp[0].toUpperCase() + irp.slice(1)}] ${esc(t.text)}</span>
+      <span class="tx-text">[${irp[0].toUpperCase() + irp.slice(1)}] ${esc(t.text)}${S.language==='CN' ? `<br><span style='color:#a9bad3'>EN: ${esc(t.translation || '')}</span>` : ''}</span>
     </div>`;
   }).join('');
 
@@ -225,6 +230,7 @@ async function init() {
 
     showContent(data.risk, S.finalOutcome);
     document.getElementById('btn-pdf').disabled = false;
+    document.getElementById('btn-json').disabled = false;
   } catch (e) {
     document.getElementById('loading-box').innerHTML = `<p style="color:#fda4af">Unable to compute summary: ${esc(e.message)}</p>`;
   }
@@ -331,6 +337,36 @@ function renderPostSolutionSpace(outcomes, pareto, finalOutcome){
     <text x="${w/2-46}" y="${h-8}" fill="#94a3b8" font-size="10">Buyer utility</text>
     <text x="8" y="14" fill="#94a3b8" font-size="10">Seller utility</text>
   </svg>`;
+}
+
+
+async function exportEnriched() {
+  document.getElementById('spin').style.display='block';
+  toast('Preparing enriched dialogue…',false);
+  try {
+    const res = await fetch('/api/export_enriched',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        turns: S.turns, filename: S.filename, language: S.language,
+        buyer_weights: S.bw, seller_weights: S.sw,
+        op_summaries: S.opSummaries, final_outcome: S.finalOutcome,
+        country: S.country, pre_justifications: S.preJustifications,
+        step_cache: S.stepCache,
+      })
+    });
+    if (!res.ok) { toast('Export failed',true); return; }
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    a.download = 'negotiation_enriched.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast('Enriched dialogue downloaded!',false);
+  } catch(e){ toast('Error: '+e.message,true); }
+  finally{ document.getElementById('spin').style.display='none'; }
 }
 
 async function exportPDF() {
