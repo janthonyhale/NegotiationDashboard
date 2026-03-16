@@ -208,6 +208,7 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
     <span class="pill" id="turn-pill">Turn 0 / 0</span>
     <button class="btn" id="btn-prev" disabled onclick="step(-1)">← Prev</button>
     <button class="btn" id="btn-next" disabled onclick="step(1)">Next →</button>
+    <button class="btn" id="btn-runall" disabled onclick="runAll()">⏭ Run All</button>
     <button class="btn primary" onclick="location.href='/post'">Summary →</button>
   </div>
 </nav>
@@ -323,7 +324,16 @@ const COUNTRY_CODE_MAP = {
   'australia':'AU','canada':'CA','brazil':'BR','mexico':'MX','south africa':'ZA',
   'united states of america':'US',"people's republic of china":'CN','republic of india':'IN'
 };
-let S = { turns:[], currentIdx:-1, dim:'anger', mapRole:'buyer', currentMapDist:{}, country:null, lastCountry:null, bw:{}, sw:{}, activeMap:null, opSummaries:[], language:'EN' };
+const CN_PROVINCE_CODE_MAP = {
+  'beijing':'CN-11','tianjin':'CN-12','hebei':'CN-13','shanxi':'CN-14','inner mongolia':'CN-15',
+  'liaoning':'CN-21','jilin':'CN-22','heilongjiang':'CN-23','shanghai':'CN-31','jiangsu':'CN-32',
+  'zhejiang':'CN-33','anhui':'CN-34','fujian':'CN-35','jiangxi':'CN-36','shandong':'CN-37',
+  'henan':'CN-41','hubei':'CN-42','hunan':'CN-43','guangdong':'CN-44','guangxi':'CN-45',
+  'hainan':'CN-46','chongqing':'CN-50','sichuan':'CN-51','guizhou':'CN-52','yunnan':'CN-53',
+  'tibet':'CN-54','shaanxi':'CN-61','gansu':'CN-62','qinghai':'CN-63','ningxia':'CN-64',
+  'xinjiang':'CN-65','hong kong':'CN-91','macau':'CN-92','taiwan':'CN-71'
+};
+let S = { turns:[], currentIdx:-1, dim:'anger', mapRole:'buyer', currentMapDist:{}, country:null, lastCountry:null, bw:{}, sw:{}, activeMap:null, opSummaries:[], language:'EN', processing:false, runAll:false };
 const IRP_KEYS = ['interest','right','power'];
 
 function classifyIRP(text=''){
@@ -373,12 +383,14 @@ function init() {
   S.sw      = D.seller_weights || {};
   S.opSummaries = Array.isArray(D.op_summaries) ? D.op_summaries : [];
   S.language = (D.language || 'EN').toUpperCase();
-  S.turns = S.turns.map(t => ({...t, emotions: undefined, irp: getTurnIRP(t)}));
+  S.turns = S.turns.map(t => ({...t, irp: getTurnIRP(t)}));
   renderTxList();
   renderCountry();
   document.getElementById('btn-next').disabled = false;
+  document.getElementById('btn-runall').disabled = false;
   document.getElementById('turn-pill').textContent = `Turn 0 / ${S.turns.length}`;
   renderIRPChart();
+  setNavProcessing(false);
 }
 
 function renderTxList() {
@@ -412,6 +424,23 @@ function setOperationalSummary(text){
   summaryEl.textContent = text || 'No operational summary available yet.';
 }
 
+function setNavProcessing(isBusy){
+  S.processing = isBusy;
+  const prevBtn = document.getElementById('btn-prev');
+  const nextBtn = document.getElementById('btn-next');
+  const runBtn = document.getElementById('btn-runall');
+  if (!prevBtn || !nextBtn || !runBtn) return;
+  if (isBusy){
+    prevBtn.disabled = true;
+    nextBtn.disabled = true;
+    runBtn.disabled = true;
+  } else {
+    prevBtn.disabled = S.currentIdx <= 0;
+    nextBtn.disabled = S.currentIdx >= S.turns.length - 1;
+    runBtn.disabled = S.currentIdx >= S.turns.length - 1;
+  }
+}
+
 function persistSessionState(){
   const raw = sessionStorage.getItem('nd');
   if (!raw) return;
@@ -422,12 +451,12 @@ function persistSessionState(){
 }
 
 async function step(dir) {
+  if (S.processing) return;
   const ni = S.currentIdx + dir;
   if (ni < 0 || ni >= S.turns.length) return;
   S.currentIdx = ni;
   updateTxHighlights();
-  document.getElementById('btn-prev').disabled = ni <= 0;
-  document.getElementById('btn-next').disabled = ni >= S.turns.length - 1;
+  setNavProcessing(true);
   document.getElementById('turn-pill').textContent = `Turn ${ni+1} / ${S.turns.length}`;
   document.getElementById('center-hint').textContent = `Turn ${ni+1} of ${S.turns.length}`;
   addBubble(S.turns[ni], ni);
@@ -458,7 +487,22 @@ async function step(dir) {
     renderRisk(data.risk);
     renderAdvisor(data.advisor);
   } catch(e){ console.error(e); setOperationalSummary('Operational summary unavailable (analysis request failed).'); }
-  finally{ document.getElementById('spin').style.display='none'; }
+  finally{ document.getElementById('spin').style.display='none'; setNavProcessing(false); }
+}
+
+async function runAll(){
+  if (S.processing || S.currentIdx >= S.turns.length - 1) return;
+  S.runAll = true;
+  document.getElementById('btn-runall').disabled = true;
+  try {
+    while (S.currentIdx < S.turns.length - 1){
+      await step(1);
+      await new Promise(r=>setTimeout(r, 40));
+    }
+  } finally {
+    S.runAll = false;
+    setNavProcessing(false);
+  }
 }
 
 function updateTxHighlights() {
@@ -515,6 +559,7 @@ function addBubble(t, idx) {
   dialogueEl.appendChild(wrap);
   scrollDialogueToBottomSmooth();
   renderIRPChart();
+  setNavProcessing(false);
 }
 
 function renderIRPChart(){
@@ -698,7 +743,7 @@ function renderRoleMap(selector, role, dist, topCode, topProb){
     const raw = String(code || '').trim();
     const up = raw.toUpperCase();
     if (isCN) {
-      if (raw) values[raw] = Math.max(0, Math.min(1, Number(val) || 0));
+      if (/^CN-\d{2}$/.test(up)) values[up] = Math.max(0, Math.min(1, Number(val) || 0));
     } else if (/^[A-Z]{2}$/.test(up)) {
       values[up] = Math.max(0, Math.min(1, Number(val) || 0));
     }
@@ -776,7 +821,7 @@ function normalizeCountryCode(raw){
   const upper = s.toUpperCase();
   if (/^[A-Z]{2}$/.test(upper)) return upper;
 
-  if (S.language === 'CN') return lower;
+  if (S.language === 'CN') return CN_PROVINCE_CODE_MAP[lower] || null;
   return null;
 }
 

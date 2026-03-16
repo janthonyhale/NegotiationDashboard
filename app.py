@@ -124,7 +124,7 @@ def parse_file(path, ext):
 
     turns = []
     if ext == 'jsonl':
-        with open(path) as f:
+        with open(path, encoding='utf-8-sig', errors='replace') as f:
             for i, line in enumerate(f):
                 line = line.strip()
                 if not line: continue
@@ -136,7 +136,7 @@ def parse_file(path, ext):
                 meta = {'irp_label': irp_label} if irp_label else {}
                 turns.append({'idx':len(turns),'speaker':obj.get('speaker','Unknown'),'text':obj.get('text',''),'ts':None,'meta':meta})
     elif ext == 'json':
-        with open(path) as f: data = json.load(f)
+        with open(path, encoding='utf-8-sig', errors='replace') as f: data = json.load(f)
         if isinstance(data, dict) and isinstance(data.get('turns'), list):
             return data.get('turns', [])
         items = data if isinstance(data,list) else data.get('turns', data.get('messages',[data]))
@@ -146,7 +146,7 @@ def parse_file(path, ext):
             turns.append({'idx':i,'speaker':obj.get('speaker',obj.get('role','Unknown')),
                           'text':obj.get('text',obj.get('content','')),'ts':None,'meta':meta})
     elif ext == 'txt':
-        with open(path) as f: content = f.read()
+        with open(path, encoding='utf-8-sig', errors='replace') as f: content = f.read()
         pat = re.compile(r'^(Buyer|Seller|Mediator)(?:\s*[\[(]\s*(Interest|Power|Right)\s*[\])])?\s*:\s*(.+)', re.M|re.I)
         for i,m in enumerate(pat.finditer(content)):
             irp_label = m.group(2).capitalize() if m.group(2) else None
@@ -158,7 +158,7 @@ def parse_file(path, ext):
                 if not line: continue
                 turns.append({'idx':i,'speaker':'Buyer' if i%2==0 else 'Seller','text':line,'ts':None,'meta':{}})
     elif ext == 'csv':
-        with open(path,newline='') as f:
+        with open(path, newline='', encoding='utf-8-sig', errors='replace') as f:
             reader = csv.DictReader(f)
             for i,row in enumerate(reader):
                 speaker = row.get('speaker',row.get('Speaker',row.get('role','Unknown')))
@@ -173,7 +173,7 @@ def extract_dialogue_language(path, ext, fallback='EN'):
     fallback = str(fallback or 'EN').upper()
     try:
         if ext == 'json':
-            with open(path) as f:
+            with open(path, encoding='utf-8-sig', errors='replace') as f:
                 data = json.load(f)
             if isinstance(data, dict):
                 raw = data.get('language', data.get('lang'))
@@ -182,7 +182,7 @@ def extract_dialogue_language(path, ext, fallback='EN'):
                     if val in {'EN', 'CN'}:
                         return val
         elif ext == 'jsonl':
-            with open(path) as f:
+            with open(path, encoding='utf-8-sig', errors='replace') as f:
                 first = f.readline().strip()
             if first:
                 obj = json.loads(first)
@@ -193,7 +193,7 @@ def extract_dialogue_language(path, ext, fallback='EN'):
                         if val in {'EN', 'CN'}:
                             return val
         elif ext == 'csv':
-            with open(path, newline='') as f:
+            with open(path, newline='', encoding='utf-8-sig', errors='replace') as f:
                 reader = csv.DictReader(f)
                 for row in reader:
                     raw = row.get('language', row.get('lang'))
@@ -203,7 +203,7 @@ def extract_dialogue_language(path, ext, fallback='EN'):
                             return val
                     break
         elif ext == 'txt':
-            with open(path) as f:
+            with open(path, encoding='utf-8-sig', errors='replace') as f:
                 first = (f.readline() or '').strip()
             m = re.match(r'^(language|lang)\s*[:=]\s*(EN|CN)\s*$', first, re.I)
             if m:
@@ -353,14 +353,14 @@ def extract_pre_dispute_justifications(path, ext):
     defaults = _default_pre_dispute_justifications()
     try:
         if ext == 'json':
-            with open(path) as f:
+            with open(path, encoding='utf-8-sig', errors='replace') as f:
                 data = json.load(f)
             if isinstance(data, dict):
                 for key in ['pre_dispute_justifications', 'justifications', 'issue_justifications']:
                     if key in data:
                         return _normalize_justification_payload(data.get(key))
         elif ext == 'jsonl':
-            with open(path) as f:
+            with open(path, encoding='utf-8-sig', errors='replace') as f:
                 first = f.readline().strip()
             if first:
                 obj = json.loads(first)
@@ -401,10 +401,10 @@ def extract_preference_weights(path, ext):
     sw = dict(DEFAULT_SELLER_WEIGHTS)
     try:
         if ext == 'json':
-            with open(path) as f:
+            with open(path, encoding='utf-8-sig', errors='replace') as f:
                 data = json.load(f)
         elif ext == 'jsonl':
-            with open(path) as f:
+            with open(path, encoding='utf-8-sig', errors='replace') as f:
                 first = f.readline().strip()
             data = json.loads(first) if first else {}
         else:
@@ -417,6 +417,18 @@ def extract_preference_weights(path, ext):
     except Exception:
         pass
     return bw, sw
+
+
+
+def turns_have_cached_enrichment(turns):
+    if not isinstance(turns, list) or not turns:
+        return False
+    for t in turns:
+        if not isinstance(t, dict):
+            continue
+        if t.get('emotions') and 'negative_signals' in t and 'threat_signals' in t:
+            return True
+    return False
 
 def llm_emotion_scores(text):
     """Use GPT-4o emotion classification when OPENAI_API_KEY is available.
@@ -932,7 +944,7 @@ def api_upload():
         if not turns: return jsonify({'error':'No turns found in file'}),400
 
         language = extract_dialogue_language(path, ext)
-        has_cached = bool(turns and isinstance(turns[0], dict) and ('emotions' in turns[0] or 'advisor' in turns[0] or 'translation' in turns[0]))
+        has_cached = turns_have_cached_enrichment(turns)
         if not has_cached:
             turns = enrich(turns)
 
@@ -1024,7 +1036,7 @@ def api_post_summary():
     dim   = data.get('emotion_dim', 'anger')
     final_outcome = data.get('final_outcome')
 
-    turns_enriched = enrich(turns) if turns and 'emotions' not in turns[0] else turns
+    turns_enriched = enrich(turns) if not turns_have_cached_enrichment(turns) else turns
     risk = estimate_risk(turns_enriched)
     emo_img = make_emotion_plot(turns_enriched, dim) if turns_enriched else ''
     outcomes = generate_all_outcomes(bw, sw)
@@ -1078,7 +1090,7 @@ def api_export_pdf():
         post_b64 = make_pareto_plot(outcomes, pareto, fo_dict, title='Post-Negotiation Solution Space')
 
     # Generate all-emotions chart
-    turns_enriched = enrich(turns) if turns and 'emotions' not in turns[0] else turns
+    turns_enriched = enrich(turns) if not turns_have_cached_enrichment(turns) else turns
     all_emo_b64 = make_all_emotions_plot(turns_enriched)
     if not emo_b64: emo_b64 = all_emo_b64
 
