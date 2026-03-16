@@ -802,8 +802,8 @@ function normalizeDist(dist){
 const CN_REGION_META = {
   north: {name:'North', cx:190, cy:95},
   central: {name:'Central', cx:165, cy:156},
-  wu_min: {name:'Wu_Min', cx:228, cy:168},
-  xian_yue: {name:'Xian_Yue', cx:190, cy:212},
+  wu_min: {name:'Wu/Min', cx:228, cy:168},
+  xian_yue: {name:'Xian/Yue', cx:190, cy:212},
 };
 
 function renderChinaRegionMap(selector, dist, topCode, role){
@@ -866,33 +866,83 @@ function renderRoleMap(selector, role, dist, topCode, topProb){
     S.activeMap = null;
   }
 
-  const values = {};
-  const useChinaMap = false;
+  const rawValues = {};
+  const fillValues = {};
+
+  const colorFor = (v) => {
+    const n = Math.max(0, Math.min(1, Number(v) || 0));
+    if (n >= 0.65) return palette[3];
+    if (n >= 0.45) return palette[2];
+    if (n >= 0.25) return palette[1];
+    if (n > 0) return palette[0];
+    return '#1b2a3d';
+  };
+
   Object.entries(dist || {}).forEach(([code, val]) => {
-    const raw = String(code || '').trim();
-    const up = raw.toUpperCase();
-    const num = Math.max(0, Math.min(1, Number(val) || 0));
-    if (useChinaMap) {
-      if (/^CN-\d{2}$/.test(up)) values[up] = num;
-    } else if (isCN) {
-      values['CN'] = Math.max(num, values['CN'] || 0);
-      values['cn'] = values['CN'];
-    } else if (/^[A-Z]{2}$/.test(up)) {
-      const visible = num > 0 ? Math.max(0.18, Math.sqrt(num)) : 0;
-      values[up] = visible;
-      values[up.toLowerCase()] = visible;
-    }
+    const up = String(code || '').trim().toUpperCase();
+    if (!/^[A-Z]{2}$/.test(up)) return;
+    const low = up.toLowerCase();
+    const n = Math.max(0, Math.min(1, Number(val) || 0));
+    rawValues[up] = n;
+    rawValues[low] = n;
+    const color = colorFor(n);
+    fillValues[up] = color;
+    fillValues[low] = color;
   });
+
+  function applyRegionFills(){
+    const container = document.querySelector(selector);
+    if (!container) return;
+
+    Object.entries(fillValues).forEach(([code, color]) => {
+      const selectors = [
+        `[data-code="${code}"]`,
+        `[data-code="${code.toUpperCase()}"]`,
+        `[data-code="${code.toLowerCase()}"]`,
+        `#${code}`,
+        `#${code.toUpperCase()}`,
+        `#${code.toLowerCase()}`,
+        `[name="${code}"]`,
+        `[name="${code.toUpperCase()}"]`,
+        `[name="${code.toLowerCase()}"]`
+      ];
+      container.querySelectorAll(selectors.join(',')).forEach(el => {
+        el.setAttribute('fill', color);
+        el.style.fill = color;
+        el.style.fillOpacity = '1';
+      });
+    });
+
+    if (topCode) {
+      const tc = String(topCode).trim();
+      const sels = [
+        `[data-code="${tc}"]`,
+        `[data-code="${tc.toUpperCase()}"]`,
+        `[data-code="${tc.toLowerCase()}"]`,
+        `#${tc}`,
+        `#${tc.toUpperCase()}`,
+        `#${tc.toLowerCase()}`,
+        `[name="${tc}"]`,
+        `[name="${tc.toUpperCase()}"]`,
+        `[name="${tc.toLowerCase()}"]`
+      ];
+      container.querySelectorAll(sels.join(',')).forEach(el => {
+        el.setAttribute('stroke', '#22d3a5');
+        el.style.stroke = '#22d3a5';
+        el.style.strokeWidth = '1.8';
+      });
+    }
+  }
 
   S.activeMap = new jsVectorMap({
     selector,
-    map: useChinaMap ? 'china' : 'world',
+    map: 'world',
     zoomButtons: false,
     zoomOnScroll: false,
     backgroundColor: '#0a1520',
     regionStyle: {
       initial: {
-        fill: '#1b2a3d',   // important: give non-data countries a default fill
+        fill: '#1b2a3d',
         fillOpacity: 1,
         stroke: '#253a55',
         strokeWidth: 0.6
@@ -901,26 +951,27 @@ function renderRoleMap(selector, role, dist, topCode, topProb){
         fillOpacity: 1,
         strokeWidth: 0.8,
         cursor: 'pointer'
+      },
+      selected: {
+        stroke: '#22d3a5',
+        strokeWidth: 1.8
       }
     },
-    selectedRegions: topCode ? [useChinaMap ? String(topCode).toUpperCase() : (isCN ? 'CN' : String(topCode).toUpperCase())] : [],
+    selectedRegions: topCode ? [String(topCode).toUpperCase()] : [],
     selectedRegionsStyle: {
-      fill: palette[3]
+      stroke: '#22d3a5',
+      strokeWidth: 1.8,
+      fillOpacity: 1
     },
     series: {
       regions: [{
         attribute: 'fill',
-        scale: palette,
-        values: values,
-        min: 0,
-        max: 1,
-        normalizeFunction: 'linear'
+        attributes: fillValues
       }]
     },
     onRegionTooltipShow(event, tooltip, code){
-      const rawCode = String(code);
-      const lookup = rawCode.toUpperCase();
-      const pct = Math.round((values[lookup] || 0) * 100);
+      const lookup = String(code).toUpperCase();
+      const pct = Math.round((rawValues[lookup] || 0) * 100);
       tooltip.text(`${tooltip.text()} · ${pct}%`);
       tooltip.css({
         backgroundColor: 'rgba(75,96,122,0.95)',
@@ -928,23 +979,19 @@ function renderRoleMap(selector, role, dist, topCode, topProb){
       });
     },
     onLoaded(map){
-      if (!useChinaMap){
-        try {
-          map.setFocus({ scale: 0.9, lat: 14, lng: 0, animate: false });
-        } catch (_) {}
-      }
+      try {
+        map.setFocus({ scale: 0.9, lat: 14, lng: 0, animate: false });
+      } catch (_) {}
+      applyRegionFills();
+      requestAnimationFrame(applyRegionFills);
+      setTimeout(applyRegionFills, 0);
+      setTimeout(applyRegionFills, 120);
     }
   });
 
-  // safer than update(...)
-  try {
-    if (S.activeMap?.series?.regions?.[0]) {
-      S.activeMap.series.regions[0].setValues(values);
-    }
-    if (topCode) {
-      S.activeMap.setSelectedRegions([useChinaMap ? String(topCode).toUpperCase() : (isCN ? 'CN' : String(topCode).toUpperCase())]);
-    }
-  } catch (_) {}
+  applyRegionFills();
+  requestAnimationFrame(applyRegionFills);
+  setTimeout(applyRegionFills, 0);
 }
 
 function normalizeCountryCode(raw){
