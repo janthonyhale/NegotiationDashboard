@@ -52,16 +52,9 @@ nav{display:flex;align-items:center;padding:11px 22px;border-bottom:1px solid va
 .brief-points{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;}
 .brief-chip{font-family:var(--mono);font-size:0.64rem;padding:3px 8px;border-radius:5px;border:1px solid rgba(148,163,184,0.35);background:rgba(11,19,32,0.55);color:#b8c6da;}
 
-/* Stat row */
-.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;}
-.stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;}
-.stat-lbl{font-family:var(--mono);font-size:0.54rem;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
-.stat-v{font-family:var(--serif);font-size:1.75rem;line-height:1;}
-.stat-v.teal{color:var(--teal);}.stat-v.blue{color:var(--accent);}.stat-v.amber{color:var(--amber);}.stat-v.red{color:var(--red);}
-
 /* Plot grid */
-.summary-grid{display:grid;grid-template-columns:1fr 1.2fr;gap:14px;align-items:start;}
-.left-col,.right-col{display:flex;flex-direction:column;gap:14px;}
+.summary-grid{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:14px;align-items:start;}
+.left-col,.mid-col,.right-col{display:flex;flex-direction:column;gap:14px;}
 .plot-grid{display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:0;}
 .plot-card{background:var(--card);border:1px solid var(--border);border-radius:11px;overflow:hidden;}
 .plot-head{padding:9px 14px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:0.56rem;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:center;}
@@ -142,18 +135,16 @@ nav{display:flex;align-items:center;padding:11px 22px;border-bottom:1px solid va
   <div id="content" style="display:none">
     <div class="summary-grid">
       <div class="left-col">
+        <div class="fw-card">
+          <div class="plot-head">Negotiation Feed</div>
+          <div class="dialogue-stage" id="dialogue">—</div>
+        </div>
+      </div>
+
+      <div class="mid-col">
         <!-- KODIS outcome -->
         <div id="outcome-section"></div>
-
         <div class="brief-card" id="exec-brief"><div class="brief-title">Executive Brief</div><div class="brief-text">Preparing dispute summary…</div></div>
-
-        <!-- Stats -->
-        <div class="stat-row">
-          <div class="stat"><div class="stat-lbl">Total Turns</div><div class="stat-v blue" id="st-turns">—</div></div>
-          <div class="stat"><div class="stat-lbl">Risk Score</div><div class="stat-v" id="st-risk">—</div></div>
-          <div class="stat"><div class="stat-lbl">Risk Level</div><div class="stat-v" id="st-risk-lbl">—</div></div>
-          <div class="stat"><div class="stat-lbl">Neg. Signals</div><div class="stat-v amber" id="st-sigs">—</div></div>
-        </div>
       </div>
 
       <div class="right-col">
@@ -163,12 +154,6 @@ nav{display:flex;align-items:center;padding:11px 22px;border-bottom:1px solid va
             <div id="post-chart" class="plot-host"></div>
             <div class="plot-ph" id="post-ph">Computing…</div>
           </div>
-        </div>
-
-        <!-- Transcript -->
-        <div class="fw-card">
-          <div class="plot-head">Negotiation Feed</div>
-          <div class="dialogue-stage" id="dialogue">—</div>
         </div>
       </div>
     </div>
@@ -273,15 +258,6 @@ function showContent(risk, finalOutcome) {
       <span class="brief-chip">${agreementState}</span>
     </div>`;
   document.getElementById('exec-brief').innerHTML = briefHtml;
-
-  const lc = risk.label.toLowerCase();
-  const c  = lc==='low'?'teal':lc==='medium'?'amber':'red';
-  document.getElementById('st-turns').textContent = S.turns.length;
-  document.getElementById('st-risk').textContent  = Math.round(risk.score*100)+'%';
-  document.getElementById('st-risk').className    = 'stat-v '+c;
-  document.getElementById('st-risk-lbl').textContent = risk.label;
-  document.getElementById('st-risk-lbl').className   = 'stat-v '+c;
-  document.getElementById('st-sigs').textContent  = risk.negative_signals;
 
   const oEl = document.getElementById('outcome-section');
   if (finalOutcome) {
