@@ -802,50 +802,74 @@ function normalizeDist(dist){
 
 
 const CN_REGION_META = {
-  north: {name:'North', cx:190, cy:95},
-  central: {name:'Central', cx:165, cy:156},
-  wu_min: {name:'Wu/Min', cx:228, cy:168},
-  xian_yue: {name:'Xian/Yue', cx:190, cy:212},
+  north: {name:'North', cx:190, cy:95, coords:[39.5, 116.3]},
+  central: {name:'Central', cx:165, cy:156, coords:[31.5, 112.5]},
+  wu_min: {name:'Wu/Min', cx:228, cy:168, coords:[28.5, 119.8]},
+  xian_yue: {name:'Xian/Yue', cx:190, cy:212, coords:[23.5, 113.2]},
 };
 
 function renderChinaRegionMap(selector, dist, topCode, role){
   const host = document.querySelector(selector);
   if (!host) return;
-  const palette = role === 'buyer'
-    ? ['#dbeafe','#93c5fd','#60a5fa','#2563eb']
-    : ['#fee2e2','#fca5a5','#f87171','#dc2626'];
-
-  const shade = (v)=>{
-    const n = Math.max(0, Math.min(1, Number(v)||0));
-    if (n >= 0.65) return palette[3];
-    if (n >= 0.45) return palette[2];
-    if (n >= 0.25) return palette[1];
-    return palette[0];
-  };
-
-  const p = {
+  const p = normalizeDist({
     north: Number((dist || {}).north || 0),
     central: Number((dist || {}).central || 0),
     wu_min: Number((dist || {}).wu_min || 0),
     xian_yue: Number((dist || {}).xian_yue || 0),
-  };
+  });
+  const baseColor = role === 'buyer' ? '#3b82f6' : '#ef4444';
+  const markers = Object.entries(CN_REGION_META).map(([k, meta]) => {
+    const prob = Number(p[k] || 0);
+    return {
+      name: `${meta.name} ${Math.round(prob * 100)}%`,
+      coords: meta.coords,
+      style: {
+        r: 5 + prob * 20,
+        fill: baseColor,
+        stroke: k === topCode ? '#22d3a5' : '#cbd5e1',
+        strokeWidth: k === topCode ? 2.4 : 1.2,
+        fillOpacity: 0.22 + prob * 0.72,
+      },
+    };
+  });
 
-  host.innerHTML = `<svg viewBox="0 0 300 260" width="100%" height="100%" aria-label="China regional confidence map">
-    <rect x="0" y="0" width="300" height="260" rx="8" ry="8" fill="#0a1520" stroke="#132236"/>
-    <path d="M42,92 L78,76 L108,84 L135,72 L164,86 L196,82 L228,96 L250,120 L238,152 L248,190 L230,212 L198,228 L170,220 L142,228 L110,214 L90,194 L70,162 L58,132 Z"
-      fill="rgba(75,96,122,0.20)" stroke="#355070" stroke-width="1.2"/>
+  if (S.activeMap) {
+    S.activeMap.destroy();
+    S.activeMap = null;
+  }
 
-    <path d="M92,88 L132,70 L164,86 L198,82 L230,96 L240,118 L218,136 L186,132 L154,126 L126,122 L100,110 Z"
-      fill="${shade(p.north)}" stroke="${topCode==='north'?'#22d3a5':'#1f3349'}" stroke-width="${topCode==='north'?2:1.1}"/>
-    <path d="M100,112 L126,122 L154,126 L186,132 L218,136 L206,160 L176,170 L146,172 L118,166 L98,148 Z"
-      fill="${shade(p.central)}" stroke="${topCode==='central'?'#22d3a5':'#1f3349'}" stroke-width="${topCode==='central'?2:1.1}"/>
-    <path d="M206,136 L230,146 L234,168 L224,188 L204,196 L194,174 L206,160 Z"
-      fill="${shade(p.wu_min)}" stroke="${topCode==='wu_min'?'#22d3a5':'#1f3349'}" stroke-width="${topCode==='wu_min'?2:1.1}"/>
-    <path d="M118,166 L146,172 L176,170 L194,174 L204,196 L198,218 L168,220 L142,228 L112,214 L98,188 Z"
-      fill="${shade(p.xian_yue)}" stroke="${topCode==='xian_yue'?'#22d3a5':'#1f3349'}" stroke-width="${topCode==='xian_yue'?2:1.1}"/>
-
-    ${Object.entries(CN_REGION_META).map(([k,v])=>`<text x="${v.cx}" y="${v.cy}" fill="#e2e8f0" font-size="10" text-anchor="middle">${v.name} ${Math.round((p[k]||0)*100)}%</text>`).join('')}
-  </svg>`;
+  try {
+    S.activeMap = new jsVectorMap({
+      selector,
+      map: 'china',
+      zoomButtons: false,
+      draggable: true,
+      zoomOnScroll: true,
+      backgroundColor: '#0a1520',
+      selectedMarkers: [],
+      markers,
+      markerStyle: {
+        initial: { fill: baseColor, stroke: '#cbd5e1', strokeWidth: 1.2, r: 6 },
+        hover: { fill: '#22d3a5' },
+      },
+      labels: {
+        markers: {
+          render: marker => marker?.name || '',
+          offsets: () => [8, 0],
+          style: { fontSize: 10, fill: '#e2e8f0' },
+        }
+      },
+      regionStyle: {
+        initial: { fill: '#1e293b', fillOpacity: 0.85, stroke: '#334155', strokeWidth: 0.8 },
+        hover: { fill: '#334155' }
+      },
+      onLoaded(map){
+        try { map.setFocus({ scale: 1.05, lat: 35, lng: 104, animate: false }); } catch (e) {}
+      }
+    });
+  } catch (e) {
+    host.innerHTML = `<div class="emo-empty" style="padding:18px">China map unavailable; unable to render region dots.</div>`;
+  }
 }
 
 function renderRoleMap(selector, role, dist, topCode, topProb){
@@ -855,10 +879,6 @@ function renderRoleMap(selector, role, dist, topCode, topProb){
 
   const isCN = S.language === 'CN';
   if (isCN) {
-    if (S.activeMap) {
-      S.activeMap.destroy();
-      S.activeMap = null;
-    }
     renderChinaRegionMap(selector, dist, topCode, role);
     return;
   }
@@ -1042,7 +1062,7 @@ function renderCountry(countrySnap){
   const topCode = sortedDist[0]?.[0] || null;
   const topProb = sortedDist[0]?.[1] || 0;
   document.getElementById('map-title').textContent = role === 'buyer' ? 'Buyer map' : 'Seller map';
-  document.getElementById('map-scale-note').textContent = S.language==='CN' ? 'Chinese regions (North/Central/Wu_Min/Xian_Yue)' : (role === 'buyer' ? 'Blue = higher confidence' : 'Red = higher confidence');
+  document.getElementById('map-scale-note').textContent = S.language==='CN' ? 'Dot size = higher confidence by China region' : (role === 'buyer' ? 'Blue = higher confidence' : 'Red = higher confidence');
   const normalizedDist = normalizeDist(dist);
   renderRoleMap('#active-map', role, normalizedDist, topCode, topProb);
 }
