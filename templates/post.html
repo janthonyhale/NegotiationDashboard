@@ -108,7 +108,7 @@ nav{display:flex;align-items:center;padding:11px 22px;border-bottom:1px solid va
 <div class="page">
   <div class="eyebrow">Step 04 — Post-Negotiation</div>
   <div class="page-title">Outcome Analysis</div>
-  <div class="page-sub">Full review: emotion trajectory, solution space, Pareto efficiency, and downloadable report.</div>
+  <div class="page-sub">Full review: final solution space, dispute summary, and downloadable report.</div>
 
   <div class="loading-box" id="loading-box">
     <div class="spin-lg"></div>
@@ -121,7 +121,7 @@ nav{display:flex;align-items:center;padding:11px 22px;border-bottom:1px solid va
     <!-- KODIS outcome -->
     <div id="outcome-section"></div>
 
-    <div class="brief-card" id="exec-brief"><div class="brief-title">Executive Brief</div><div class="brief-text">Preparing mission summary…</div></div>
+    <div class="brief-card" id="exec-brief"><div class="brief-title">Executive Brief</div><div class="brief-text">Preparing dispute summary…</div></div>
 
     <!-- Stats -->
     <div class="stat-row">
@@ -132,25 +132,12 @@ nav{display:flex;align-items:center;padding:11px 22px;border-bottom:1px solid va
     </div>
 
     <!-- Plots -->
-    <div class="plot-grid">
+    <div class="plot-grid" style="grid-template-columns:1fr">
       <div class="plot-card">
-        <div class="plot-head">Pre-Negotiation Solution Space</div>
-        <img id="pre-img" src="" style="display:none">
-        <div class="plot-ph" id="pre-ph">—</div>
-      </div>
-      <div class="plot-card">
-        <div class="plot-head">Post-Negotiation — Agreement Marked<span id="agree-badge" style="color:var(--teal)"></span></div>
+        <div class="plot-head">Solution Space — Agreement Marked<span id="agree-badge" style="color:var(--teal)"></span></div>
         <div id="post-chart" class="plot-host"></div>
-        <img id="post-img" src="" style="display:none">
         <div class="plot-ph" id="post-ph">Computing…</div>
       </div>
-    </div>
-
-    <!-- Emotion (full width) -->
-    <div class="fw-card" style="margin-bottom:18px">
-      <div class="plot-head">Emotion Trajectory — All Turns &amp; All Emotions</div>
-      <img id="emo-img" src="" style="display:none">
-      <div class="plot-ph" id="emo-ph">Computing…</div>
     </div>
 
     <!-- Transcript -->
@@ -165,7 +152,7 @@ nav{display:flex;align-items:center;padding:11px 22px;border-bottom:1px solid va
 <div id="toast"></div>
 
 <script>
-let S = { turns:[], bw:{}, sw:{}, filename:'', preImg:'', postImg:'', emoImg:'', finalOutcome:null, opSummaries:[], outcomes:[], pareto:[], language:'EN', country:null, preJustifications:{}, stepCache:{} };
+let S = { turns:[], bw:{}, sw:{}, filename:'', preImg:'', postImg:'', finalOutcome:null, opSummaries:[], outcomes:[], pareto:[], language:'EN', country:null, preJustifications:{}, stepCache:{}, executiveBrief:'' };
 const IRP_KEYS = ['interest','right','power'];
 
 function classifyIRP(text=''){
@@ -194,10 +181,6 @@ async function init() {
   S.preJustifications = D.pre_justifications || {};
   S.stepCache = D.step_cache || {};
 
-  document.getElementById('pre-img').src = 'data:image/png;base64,' + S.preImg;
-  document.getElementById('pre-img').style.display = 'block';
-  document.getElementById('pre-ph').style.display = 'none';
-
   document.getElementById('tx-body').innerHTML = S.turns.map(t=>{
     const role = t.speaker.toLowerCase();
     const irp = (t.meta && t.meta.irp_label ? String(t.meta.irp_label).toLowerCase() : classifyIRP(t.text));
@@ -217,13 +200,13 @@ async function init() {
         buyer_weights: S.bw,
         seller_weights: S.sw,
         final_outcome: detected,
-        emotion_dim: 'anger'
+        op_summaries: S.opSummaries
       })
     });
     if (!res.ok) throw new Error('Failed to compute summary');
     const data = await res.json();
-    S.emoImg = data.emotion_img;
     S.postImg = data.post_img;
+    S.executiveBrief = data.executive_brief || '';
     S.finalOutcome = data.final_outcome || detected;
     S.outcomes = Array.isArray(data.outcomes) ? data.outcomes : [];
     S.pareto = Array.isArray(data.pareto) ? data.pareto : [];
@@ -261,16 +244,14 @@ function showContent(risk, finalOutcome) {
   document.getElementById('loading-box').style.display='none';
   document.getElementById('content').style.display='block';
 
-  const recent = S.turns.slice(-6).map(t=>t.text.toLowerCase()).join(' ');
-  const pressure = /lawyer|court|sue|walk away|final offer/.test(recent) ? 'elevated pressure language' : 'limited hard-threat language';
-  const agreementState = finalOutcome ? 'A provisional agreement signature is detectable in the closing turns.' : 'No definitive agreement signature is detected in closing turns.';
+  const agreementState = finalOutcome ? 'Agreement detected in closing turns.' : 'No definitive agreement signature detected in closing turns.';
   const briefHtml = `<div class="brief-title">Executive Brief</div>
-    <div class="brief-text">Current negotiation posture remains ${risk.label.toLowerCase()} risk (${Math.round(risk.score*100)}%). ${agreementState} Conversation shows ${pressure}, with ${risk.negative_signals} negative signals captured so far.</div>
+    <div class="brief-text">${esc(S.executiveBrief).replace(/\n/g,'<br><br>')}</div>
     <div class="brief-points">
       <span class="brief-chip">Turns: ${S.turns.length}</span>
       <span class="brief-chip">Risk: ${risk.label}</span>
       <span class="brief-chip">Neg. signals: ${risk.negative_signals}</span>
-      <span class="brief-chip">Threats: ${risk.threats}</span>
+      <span class="brief-chip">${agreementState}</span>
     </div>`;
   document.getElementById('exec-brief').innerHTML = briefHtml;
 
@@ -299,14 +280,8 @@ function showContent(risk, finalOutcome) {
     oEl.innerHTML=`<div class="no-outcome">No clear final agreement detected in the transcript. The Pareto frontier is shown without an agreement marker.</div>`;
   }
 
-  document.getElementById('post-img').src  = 'data:image/png;base64,' + S.postImg;
-  document.getElementById('post-img').style.display = 'none';
   document.getElementById('post-ph').style.display  = 'none';
   renderPostSolutionSpace(S.outcomes, S.pareto, finalOutcome);
-
-  document.getElementById('emo-img').src  = 'data:image/png;base64,' + S.emoImg;
-  document.getElementById('emo-img').style.display = 'block';
-  document.getElementById('emo-ph').style.display  = 'none';
 }
 
 function renderPostSolutionSpace(outcomes, pareto, finalOutcome){
@@ -378,7 +353,7 @@ async function exportPDF() {
       body: JSON.stringify({
         turns: S.turns, filename: S.filename,
         buyer_weights: S.bw, seller_weights: S.sw,
-        pre_img: S.preImg, emotion_img: S.emoImg, post_img: S.postImg,
+        pre_img: S.preImg, post_img: S.postImg,
         final_outcome: S.finalOutcome,
         op_summaries: S.opSummaries,
       })
