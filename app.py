@@ -598,6 +598,95 @@ def llm_evolution_summary(op_summaries):
     except Exception:
         return 'Operational summaries indicate shifting emotional intensity with intermittent convergence opportunities; uncertainty remained around cultural priors while risk signals fluctuated by turn.'
 
+def llm_executive_brief(turns, op_summaries, final_outcome, pareto):
+    """Draft a two-paragraph executive brief using GPT-5.2 when available."""
+    turns = turns or []
+    op_summaries = op_summaries or []
+    api_key = os.getenv('OPENAI_API_KEY')
+
+    dialogue_excerpt = "\n".join(
+        f"{t.get('speaker', 'Unknown')}: {t.get('text', '')}"
+        for t in turns[-60:]
+    )
+    timeline_excerpt = "\n".join(
+        f"Turn {int(item.get('idx', 0)) + 1}: {item.get('summary', '')}"
+        for item in sorted(op_summaries, key=lambda x: int(x.get('idx', 0)))
+        if item.get('summary')
+    )
+
+    pareto_set = {
+        (
+            p.get('refund_label'),
+            p.get('buyer_review'),
+            p.get('seller_review'),
+            p.get('seller_apology'),
+            p.get('buyer_apology'),
+        )
+        for p in (pareto or [])
+    }
+    is_pareto_efficient = False
+    if final_outcome:
+        sig = (
+            final_outcome.get('refund_label'),
+            final_outcome.get('buyer_review'),
+            final_outcome.get('seller_review'),
+            final_outcome.get('seller_apology'),
+            final_outcome.get('buyer_apology'),
+        )
+        is_pareto_efficient = sig in pareto_set
+
+    fallback = (
+        "The dispute centered on compensation, review removal, and apology expectations, then evolved from positional demands toward partial trade-offs as each side tested leverage and legitimacy. "
+        + ("It ended with a detectible agreement package that balanced face-saving and practical closure. " if final_outcome else "It ended without a clearly detectable final agreement in the closing turns. ")
+        + "Across the timeline summaries, emotional intensity and pressure language varied, but convergence attempts appeared when parties shifted from accusations to concrete terms."
+        + "\n\n"
+        + "The process could likely have gone better with earlier reframing around shared interests, explicit option-building, and mediator checkpoints that separated rights/power claims from underlying needs. "
+        + ("The final package appears Pareto efficient under the configured utility model. " if is_pareto_efficient else "The final package does not appear Pareto efficient under the configured utility model, suggesting unclaimed joint gains remained. ")
+        + "Buyer and seller could each have improved outcomes by making contingent offers sooner, clarifying non-negotiables, and sequencing apologies/review actions with measurable commitments."
+    )
+
+    if not api_key:
+        return fallback
+
+    prompt = (
+        "Write exactly two paragraphs for an executive brief.\n"
+        "Paragraph 1: summarize the dispute, how it evolved, and how it ended.\n"
+        "Paragraph 2: explain how it could have gone better, including mediator actions, buyer/seller alternatives, and whether the solution was Pareto efficient.\n"
+        "Make the analysis insightful and specific, not generic. Use concrete dynamics from the timeline and dialogue.\n"
+        "Target roughly 4-6 sentences per paragraph.\n"
+        "Keep a neutral, executive tone focused on decision-relevant insights.\n"
+        f"Detected final outcome: {json.dumps(final_outcome)}\n"
+        f"Pareto efficient under configured utility model: {is_pareto_efficient}\n"
+        f"Operational summaries over time:\n{timeline_excerpt or '[none]'}\n\n"
+        f"Dialogue excerpt:\n{dialogue_excerpt or '[none]'}"
+    )
+
+    payload = {
+        "model": "gpt-5.2",
+        "messages": [
+            {"role": "system", "content": "You draft executive mediation briefs for negotiation outcomes."},
+            {"role": "user", "content": prompt},
+        ],
+        "temperature": 0.2,
+        "max_tokens": 450
+    }
+    req = urllib.request.Request(
+        'https://api.openai.com/v1/chat/completions',
+        data=json.dumps(payload).encode('utf-8'),
+        headers={
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {api_key}'
+        },
+        method='POST'
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=18) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+        content = (data['choices'][0]['message']['content'] or '').strip()
+        return content or fallback
+    except Exception:
+        return fallback
+
 
 def estimate_risk(turns_so_far):
     if not turns_so_far:
@@ -1109,12 +1198,11 @@ def api_post_summary():
     turns = data.get('turns', [])
     bw    = data.get('buyer_weights', DEFAULT_BUYER_WEIGHTS)
     sw    = data.get('seller_weights', DEFAULT_SELLER_WEIGHTS)
-    dim   = data.get('emotion_dim', 'anger')
+    op_summaries = data.get('op_summaries', [])
     final_outcome = data.get('final_outcome')
 
     turns_enriched = enrich(turns) if not turns_have_cached_enrichment(turns) else turns
     risk = estimate_risk(turns_enriched)
-    emo_img = make_emotion_plot(turns_enriched, dim) if turns_enriched else ''
     outcomes = generate_all_outcomes(bw, sw)
     pareto = compute_pareto(outcomes)
 
@@ -1128,13 +1216,14 @@ def api_post_summary():
                       o['buyer_apology']  == final_outcome.get('buyer_apology')), None)
 
     post_img = make_pareto_plot(outcomes, pareto, match, title='Post-Negotiation: Solution Space')
+    executive_brief = llm_executive_brief(turns_enriched, op_summaries, match, pareto)
     return jsonify({
         'risk': risk,
-        'emotion_img': emo_img,
         'post_img': post_img,
         'final_outcome': match,
         'outcomes': outcomes,
         'pareto': pareto,
+        'executive_brief': executive_brief,
     })
 
 @app.route('/api/export_pdf', methods=['POST'])
