@@ -564,10 +564,12 @@ async function step(dir) {
 async function runAll(){
   if (S.processing || S.currentIdx >= S.turns.length - 1) return;
   S.runAll = true;
-  setNavProcessing(true);
+  setNavProcessing(false);
   try {
     while (S.currentIdx < S.turns.length - 1){
+      const before = S.currentIdx;
       await step(1);
+      if (S.currentIdx === before) break;
       await new Promise(r=>setTimeout(r, 40));
     }
   } finally {
