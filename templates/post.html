@@ -209,6 +209,7 @@ async function init() {
         turns: S.turns,
         buyer_weights: S.bw,
         seller_weights: S.sw,
+        language: S.language,
         op_summaries: S.opSummaries
       })
     });
@@ -386,6 +387,7 @@ async function exportPDF() {
       method:'POST',headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         turns: S.turns, filename: S.filename,
+        language: S.language,
         buyer_weights: S.bw, seller_weights: S.sw,
         pre_img: S.preImg, post_img: S.postImg,
         final_outcome: S.finalOutcome,
