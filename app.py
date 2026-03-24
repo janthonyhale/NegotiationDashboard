@@ -873,7 +873,8 @@ def llm_operational_summary(turns_so_far, country_snapshot, risk_snapshot):
         "Only highlight the most important facets of the dialogue so far. "
         "Use signals from: integrative potential, dialogue history progression, emotional trajectory, and IRP balance (Interests/Rights/Power). "
         "Keep it high-level, practical, and easy to understand for mediators. "
-        "Treat country predictions as uncertain priors (not facts).\n\n"
+        "Treat country predictions as uncertain priors (not facts). "
+        "Respond in English only.\n\n"
         f"Risk snapshot: {json.dumps(risk_snapshot)}\n"
         f"Country snapshot: {json.dumps(country_snapshot)}\n"
         f"Observed turns:\n{transcript_excerpt}"
@@ -906,6 +907,43 @@ def llm_operational_summary(turns_so_far, country_snapshot, risk_snapshot):
             f"Risk is {risk_snapshot.get('label','Unknown')} ({risk_snapshot.get('score',0)}), with the dialogue still mixing rights and power claims over core interests. "
             "Emotions remain active, so focus next on de-escalation and one concrete reciprocal package tied to shared interests."
         )
+
+
+def llm_irp_label(turns_so_far, current_turn):
+    api_key = os.getenv('OPENAI_API_KEY')
+    if not api_key:
+        return current_turn.get('meta', {}).get('irp_label') or 'Interest'
+    excerpt = "\n".join(f"{t.get('speaker','Unknown')}: {t.get('text','')}" for t in turns_so_far[-8:])
+    payload = {
+        "model": "gpt-4.1",
+        "messages": [
+            {"role": "system", "content": "Classify negotiation utterances into Interest, Right, or Power. Respond in English JSON only."},
+            {"role": "user", "content": (
+                "Label ONLY the final utterance in this context as one of: Interest, Right, Power. "
+                "Return JSON: {\"irp_label\":\"Interest|Right|Power\"}.\n\n"
+                f"{excerpt}"
+            )}
+        ],
+        "temperature": 0,
+        "response_format": {"type": "json_object"}
+    }
+    req = urllib.request.Request(
+        'https://api.openai.com/v1/chat/completions',
+        data=json.dumps(payload).encode('utf-8'),
+        headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {api_key}'},
+        method='POST'
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=12) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+        obj = json.loads(data['choices'][0]['message']['content'] or '{}')
+        v = str(obj.get('irp_label', '')).strip().lower()
+        if v.startswith('interest'): return 'Interest'
+        if v.startswith('right'): return 'Right'
+        if v.startswith('power'): return 'Power'
+    except Exception:
+        pass
+    return current_turn.get('meta', {}).get('irp_label') or 'Interest'
 
 
 def llm_evolution_summary(op_summaries):
@@ -1050,6 +1088,51 @@ def estimate_risk(turns_so_far):
     return {'score':round(float(score),3),'label':label,
             'negative_signals':int(total_neg),'threats':int(total_threat)}
 
+
+def llm_failure_risk(turns_so_far):
+    base = estimate_risk(turns_so_far)
+    base['risk_0_100'] = int(round(base['score'] * 100))
+    api_key = os.getenv('OPENAI_API_KEY')
+    if not api_key or not turns_so_far:
+        return base
+    transcript = '\n'.join(
+        f"Turn {i+1} - {t.get('speaker','Unknown')}: {t.get('text','')}"
+        for i, t in enumerate(turns_so_far[-35:])
+    )
+    payload = {
+        "model": "gpt-4.1",
+        "messages": [
+            {"role": "system", "content": "Assess negotiation failure risk. Return ENGLISH JSON only."},
+            {"role": "user", "content": (
+                "Output JSON with fields: risk_0_100 (0-100 integer), label (Low|Medium|High), rationale_short (<=18 words).\n\n"
+                f"{transcript}"
+            )}
+        ],
+        "temperature": 0,
+        "response_format": {"type": "json_object"}
+    }
+    req = urllib.request.Request(
+        'https://api.openai.com/v1/chat/completions',
+        data=json.dumps(payload).encode('utf-8'),
+        headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {api_key}'},
+        method='POST'
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=12) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+        obj = json.loads(data['choices'][0]['message']['content'] or '{}')
+        risk_100 = max(0, min(100, int(float(obj.get('risk_0_100', base['risk_0_100'])))))
+        label = str(obj.get('label', '')).strip().capitalize()
+        if label not in {'Low', 'Medium', 'High'}:
+            label = 'Low' if risk_100 < 33 else ('Medium' if risk_100 < 66 else 'High')
+        base['risk_0_100'] = risk_100
+        base['score'] = round(risk_100 / 100.0, 3)
+        base['label'] = label
+        base['rationale_short'] = str(obj.get('rationale_short', '')).strip()
+    except Exception:
+        pass
+    return base
+
 def llm_intervention_assessment(turns_so_far, prior_intervention_turns=None):
     api_key = os.getenv('OPENAI_API_KEY')
     prior_intervention_turns = prior_intervention_turns or []
@@ -1096,18 +1179,19 @@ def llm_intervention_assessment(turns_so_far, prior_intervention_turns=None):
     if not api_key:
         return fallback_assessment()
 
-    prompt = """Imagine you are playing the role of a mediator in a buyer/seller purchase dispute. Your goal is to allow participants to resolve their dispute on their own if possible, but to intervene if necessary. Some reasons to intervene include:
+    prompt = """Imagine you are the mediator in a buyer/seller purchase dispute. Let parties resolve it themselves unless intervention is necessary. Reasons:
 1. Escalation of Conflict: if the conversation becomes heated with parties resorting to personal attacks or hostile language
 2. Impasse: when parties reach a deadlock and are unable to move forward
 3. Miscommunication: if there are signs that the parties are misunderstanding each other’s points
 4. Unreasonable demands: If one party is making unreasonable demands that the other party can’t possibly meet.
 5. Invocation: If one party asks the mediator to interject. 
 
-You will be given the conversation so far. Rate the situation on a scale from 1 to 5 with 1 meaning definitely don’t intervene and 5 meaning definitely intervene. Provide (a) the rating on if to intervene, (b) the reason to intervene, from the list above, and (c) a one sentence statement you might tell the parties at this point. 
+You will be given the conversation so far. Rate intervention urgency 1-5 (1=definitely don't intervene, 5=definitely intervene).
+Provide JSON with: rating, reason (from list above), statement (one sentence).
 
 You do not need to intervene every turn, and should consider how recently you've intervened before making a decision.
 
-Any score over a seven will trigger an intervention, and your message will be sent to both the buyer and seller."""
+Return ENGLISH only."""
 
     payload = {
         "model": "gpt-4.1",
@@ -1540,7 +1624,12 @@ def api_step():
         cur['translation'] = llm_translate_cn_to_en(cur.get('text',''))
     turns_so_far = turns[:idx+1]
 
-    risk  = estimate_risk(turns_so_far)
+    irp_label = llm_irp_label(turns_so_far, cur)
+    cur.setdefault('meta', {})
+    cur['meta']['irp_label'] = irp_label
+    cur['irp'] = irp_label.lower()
+
+    risk  = llm_failure_risk(turns_so_far)
     adv   = cur.get('advisor') or get_advisor(turns_so_far, cur)
     cur['advisor'] = adv
     emo_img = make_emotion_plot(turns_so_far, dim)

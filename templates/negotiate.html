@@ -476,7 +476,7 @@ async function ensureStepData(idx) {
   const data = await res.json();
 
   if (data.current_turn) {
-    S.turns[idx] = { ...S.turns[idx], ...data.current_turn, irp: S.turns[idx].irp };
+    S.turns[idx] = { ...S.turns[idx], ...data.current_turn, irp: data.current_turn.irp || S.turns[idx].irp };
   }
   if (data.current_turn && data.current_turn.emotions) {
     S.turns[idx].emotions = data.current_turn.emotions;
