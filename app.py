@@ -346,7 +346,7 @@ def make_cn_province_map(province_probs, role='buyer'):
     ax.set_xlabel('Longitude', color='#8fb3d9', fontsize=8)
     ax.set_ylabel('Latitude', color='#8fb3d9', fontsize=8)
     fig.tight_layout()
-    return plot_to_b64(fig)
+    return fig_b64(fig)
 
 def score_emo(text):
     tl = text.lower()
