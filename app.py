@@ -234,7 +234,7 @@ def llm_translate_cn_to_en(text):
         method='POST'
     )
     try:
-        with urllib.request.urlopen(req, timeout=12) as resp:
+        with urllib.request.urlopen(req, timeout=60) as resp:
             data = json.loads(resp.read().decode('utf-8'))
         return (data['choices'][0]['message']['content'] or '').strip()
     except Exception:
@@ -817,7 +817,7 @@ These scores should sum to one. If an utterance is neutral, then neutral must be
         method='POST'
     )
     try:
-        with urllib.request.urlopen(req, timeout=12) as resp:
+        with urllib.request.urlopen(req, timeout=60) as resp:
             data = json.loads(resp.read().decode('utf-8'))
         content = data['choices'][0]['message']['content']
         obj = json.loads(content)
@@ -896,7 +896,7 @@ def llm_operational_summary(turns_so_far, country_snapshot, risk_snapshot):
         method='POST'
     )
     try:
-        with urllib.request.urlopen(req, timeout=12) as resp:
+        with urllib.request.urlopen(req, timeout=60) as resp:
             data = json.loads(resp.read().decode('utf-8'))
         return (data['choices'][0]['message']['content'] or '').strip()
     except Exception:
@@ -975,7 +975,7 @@ def llm_evolution_summary(op_summaries):
         method='POST'
     )
     try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        with urllib.request.urlopen(req, timeout=60) as resp:
             data = json.loads(resp.read().decode('utf-8'))
         return (data['choices'][0]['message']['content'] or '').strip()
     except Exception:
@@ -1063,7 +1063,7 @@ def llm_executive_brief(turns, op_summaries, final_outcome, pareto):
         method='POST'
     )
     try:
-        with urllib.request.urlopen(req, timeout=18) as resp:
+        with urllib.request.urlopen(req, timeout=60) as resp:
             data = json.loads(resp.read().decode('utf-8'))
         content = (data['choices'][0]['message']['content'] or '').strip()
         return content or fallback
@@ -1208,7 +1208,7 @@ Return ENGLISH only."""
         method='POST'
     )
     try:
-        with urllib.request.urlopen(req, timeout=12) as resp:
+        with urllib.request.urlopen(req, timeout=60) as resp:
             data = json.loads(resp.read().decode('utf-8'))
         content = data['choices'][0]['message']['content']
         obj = json.loads(content)
@@ -1597,6 +1597,9 @@ def api_upload():
         elif language == 'CN':
             buyer_c = predict_cn_region_with_model(turns, 'Buyer')
             seller_c = predict_cn_region_with_model(turns, 'Seller')
+            empty_probs = {k: 0.0 for k in CN_PROVINCE_CENTROIDS.keys()}
+            buyer_c['province_map_b64_empty'] = make_cn_province_map(empty_probs, role='buyer')
+            seller_c['province_map_b64_empty'] = make_cn_province_map(empty_probs, role='seller')
         else:
             buyer_c  = predict_country_with_model(turns,'Buyer')
             seller_c = predict_country_with_model(turns,'Seller')
