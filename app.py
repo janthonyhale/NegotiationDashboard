@@ -393,11 +393,11 @@ def infer_cn_province_distribution(turns, role):
 
 CN_REGION_PROVINCES = {
     # Keep province scope aligned with chinese model classes in predictor.py.
-    # These groups follow the requested class↔province mapping (overlaps allowed).
-    'North': ['beijing', 'tianjin', 'hebei', 'shanxi', 'inner mongolia', 'liaoning', 'jilin', 'heilongjiang', 'shandong', 'henan', 'shaanxi', 'gansu', 'ningxia', 'xinjiang'],
-    'Central': ['henan', 'hubei', 'anhui', 'jiangsu', 'sichuan', 'chongqing', 'yunnan', 'guizhou', 'shaanxi', 'gansu'],
-    'Wu_Min': ['shanghai', 'jiangsu', 'zhejiang', 'fujian', 'taiwan', 'guangdong', 'hainan'],
-    'Xian_Yue': ['hunan', 'guangdong', 'guangxi', 'hong kong', 'macau'],
+    # Grouping requested by user.
+    'Wu_Min': ['jiangsu', 'shanghai', 'zhejiang', 'fujian', 'anhui'],
+    'Xian_Yue': ['guangdong', 'jiangxi', 'hainan'],
+    'Central': ['hubei', 'sichuan', 'hebei', 'hunan', 'henan', 'guizhou', 'chongqing', 'yunnan'],
+    'North': ['beijing', 'shandong', 'liaoning', 'heilongjiang', 'jilin', 'tianjin', 'gansu', 'shaanxi', 'qinghai', 'inner mongolia', 'xinjiang', 'shanxi', 'ningxia'],
 }
 
 CN_REGION_LABEL_POS = {
@@ -492,7 +492,8 @@ def make_cn_province_map(province_probs, role='buyer', region_probs=None):
             rings = _extract_polygon_rings(feat.get('geometry', {}))
             if not rings:
                 continue
-            p = float(probs.get(pname, 0.0)) if pname else 0.0
+            region_name = province_to_region.get(pname)
+            p = float(rp.get(region_name, 0.0)) if region_name else 0.0
             face = color_for_prob(p)
             for ring in rings:
                 if not ring:
@@ -523,7 +524,8 @@ def make_cn_province_map(province_probs, role='buyer', region_probs=None):
         sizes = []
         colors = []
         for prov, (lon, lat) in CN_PROVINCE_CENTROIDS.items():
-            p = float(probs.get(prov, 0.0))
+            region_name = province_to_region.get(prov)
+            p = float(rp.get(region_name, 0.0)) if region_name else 0.0
             lons.append(lon)
             lats.append(lat)
             sizes.append(140 + p * 2800)
