@@ -1,0 +1,11 @@
+{"language":"CN", "buyer_weights": {"buyer_apology": 10, "buyer_review": 10, "refund": 70, "seller_apology": 10, "seller_review": 10}, "seller_weights": {"buyer_apology": 10, "buyer_review": 50, "refund": 30, "seller_apology": 10, "seller_review": 10}, "pre_dispute_justifications": {"buyer_review": {"buyer": "因为本来就是店家的错", "seller": "保持店内无差评很重要，而且他明显是恶意差评"}, "receive_apology": {"buyer": "这是对我的诽谤", "seller": "犯错者就应该道歉"}, "refund": {"buyer": "因为我买到的东西并值这个价钱", "seller": "我不必因为这种人做出让步，尽管一件衬衫并不贵"}, "seller_review": {"buyer": "因为错不在我", "seller": "是他的行为不当，被差评是应该的"}}}
+{"speaker": "Buyer", "text": "请退款，这件球衣并不是我需要的", "irp": "I"}
+{"speaker": "Seller", "text": "可是店内已经明确标出没有您要的球衣", "irp": "R"}
+{"speaker": "Buyer", "text": "淘宝标题写的是科比球衣对吧？你发来的东西是你标题所写的吗？要不找平台官方客服介入看看？", "irp": "R"}
+{"speaker": "Seller", "text": "可是店内明确说了没有24号，科比也不止穿过24号，请您撤销差评", "irp": "R"}
+{"speaker": "Buyer", "text": "科比穿没穿过和我没有关系，我只关心你是否有虚假标识，是否虚假库存。你做不到就让平台官方接入，我只是想大事化小，小事化了。你没有资格要求我撤销差评", "irp": "R"}
+{"speaker": "Seller", "text": "你没必要用官方来吓我，我店里写的很清楚没有24号，也就没有虚假标识，反而你的恶意差评影响店面正面形象", "irp": "P"}
+{"speaker": "Buyer", "text": "你以为你偷偷改了商品标题，淘宝的后台没办法调出你的修改记录吗？", "irp": "R"}
+{"speaker": "Seller", "text": "我从未改过标题，我也不怕淘宝后台查看， 如果咱俩只是这样交涉的话是没有结果的", "irp": "R"}
+{"speaker": "Buyer", "text": "那我也无所谓，反正差评对你店铺来说影响更大，我又不赚钱。我买家差评又有什么影响呢？", "irp": "P"}
+{"speaker": "Seller", "text": "我离开协商", "irp": "NA"}

@@ -1,0 +1,16 @@
+{"buyer_weights": {"buyer_apology": 0, "buyer_review": 0, "refund": 50, "seller_apology": 0, "seller_review": 50}, "seller_weights": {"buyer_apology": 5, "buyer_review": 45, "refund": 40, "seller_apology": 0, "seller_review": 10}, "pre_dispute_justifications": {"buyer_review": {"buyer": "I deserve to keep my negative review up because the seller has proven to be unethical and everyone should know this.", "seller": "To make my shop look better."}, "receive_apology": {"buyer": "The seller should update the bad review because I deserve an apology since I did nothing wrong.", "seller": "To make me look correct and that the buyer was wrong."}, "refund": {"buyer": "I deserve a full refund because I bought an item from a deceptive seller.", "seller": "I provided the item that was described online so I shouldn't lose money because of the buyer's mistake."}, "seller_review": {"buyer": "The seller should remove the review about me because I will look bad when I don't deserve it and the seller knows it.", "seller": "To warn other sellers of this buyer's behavior."}}}
+{"speaker": "Buyer", "text": "Hello, I received a product that wasn't as described and I'd like to request a refund.", "irp": "I"}
+{"speaker": "Seller", "text": "How was it not as described?", "irp": "I"}
+{"speaker": "Buyer", "text": "When I bought it, I noticed it said it was a Kobe Bryant shirt but after I received it, I noticed it was a different shirt.", "irp": "I"}
+{"speaker": "Buyer", "text": "The description was also different after I went to reread it.", "irp": "I"}
+{"speaker": "Seller", "text": "I assure you the description was always correct.", "irp": "I"}
+{"speaker": "Seller", "text": "I cannot offer you a refund as I completed the purchase as described.", "irp": "R"}
+{"speaker": "Buyer", "text": "Are you capable of proving the description was always the same?", "irp": "R"}
+{"speaker": "Seller", "text": "No but I am sorry that you misread it.", "irp": "P"}
+{"speaker": "Seller", "text": "Could you please retract your bad review since it was your mistake?", "irp": "I"}
+{"speaker": "Buyer", "text": "I won't get rid of the bad review because it was clearly your mistake.", "irp": "I"}
+{"speaker": "Buyer", "text": "You need to get rid of your bad review because it's a lie and you know it.", "irp": "I"}
+{"speaker": "Seller", "text": "It is not a lie! I demand an apology from you!", "irp": "I"}
+{"speaker": "Buyer", "text": "No apology because it was your mistake and you already proved it.", "irp": "I"}
+{"speaker": "Seller", "text": "Submitted agreement: Buyer gets no refund, seller kept their review, buyer kept their review, seller did apologize, and buyer didn't apologize.", "irp": "NA"}
+{"speaker": "Buyer", "text": "I Walk Away.", "irp": "NA"}

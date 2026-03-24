@@ -1,0 +1,12 @@
+{"language": "CN", "buyer_weights": {"refund": 30, "buyer_review": 30, "seller_review": 20, "seller_apology": 20, "buyer_apology": 0}, "seller_weights": {"refund": 30, "buyer_review": 30, "seller_review": 20, "seller_apology": 0, "buyer_apology": 20}, "pre_dispute_justifications": {"refund": {"buyer": "更加高级的啊", "seller": "我没有义务这么做"}, "buyer_review": {"buyer": "我们要相互理解", "seller": "保护我的权益"}, "seller_review": {"buyer": "我们要相互理解", "seller": "我的维权方式"}, "receive_apology": {"buyer": "我们要相互理解", "seller": "得到基本的尊重"}}}
+{"idx": 0, "speaker": "Buyer", "text": "退款啊", "irp": "I"}
+{"idx": 1, "speaker": "Seller", "text": "亲~一经销售不退不换哦", "irp": "R"}
+{"idx": 2, "speaker": "Buyer", "text": "为什么", "irp": "I"}
+{"idx": 3, "speaker": "Seller", "text": "店铺主页有明确说明球衣不是针对特定球员的哦~", "irp": "R"}
+{"idx": 4, "speaker": "Buyer", "text": "你太扣了", "irp": "P"}
+{"idx": 5, "speaker": "Seller", "text": "亲感谢您对产品的喜欢呢，下次看清再下单哦~差评双方都删除，您接受吗？", "irp": "I"}
+{"idx": 6, "speaker": "Buyer", "text": "退款", "irp": "I"}
+{"idx": 7, "speaker": "Seller", "text": "亲不可以哦~可以退货退款", "irp": "I"}
+{"idx": 8, "speaker": "Buyer", "text": "退款并道歉", "irp": "I"}
+{"idx": 9, "speaker": "Seller", "text": "您没有看清商品说明就来诋毁店铺商品，您做的自己的做法正确吗？", "irp": "R"}
+{"idx": 10, "speaker": "Buyer", "text": "我离开协商", "irp": "NA"}

@@ -1,0 +1,1265 @@
+{
+  "language": "EN",
+  "buyer_weights": {
+    "buyer_apology": 0,
+    "buyer_review": 0,
+    "refund": 50,
+    "seller_apology": 0,
+    "seller_review": 50
+  },
+  "seller_weights": {
+    "buyer_apology": 5,
+    "buyer_review": 45,
+    "refund": 40,
+    "seller_apology": 0,
+    "seller_review": 10
+  },
+  "pre_dispute_justifications": {
+    "buyer_review": {
+      "buyer": "I deserve to keep my negative review up because the seller has proven to be unethical and everyone should know this.",
+      "seller": "To make my shop look better."
+    },
+    "receive_apology": {
+      "buyer": "The seller should update the bad review because I deserve an apology since I did nothing wrong.",
+      "seller": "To make me look correct and that the buyer was wrong."
+    },
+    "refund": {
+      "buyer": "I deserve a full refund because I bought an item from a deceptive seller.",
+      "seller": "I provided the item that was described online so I shouldn't lose money because of the buyer's mistake."
+    },
+    "seller_review": {
+      "buyer": "The seller should remove the review about me because I will look bad when I don't deserve it and the seller knows it.",
+      "seller": "To warn other sellers of this buyer's behavior."
+    }
+  },
+  "turns": [
+    {
+      "idx": 0,
+      "meta": {
+        "irp_label": "Interest"
+      },
+      "speaker": "Buyer",
+      "text": "Hello, I received a product that wasn't as described and I'd like to request a refund.",
+      "ts": null,
+      "irp": "interest",
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "There is no sign of conflict, impasse, miscommunication, unreasonable demands, or request for intervention at this stage."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 1,
+      "meta": {
+        "irp_label": "Interest"
+      },
+      "speaker": "Seller",
+      "text": "How was it not as described?",
+      "ts": null,
+      "irp": "interest",
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "Both parties are communicating politely and seeking clarification; no intervention is needed."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 2,
+      "meta": {
+        "irp_label": "Right"
+      },
+      "speaker": "Buyer",
+      "text": "When I bought it, I noticed it said it was a Kobe Bryant shirt but after I received it, I noticed it was a different shirt.",
+      "ts": null,
+      "irp": "right",
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The conversation is civil and both parties are exchanging information."
+      },
+      "emotions": {
+        "anger": 0.7,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 0,
+        "sadness": 0.3,
+        "surprise": 0,
+        "valence": -1
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 3,
+      "meta": {
+        "irp_label": "Right"
+      },
+      "speaker": "Buyer",
+      "text": "The description was also different after I went to reread it.",
+      "ts": null,
+      "irp": "right",
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "No intervention is needed as both parties are communicating calmly and seeking clarification."
+      },
+      "emotions": {
+        "anger": 0.5,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 0,
+        "sadness": 0.2,
+        "surprise": 0.3,
+        "valence": -0.7
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 4,
+      "meta": {
+        "irp_label": "Right"
+      },
+      "speaker": "Seller",
+      "text": "I assure you the description was always correct.",
+      "ts": null,
+      "irp": "right",
+      "advisor": {
+        "action": "Observe",
+        "rating": 2,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "There may be some miscommunication about the product description, but the conversation remains civil and could still be resolved by the parties."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 5,
+      "meta": {
+        "irp_label": "Right"
+      },
+      "speaker": "Seller",
+      "text": "I cannot offer you a refund as I completed the purchase as described.",
+      "ts": null,
+      "irp": "right",
+      "advisor": {
+        "action": "Observe",
+        "rating": 2,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "There may be some miscommunication about the product description, but the conversation remains civil and could still be resolved by the parties."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 6,
+      "meta": {
+        "irp_label": "Right"
+      },
+      "speaker": "Buyer",
+      "text": "Are you capable of proving the description was always the same?",
+      "ts": null,
+      "irp": "right",
+      "advisor": {
+        "action": "Observe",
+        "rating": 2,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The conversation is approaching a potential impasse, but the parties are still communicating and clarifying their positions."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 7,
+      "meta": {
+        "irp_label": "Right"
+      },
+      "speaker": "Seller",
+      "text": "No but I am sorry that you misread it.",
+      "ts": null,
+      "irp": "right",
+      "advisor": {
+        "action": "Observe",
+        "rating": 2,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "There are signs of miscommunication, but the conversation remains civil and the parties are still engaging constructively."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 8,
+      "meta": {
+        "irp_label": "Interest"
+      },
+      "speaker": "Seller",
+      "text": "Could you please retract your bad review since it was your mistake?",
+      "ts": null,
+      "irp": "interest",
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "There are signs of miscommunication, as the buyer and seller disagree about the product description and responsibility for the issue."
+      },
+      "emotions": {
+        "anger": 0.2,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 0.8,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": -0.2
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 9,
+      "meta": {
+        "irp_label": "Right"
+      },
+      "speaker": "Buyer",
+      "text": "I won't get rid of the bad review because it was clearly your mistake.",
+      "ts": null,
+      "irp": "right",
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Escalation of Conflict",
+        "should_intervene": false,
+        "statement": "The conversation is becoming more adversarial, with both parties blaming each other, but it has not yet reached a level requiring immediate intervention."
+      },
+      "emotions": {
+        "anger": 0.7,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 0.3,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": -0.7
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 10,
+      "meta": {
+        "irp_label": "Power"
+      },
+      "speaker": "Buyer",
+      "text": "You need to get rid of your bad review because it's a lie and you know it.",
+      "ts": null,
+      "irp": "power",
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Escalation of Conflict",
+        "should_intervene": false,
+        "statement": "The conversation is becoming heated with both parties accusing each other of lying and making mistakes."
+      },
+      "emotions": {
+        "anger": 0.8,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 0.2,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": -0.8
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 11,
+      "meta": {
+        "irp_label": "Power"
+      },
+      "speaker": "Seller",
+      "text": "It is not a lie! I demand an apology from you!",
+      "ts": null,
+      "irp": "power",
+      "advisor": {
+        "action": "Intervene",
+        "rating": 4,
+        "reason": "Escalation of Conflict",
+        "should_intervene": true,
+        "statement": "The conversation is becoming heated with both parties making personal accusations and demands, indicating a risk of further escalation."
+      },
+      "emotions": {
+        "anger": 1,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 0,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": -1
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 12,
+      "meta": {
+        "irp_label": "Right"
+      },
+      "speaker": "Buyer",
+      "text": "No apology because it was your mistake and you already proved it.",
+      "ts": null,
+      "irp": "right",
+      "advisor": {
+        "action": "Intervene",
+        "rating": 4,
+        "reason": "Escalation of Conflict",
+        "should_intervene": true,
+        "statement": "The conversation is becoming increasingly heated with both parties making personal accusations and demands."
+      },
+      "emotions": {
+        "anger": 0.8,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 0,
+        "sadness": 0.2,
+        "surprise": 0,
+        "valence": -1
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 13,
+      "meta": {
+        "irp_label": "Interest"
+      },
+      "speaker": "Seller",
+      "text": "Submitted agreement: Buyer gets no refund, seller kept their review, buyer kept their review, seller did apologize, and buyer didn't apologize.",
+      "ts": null,
+      "irp": "interest",
+      "advisor": {
+        "action": "Observe",
+        "rating": 2,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The parties have submitted an agreement, and while there was some heated language earlier, the dispute appears to have reached a resolution."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 14,
+      "meta": {
+        "irp_label": "Power"
+      },
+      "speaker": "Buyer",
+      "text": "I Walk Away.",
+      "ts": null,
+      "irp": "power",
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The buyer has indicated they are walking away, suggesting the dispute has ended without further escalation."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0.3,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 0,
+        "sadness": 0.7,
+        "surprise": 0,
+        "valence": -0.4
+      },
+      "negative_signals": 1,
+      "threat_signals": 0
+    }
+  ],
+  "op_summaries": [
+    {
+      "idx": 0,
+      "summary": "The buyer has calmly initiated a refund request due to a product issue, with no signs of hostility or escalation; the dialogue is at an early stage with clear integrative potential and a focus on interests rather than rights or power. Both parties’ positions and emotions remain neutral, indicating a low-risk, cooperative environment for mediation."
+    },
+    {
+      "idx": 1,
+      "summary": "The dialogue is calm and constructive, with the buyer stating their interest in a refund and the seller responding neutrally to seek clarification, indicating early integrative potential. Both parties are focused on interests rather than rights or power, and the conversation is progressing positively with low risk of escalation."
+    },
+    {
+      "idx": 2,
+      "summary": "The buyer clearly states a mismatch between the product received and its description, expressing frustration and disappointment, while the seller responds neutrally and seeks clarification, signaling openness to resolution. The dialogue is progressing constructively with a focus on interests, minimal rights or power assertions, and strong integrative potential for a mutually agreeable outcome."
+    },
+    {
+      "idx": 3,
+      "summary": "The buyer is dissatisfied and increasingly frustrated due to receiving a product that did not match the description, while the seller has not yet acknowledged responsibility or offered a solution. The dialogue is focused on interests (refund, product accuracy) with rising emotional tension, but there is still room for integrative resolution as neither party has escalated to rights or power claims."
+    },
+    {
+      "idx": 4,
+      "summary": "The dialogue is stalled in a factual dispute, with the buyer expressing frustration and the seller firmly denying any issue; both parties are focused on asserting rights rather than exploring interests. Integrative potential is low at this stage, and the emotional tone is tense, signaling a need for trust-building and fact clarification to move forward."
+    },
+    {
+      "idx": 5,
+      "summary": "The dialogue is stalled, with the buyer expressing frustration over receiving an item not as described and requesting a refund, while the seller firmly denies any issue and refuses the refund, resulting in a high-risk, rights-based standoff. There is little integrative potential or emotional movement, and both parties are focused on asserting their positions rather than exploring interests or solutions."
+    },
+    {
+      "idx": 6,
+      "summary": "Positions are entrenched, with the buyer focused on interests (refund for misdescription) and the seller asserting rights (description accuracy) and power (refusal to refund); emotional tone is escalating on the buyer’s side, and integrative potential is currently low. Dialogue has stalled on proof and accountability, with little movement toward mutual problem-solving."
+    },
+    {
+      "idx": 7,
+      "summary": "The dialogue has stalled with the seller denying responsibility, refusing a refund, and lacking evidence to support their claim, while the buyer expresses increasing frustration and remains dissatisfied. There is little integrative potential, the conversation is rights- and power-focused, and emotions are escalating on the buyer’s side, indicating a high risk of impasse."
+    },
+    {
+      "idx": 8,
+      "summary": "The dialogue has escalated with the seller denying responsibility, refusing a refund, and shifting blame to the buyer, leading to high emotional tension and a power- and rights-based standoff with little integrative progress. Both parties are entrenched, and resolution chances are currently low without a shift toward interests or mutual problem-solving."
+    },
+    {
+      "idx": 9,
+      "summary": "Positions are entrenched with the seller denying fault and refusing a refund, while the buyer remains angry and insists on their claim, resulting in low trust and little integrative potential. The dialogue is dominated by rights and power assertions, with emotions escalating and no movement toward mutual interests or resolution."
+    },
+    {
+      "idx": 10,
+      "summary": "The dialogue is highly adversarial, with both parties entrenched in blame and defensiveness, showing no willingness to compromise or provide evidence, and escalating negative emotions. There is minimal integrative potential, and the conversation is dominated by rights and power claims rather than shared interests, resulting in a high risk of impasse."
+    },
+    {
+      "idx": 11,
+      "summary": "The dialogue has escalated into mutual accusations and anger, with both parties entrenched in defending their positions and focusing on rights and power rather than interests or solutions. There is currently no integrative potential, as neither side is willing to compromise or provide evidence, and the emotional trajectory is highly negative."
+    },
+    {
+      "idx": 12,
+      "summary": "The dialogue is highly adversarial, with both parties entrenched in blame and anger, showing no willingness to compromise or provide evidence, and escalating demands around apologies and review retractions. There is minimal integrative potential, the conversation is dominated by rights and power assertions rather than interests, and emotions are intensifying, keeping the risk of impasse very high."
+    },
+    {
+      "idx": 13,
+      "summary": "The negotiation has escalated with both parties making mutual accusations, expressing strong negative emotions, and focusing on rights and power rather than interests, resulting in a high risk of failure and little integrative potential. Dialogue progression shows entrenched positions with no movement toward resolution, and the submitted agreement reflects a stalemate rather than a true settlement."
+    },
+    {
+      "idx": 14,
+      "summary": "The negotiation escalated quickly with both parties shifting from neutral to high anger and mutual accusations, resulting in a deadlock where neither side’s interests were met and both relied on rights and power claims rather than seeking integrative solutions. Emotional tone deteriorated, dialogue stalled, and the buyer ultimately walked away, leaving the conflict unresolved and risk extremely high."
+    }
+  ],
+  "final_outcome": null,
+  "country": {
+    "buyer": {
+      "confidence": 0.38,
+      "country": "United States",
+      "flag": "🇺🇸",
+      "lat": 37.09,
+      "lng": -95.71,
+      "probabilities": {
+        "Mexico": 0.272591,
+        "South Africa": 0.180272,
+        "United Kingdom": 0.163783,
+        "United States": 0.383353
+      }
+    },
+    "seller": {
+      "confidence": 0.34,
+      "country": "United States",
+      "flag": "🇺🇸",
+      "lat": 37.09,
+      "lng": -95.71,
+      "probabilities": {
+        "Mexico": 0.164936,
+        "South Africa": 0.293443,
+        "United Kingdom": 0.205797,
+        "United States": 0.335825
+      }
+    }
+  },
+  "step_cache": {
+    "0": {
+      "ready": true,
+      "risk": {
+        "label": "Low",
+        "negative_signals": 0,
+        "rationale_short": "Buyer is polite and requests a refund; no hostility or refusal yet.",
+        "risk_0_100": 30,
+        "score": 0.3,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "There is no sign of conflict, impasse, miscommunication, unreasonable demands, or request for intervention at this stage."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.37,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.374939,
+            "South Africa": 0.123085,
+            "United Kingdom": 0.203093,
+            "United States": 0.298883
+          }
+        },
+        "seller": {
+          "confidence": 0,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {}
+        }
+      },
+      "operational_summary": "The buyer has calmly initiated a refund request due to a product issue, with no signs of hostility or escalation; the dialogue is at an early stage with clear integrative potential and a focus on interests rather than rights or power. Both parties’ positions and emotions remain neutral, indicating a low-risk, cooperative environment for mediation."
+    },
+    "1": {
+      "ready": true,
+      "risk": {
+        "label": "Low",
+        "negative_signals": 0,
+        "rationale_short": "Seller is engaging and seeking clarification, indicating willingness to resolve the issue.",
+        "risk_0_100": 20,
+        "score": 0.2,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "Both parties are communicating politely and seeking clarification; no intervention is needed."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.37,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.374939,
+            "South Africa": 0.123085,
+            "United Kingdom": 0.203093,
+            "United States": 0.298883
+          }
+        },
+        "seller": {
+          "confidence": 0.43,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.12249,
+            "South Africa": 0.226711,
+            "United Kingdom": 0.217484,
+            "United States": 0.433315
+          }
+        }
+      },
+      "operational_summary": "The dialogue is calm and constructive, with the buyer stating their interest in a refund and the seller responding neutrally to seek clarification, indicating early integrative potential. Both parties are focused on interests rather than rights or power, and the conversation is progressing positively with low risk of escalation."
+    },
+    "2": {
+      "ready": true,
+      "risk": {
+        "label": "Low",
+        "negative_signals": 0,
+        "rationale_short": "Buyer is clear; seller is seeking clarification, indicating willingness to resolve.",
+        "risk_0_100": 30,
+        "score": 0.3,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The conversation is civil and both parties are exchanging information."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.36,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.355016,
+            "South Africa": 0.18128,
+            "United Kingdom": 0.197454,
+            "United States": 0.26625
+          }
+        },
+        "seller": {
+          "confidence": 0.43,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.12249,
+            "South Africa": 0.226711,
+            "United Kingdom": 0.217484,
+            "United States": 0.433315
+          }
+        }
+      },
+      "operational_summary": "The buyer clearly states a mismatch between the product received and its description, expressing frustration and disappointment, while the seller responds neutrally and seeks clarification, signaling openness to resolution. The dialogue is progressing constructively with a focus on interests, minimal rights or power assertions, and strong integrative potential for a mutually agreeable outcome."
+    },
+    "3": {
+      "ready": true,
+      "risk": {
+        "label": "Medium",
+        "negative_signals": 0,
+        "rationale_short": "Buyer is dissatisfied, but seller has not refused or escalated yet.",
+        "risk_0_100": 40,
+        "score": 0.4,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "No intervention is needed as both parties are communicating calmly and seeking clarification."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.34,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.338658,
+            "South Africa": 0.162571,
+            "United Kingdom": 0.184408,
+            "United States": 0.314362
+          }
+        },
+        "seller": {
+          "confidence": 0.43,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.12249,
+            "South Africa": 0.226711,
+            "United Kingdom": 0.217484,
+            "United States": 0.433315
+          }
+        }
+      },
+      "operational_summary": "The buyer is dissatisfied and increasingly frustrated due to receiving a product that did not match the description, while the seller has not yet acknowledged responsibility or offered a solution. The dialogue is focused on interests (refund, product accuracy) with rising emotional tension, but there is still room for integrative resolution as neither party has escalated to rights or power claims."
+    },
+    "4": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 0,
+        "rationale_short": "Seller denies issue, buyer insists; trust and facts are disputed.",
+        "risk_0_100": 75,
+        "score": 0.75,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 2,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "There may be some miscommunication about the product description, but the conversation remains civil and could still be resolved by the parties."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.34,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.338658,
+            "South Africa": 0.162571,
+            "United Kingdom": 0.184408,
+            "United States": 0.314362
+          }
+        },
+        "seller": {
+          "confidence": 0.4,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.159931,
+            "South Africa": 0.246213,
+            "United Kingdom": 0.195126,
+            "United States": 0.398731
+          }
+        }
+      },
+      "operational_summary": "The dialogue is stalled in a factual dispute, with the buyer expressing frustration and the seller firmly denying any issue; both parties are focused on asserting rights rather than exploring interests. Integrative potential is low at this stage, and the emotional tone is tense, signaling a need for trust-building and fact clarification to move forward."
+    },
+    "5": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 0,
+        "rationale_short": "Seller denies issue, refuses refund, buyer insists item not as described.",
+        "risk_0_100": 85,
+        "score": 0.85,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 2,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "There may be some miscommunication about the product description, but the conversation remains civil and could still be resolved by the parties."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.34,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.338658,
+            "South Africa": 0.162571,
+            "United Kingdom": 0.184408,
+            "United States": 0.314362
+          }
+        },
+        "seller": {
+          "confidence": 0.35,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.134868,
+            "South Africa": 0.305665,
+            "United Kingdom": 0.214118,
+            "United States": 0.345349
+          }
+        }
+      },
+      "operational_summary": "The dialogue is stalled, with the buyer expressing frustration over receiving an item not as described and requesting a refund, while the seller firmly denies any issue and refuses the refund, resulting in a high-risk, rights-based standoff. There is little integrative potential or emotional movement, and both parties are focused on asserting their positions rather than exploring interests or solutions."
+    },
+    "6": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 0,
+        "rationale_short": "Seller denies issue, refuses refund, buyer challenges proof; positions are entrenched.",
+        "risk_0_100": 75,
+        "score": 0.75,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 2,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The conversation is approaching a potential impasse, but the parties are still communicating and clarifying their positions."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.35,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.300702,
+            "South Africa": 0.167585,
+            "United Kingdom": 0.180953,
+            "United States": 0.350761
+          }
+        },
+        "seller": {
+          "confidence": 0.35,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.134868,
+            "South Africa": 0.305665,
+            "United Kingdom": 0.214118,
+            "United States": 0.345349
+          }
+        }
+      },
+      "operational_summary": "Positions are entrenched, with the buyer focused on interests (refund for misdescription) and the seller asserting rights (description accuracy) and power (refusal to refund); emotional tone is escalating on the buyer’s side, and integrative potential is currently low. Dialogue has stalled on proof and accountability, with little movement toward mutual problem-solving."
+    },
+    "7": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 0,
+        "rationale_short": "Seller denies fault, refuses refund, and cannot prove claim; buyer likely dissatisfied.",
+        "risk_0_100": 85,
+        "score": 0.85,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 2,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "There are signs of miscommunication, but the conversation remains civil and the parties are still engaging constructively."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.35,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.300702,
+            "South Africa": 0.167585,
+            "United Kingdom": 0.180953,
+            "United States": 0.350761
+          }
+        },
+        "seller": {
+          "confidence": 0.34,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.147554,
+            "South Africa": 0.301064,
+            "United Kingdom": 0.207365,
+            "United States": 0.344017
+          }
+        }
+      },
+      "operational_summary": "The dialogue has stalled with the seller denying responsibility, refusing a refund, and lacking evidence to support their claim, while the buyer expresses increasing frustration and remains dissatisfied. There is little integrative potential, the conversation is rights- and power-focused, and emotions are escalating on the buyer’s side, indicating a high risk of impasse."
+    },
+    "8": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 0,
+        "rationale_short": "Seller denies fault, refuses refund, and blames buyer, escalating conflict and reducing resolution chances.",
+        "risk_0_100": 85,
+        "score": 0.85,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "There are signs of miscommunication, as the buyer and seller disagree about the product description and responsibility for the issue."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.35,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.300702,
+            "South Africa": 0.167585,
+            "United Kingdom": 0.180953,
+            "United States": 0.350761
+          }
+        },
+        "seller": {
+          "confidence": 0.35,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.152428,
+            "South Africa": 0.289557,
+            "United Kingdom": 0.206548,
+            "United States": 0.351467
+          }
+        }
+      },
+      "operational_summary": "The dialogue has escalated with the seller denying responsibility, refusing a refund, and shifting blame to the buyer, leading to high emotional tension and a power- and rights-based standoff with little integrative progress. Both parties are entrenched, and resolution chances are currently low without a shift toward interests or mutual problem-solving."
+    },
+    "9": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 0,
+        "rationale_short": "Seller denies fault, refuses refund, blames buyer; positions are entrenched, trust is low.",
+        "risk_0_100": 85,
+        "score": 0.85,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Escalation of Conflict",
+        "should_intervene": false,
+        "statement": "The conversation is becoming more adversarial, with both parties blaming each other, but it has not yet reached a level requiring immediate intervention."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.35,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.313036,
+            "South Africa": 0.170995,
+            "United Kingdom": 0.166186,
+            "United States": 0.349783
+          }
+        },
+        "seller": {
+          "confidence": 0.35,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.152428,
+            "South Africa": 0.289557,
+            "United Kingdom": 0.206548,
+            "United States": 0.351467
+          }
+        }
+      },
+      "operational_summary": "Positions are entrenched with the seller denying fault and refusing a refund, while the buyer remains angry and insists on their claim, resulting in low trust and little integrative potential. The dialogue is dominated by rights and power assertions, with emotions escalating and no movement toward mutual interests or resolution."
+    },
+    "10": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 0,
+        "rationale_short": "Both parties are accusatory, defensive, and unwilling to compromise or provide evidence.",
+        "risk_0_100": 90,
+        "score": 0.9,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Escalation of Conflict",
+        "should_intervene": false,
+        "statement": "The conversation is becoming heated with both parties accusing each other of lying and making mistakes."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.35,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.317263,
+            "South Africa": 0.172331,
+            "United Kingdom": 0.156047,
+            "United States": 0.354358
+          }
+        },
+        "seller": {
+          "confidence": 0.35,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.152428,
+            "South Africa": 0.289557,
+            "United Kingdom": 0.206548,
+            "United States": 0.351467
+          }
+        }
+      },
+      "operational_summary": "The dialogue is highly adversarial, with both parties entrenched in blame and defensiveness, showing no willingness to compromise or provide evidence, and escalating negative emotions. There is minimal integrative potential, and the conversation is dominated by rights and power claims rather than shared interests, resulting in a high risk of impasse."
+    },
+    "11": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 0,
+        "rationale_short": "Both parties are defensive, accusatory, and unwilling to compromise or provide evidence.",
+        "risk_0_100": 90,
+        "score": 0.9,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Intervene",
+        "rating": 4,
+        "reason": "Escalation of Conflict",
+        "should_intervene": true,
+        "statement": "The conversation is becoming heated with both parties making personal accusations and demands, indicating a risk of further escalation."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.35,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.317263,
+            "South Africa": 0.172331,
+            "United Kingdom": 0.156047,
+            "United States": 0.354358
+          }
+        },
+        "seller": {
+          "confidence": 0.37,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.156011,
+            "South Africa": 0.272928,
+            "United Kingdom": 0.201474,
+            "United States": 0.369587
+          }
+        }
+      },
+      "operational_summary": "The dialogue has escalated into mutual accusations and anger, with both parties entrenched in defending their positions and focusing on rights and power rather than interests or solutions. There is currently no integrative potential, as neither side is willing to compromise or provide evidence, and the emotional trajectory is highly negative."
+    },
+    "12": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 0,
+        "rationale_short": "Both parties are defensive, accusatory, and unwilling to compromise or provide evidence.",
+        "risk_0_100": 95,
+        "score": 0.95,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Intervene",
+        "rating": 4,
+        "reason": "Escalation of Conflict",
+        "should_intervene": true,
+        "statement": "The conversation is becoming increasingly heated with both parties making personal accusations and demands."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.37,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.297268,
+            "South Africa": 0.178434,
+            "United Kingdom": 0.15418,
+            "United States": 0.370118
+          }
+        },
+        "seller": {
+          "confidence": 0.37,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.156011,
+            "South Africa": 0.272928,
+            "United Kingdom": 0.201474,
+            "United States": 0.369587
+          }
+        }
+      },
+      "operational_summary": "The dialogue is highly adversarial, with both parties entrenched in blame and anger, showing no willingness to compromise or provide evidence, and escalating demands around apologies and review retractions. There is minimal integrative potential, the conversation is dominated by rights and power assertions rather than interests, and emotions are intensifying, keeping the risk of impasse very high."
+    },
+    "13": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 0,
+        "rationale_short": "Escalating conflict, mutual accusations, no resolution, and emotional responses indicate high negotiation failure risk.",
+        "risk_0_100": 85,
+        "score": 0.85,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 2,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The parties have submitted an agreement, and while there was some heated language earlier, the dispute appears to have reached a resolution."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.37,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.297268,
+            "South Africa": 0.178434,
+            "United Kingdom": 0.15418,
+            "United States": 0.370118
+          }
+        },
+        "seller": {
+          "confidence": 0.34,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.164936,
+            "South Africa": 0.293443,
+            "United Kingdom": 0.205797,
+            "United States": 0.335825
+          }
+        }
+      },
+      "operational_summary": "The negotiation has escalated with both parties making mutual accusations, expressing strong negative emotions, and focusing on rights and power rather than interests, resulting in a high risk of failure and little integrative potential. Dialogue progression shows entrenched positions with no movement toward resolution, and the submitted agreement reflects a stalemate rather than a true settlement."
+    },
+    "14": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 1,
+        "rationale_short": "Escalating conflict, no agreement, buyer walks away, mutual accusations, no resolution.",
+        "risk_0_100": 95,
+        "score": 0.95,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The buyer has indicated they are walking away, suggesting the dispute has ended without further escalation."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.38,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.272591,
+            "South Africa": 0.180272,
+            "United Kingdom": 0.163783,
+            "United States": 0.383353
+          }
+        },
+        "seller": {
+          "confidence": 0.34,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.164936,
+            "South Africa": 0.293443,
+            "United Kingdom": 0.205797,
+            "United States": 0.335825
+          }
+        }
+      },
+      "operational_summary": "The negotiation escalated quickly with both parties shifting from neutral to high anger and mutual accusations, resulting in a deadlock where neither side’s interests were met and both relied on rights and power claims rather than seeking integrative solutions. Emotional tone deteriorated, dialogue stalled, and the buyer ultimately walked away, leaving the conflict unresolved and risk extremely high."
+    }
+  }
+}

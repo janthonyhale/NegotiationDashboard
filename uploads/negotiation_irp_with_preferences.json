@@ -1,0 +1,283 @@
+{
+  "language": "EN",
+  "turns": [
+    {
+      "idx": 0,
+      "speaker": "Buyer",
+      "text": "Hello",
+      "irp": "NA"
+    },
+    {
+      "idx": 1,
+      "speaker": "Seller",
+      "text": "Hi",
+      "irp": "NA"
+    },
+    {
+      "idx": 2,
+      "speaker": "Buyer",
+      "text": "I would like to discuss a refund for the jersey I purchased and ask that your negative review of me be removed.",
+      "irp": "I"
+    },
+    {
+      "idx": 3,
+      "speaker": "Seller",
+      "text": "I am sorry for the frustrating situation.",
+      "irp": "R"
+    },
+    {
+      "idx": 4,
+      "speaker": "Seller",
+      "text": "However, I do not want to issue a refund.",
+      "irp": "I"
+    },
+    {
+      "idx": 5,
+      "speaker": "Seller",
+      "text": "The listing clearly stated that it was not for any specific jersey and that all sales are final.",
+      "irp": "I,R"
+    },
+    {
+      "idx": 6,
+      "speaker": "Seller",
+      "text": "As for the negative review, I would be willing to remove it if you remove the bad review of me",
+      "irp": "I"
+    },
+    {
+      "idx": 7,
+      "speaker": "Buyer",
+      "text": "The original listing stated it was a Kobe Bryant jersey.",
+      "irp": "I"
+    },
+    {
+      "idx": 8,
+      "speaker": "Buyer",
+      "text": "I paid particular attention because the purchase is for my nephew who is ill and a huge Kobe Bryant fan.",
+      "irp": "R"
+    },
+    {
+      "idx": 9,
+      "speaker": "Buyer",
+      "text": "If possible can you provide me with the correct jersey?",
+      "irp": "I"
+    },
+    {
+      "idx": 10,
+      "speaker": "Seller",
+      "text": "I'm sorry that you misunderstood the listing.",
+      "irp": "I"
+    },
+    {
+      "idx": 11,
+      "speaker": "Seller",
+      "text": "Nowhere did it state it was for that specific jersey.",
+      "irp": "I"
+    },
+    {
+      "idx": 12,
+      "speaker": "Seller",
+      "text": "I don't currently have a Kobe Bryant jersey that I can send you.",
+      "irp": "I"
+    },
+    {
+      "idx": 13,
+      "speaker": "Buyer",
+      "text": "Would you be willing to provide some sort of financial reimbursement?",
+      "irp": "I"
+    },
+    {
+      "idx": 14,
+      "speaker": "Buyer",
+      "text": "My nephew really wants the jersey and because he is terminally ill I really want to obtain it for him.",
+      "irp": "R"
+    },
+    {
+      "idx": 15,
+      "speaker": "Buyer",
+      "text": "I would be willing to remove my review if I am reimbursed in some way.",
+      "irp": "I"
+    },
+    {
+      "idx": 16,
+      "speaker": "Buyer",
+      "text": "I really wish I saved the original listing because I'm positive it advertised for the Kobe Bryant jersey, I looked for it specifically because it is important.",
+      "irp": "I"
+    },
+    {
+      "idx": 17,
+      "speaker": "Seller",
+      "text": "No, I'm sorry, but I can't reimburse you.",
+      "irp": "I"
+    },
+    {
+      "idx": 18,
+      "speaker": "Seller",
+      "text": "As a seller, I fulfilled my end of the deal.",
+      "irp": "R"
+    },
+    {
+      "idx": 19,
+      "speaker": "Seller",
+      "text": "As a buyer it is your responsibility to fully read listings.",
+      "irp": "R"
+    },
+    {
+      "idx": 20,
+      "speaker": "Seller",
+      "text": "This seems to be a reoccurring issue for you as I see other sellers have left similar reviews of you.",
+      "irp": "I"
+    },
+    {
+      "idx": 21,
+      "speaker": "Seller",
+      "text": "I am sorry about your nephew.",
+      "irp": "NA"
+    },
+    {
+      "idx": 22,
+      "speaker": "Seller",
+      "text": "I recommend you try to sell the jersey yourself if you do not want to keep it.",
+      "irp": "I"
+    },
+    {
+      "idx": 23,
+      "speaker": "Buyer",
+      "text": "I'm sure your original listing was for a Kobe Bryant jersey.",
+      "irp": "I"
+    },
+    {
+      "idx": 24,
+      "speaker": "Buyer",
+      "text": "I think it is important others use caution when making purchasing that cannot be returned or refunded if they are not what the customer expects so I won't remove my review.",
+      "irp": "P"
+    },
+    {
+      "idx": 25,
+      "speaker": "Seller",
+      "text": "Again, I'm sorry that you didn't fully read my listing.",
+      "irp": "I"
+    },
+    {
+      "idx": 26,
+      "speaker": "Seller",
+      "text": "You are the only buyer that has overlooked the details of it.",
+      "irp": "I"
+    },
+    {
+      "idx": 27,
+      "speaker": "Seller",
+      "text": "I'm about to walk away as you are wasting my time and yours.",
+      "irp": "NA"
+    },
+    {
+      "idx": 28,
+      "speaker": "Seller",
+      "text": "You should really learn how to take responsibility for your own mistakes.",
+      "irp": "P"
+    },
+    {
+      "idx": 29,
+      "speaker": "Seller",
+      "text": "I also don't appreciate you trying to manipulate me with telling me the jersey is for a terminally ill child.",
+      "irp": "I"
+    },
+    {
+      "idx": 30,
+      "speaker": "Seller",
+      "text": "You should be ashamed of yourself.",
+      "irp": "NA"
+    },
+    {
+      "idx": 31,
+      "speaker": "Buyer",
+      "text": "Unfortunately my nephew is in deed terminally ill, $75 is not enough for me to make up a horrible lie.",
+      "irp": "R,I"
+    },
+    {
+      "idx": 32,
+      "speaker": "Buyer",
+      "text": "The jersey is important to him which is why I am determined to obtain it.",
+      "irp": "I"
+    },
+    {
+      "idx": 33,
+      "speaker": "Buyer",
+      "text": "As a seller the customer's satisfaction should be your number one priority.",
+      "irp": "I"
+    },
+    {
+      "idx": 34,
+      "speaker": "Buyer",
+      "text": "I actually feel manipulated because your company changed the listing, the review is deserved.",
+      "irp": "I"
+    },
+    {
+      "idx": 35,
+      "speaker": "Seller",
+      "text": "Submitted agreement: Buyer gets no refund, seller kept their review, buyer kept their review, seller did apologize, and buyer didn't apologize.",
+      "irp": "NA"
+    },
+    {
+      "idx": 36,
+      "speaker": "Buyer",
+      "text": "Reject Deal",
+      "irp": "NA"
+    },
+    {
+      "idx": 37,
+      "speaker": "Buyer",
+      "text": "Why is your company not willing to take accountability for their error?",
+      "irp": "R"
+    },
+    {
+      "idx": 38,
+      "speaker": "Buyer",
+      "text": "Misleading consumers is okay with you?",
+      "irp": "I"
+    },
+    {
+      "idx": 39,
+      "speaker": "Seller",
+      "text": "I Walk Away.",
+      "irp": "NA"
+    }
+  ],
+  "justifications_and_preferences": {
+    "Buyer": [
+      {
+        "justification": "I need the money to purchase the correct jersey for my nephew.",
+        "weight": 30
+      },
+      {
+        "justification": "To inform other to be cautious when purchasing from the seller.",
+        "weight": 25
+      },
+      {
+        "justification": "So other sellers won't view me as a troublemaker and refuse to sell to me.",
+        "weight": 30
+      },
+      {
+        "justification": "To be seen in a positive light by other sellers.",
+        "weight": 15
+      }
+    ],
+    "Seller": [
+      {
+        "justification": "The listing didn't state is was for a specific jersey and I fulfilled my end of the deal.",
+        "weight": 30
+      },
+      {
+        "justification": "It helps other sellers from ending up in a similar situation.",
+        "weight": 30
+      },
+      {
+        "justification": "The review states false claims.",
+        "weight": 20
+      },
+      {
+        "justification": "It makes the buyer accept responsibility.",
+        "weight": 20
+      }
+    ]
+  }
+}

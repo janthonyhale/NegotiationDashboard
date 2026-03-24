@@ -1,0 +1,714 @@
+{
+  "language": "EN",
+  "buyer_weights": {
+    "buyer_apology": 0,
+    "buyer_review": 15,
+    "refund": 55,
+    "seller_apology": 10,
+    "seller_review": 20
+  },
+  "seller_weights": {
+    "buyer_apology": 25,
+    "buyer_review": 30,
+    "refund": 35,
+    "seller_apology": 0,
+    "seller_review": 10
+  },
+  "pre_dispute_justifications": {
+    "buyer_review": {
+      "buyer": "My review is my honest account, so I want to keep it visible for other buyers.",
+      "seller": "I want the buyer review removed because I believe parts of it are inaccurate and harming our reputation."
+    },
+    "receive_apology": {
+      "buyer": "I want a direct apology because your comments made this dispute feel personal, not just transactional.",
+      "seller": "I can apologize for tone, but I do not want wording that admits full fault for the product issue."
+    },
+    "refund": {
+      "buyer": "I paid in full for a functioning laptop, so I need meaningful compensation for receiving defective hardware.",
+      "seller": "I can offer compensation, but a full refund feels disproportionate because the device worked when shipped and policy limits what I can authorize."
+    },
+    "seller_review": {
+      "buyer": "Your review of me was unfair and personal, so I need it removed.",
+      "seller": "I posted my review to document transaction concerns, so I prefer to keep it unless we settle."
+    }
+  },
+  "turns": [
+    {
+      "emotions": {
+        "anger": 0,
+        "compassion": 0.28,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 0.34,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0.28
+      },
+      "idx": 0,
+      "meta": {
+        "irp_label": "Right"
+      },
+      "negative_signals": 0,
+      "speaker": "Buyer",
+      "text": "I need to discuss the defective laptop I received. It stopped working after just two weeks. I want a full refund and I want your horrible review of me taken down — you called me a difficult customer when I was simply asking for basic consumer rights.",
+      "threat_signals": 0,
+      "ts": null,
+      "irp": "right",
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Escalation of Conflict",
+        "should_intervene": false,
+        "statement": "The buyer's language is becoming accusatory and could escalate the conflict if not addressed."
+      }
+    },
+    {
+      "emotions": {
+        "anger": 0.28,
+        "compassion": 0.28,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 0.36,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "idx": 1,
+      "meta": {
+        "irp_label": "Right"
+      },
+      "negative_signals": 0,
+      "speaker": "Seller",
+      "text": "I understand you're frustrated, but the laptop worked fine when shipped. Our diagnostics showed user damage. A full refund isn't something I can offer for mishandled equipment. However, I'm willing to consider a partial refund. And I'd ask you to take down your one-star review that accused us of selling fake products — that's damaging to our business.",
+      "threat_signals": 0,
+      "ts": null,
+      "irp": "right",
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "There are signs of miscommunication regarding the cause of the laptop's defect and the expectations around reviews and refunds."
+      }
+    },
+    {
+      "emotions": {
+        "anger": 0.28,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 0.34,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": -0.28
+      },
+      "idx": 2,
+      "meta": {
+        "irp_label": "Power"
+      },
+      "negative_signals": 0,
+      "speaker": "Buyer",
+      "text": "User damage? That's absolutely outrageous. This laptop arrived with a failing battery — it was a manufacturing defect. I won't accept anything less than a full refund. As for the review, it reflects my genuine experience. Your review of me was completely uncalled for and I want it gone.",
+      "threat_signals": 0,
+      "ts": null,
+      "irp": "power",
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Escalation of Conflict",
+        "should_intervene": false,
+        "statement": "The conversation is becoming heated, with both parties making strong accusations and demands, but it has not yet reached a level requiring immediate intervention."
+      }
+    },
+    {
+      "emotions": {
+        "anger": 0,
+        "compassion": 0.84,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 0.38,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0.84
+      },
+      "idx": 3,
+      "meta": {
+        "irp_label": "Interest"
+      },
+      "negative_signals": 0,
+      "speaker": "Seller",
+      "text": "I hear your frustration and I'm sorry the experience has been this difficult. Let me be honest — a half refund is the maximum I can authorize without escalating to our legal team. I also want to resolve this professionally. If we each remove our reviews, would that be a reasonable middle ground?",
+      "threat_signals": 0,
+      "ts": null,
+      "irp": "interest",
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The parties are repeating their positions and seem unable to reach an agreement, but the conversation remains civil and could still progress."
+      }
+    },
+    {
+      "emotions": {
+        "anger": 0,
+        "compassion": 0.56,
+        "fear": 0,
+        "joy": 0.28,
+        "neutral": 0.36,
+        "sadness": 0.28,
+        "surprise": 0,
+        "valence": 0.56
+      },
+      "idx": 4,
+      "meta": {
+        "irp_label": "Interest"
+      },
+      "negative_signals": 0,
+      "speaker": "Buyer",
+      "text": "A half refund and mutual review removal... I'm still quite upset about this whole ordeal. But I'm also exhausted by this dispute. If you genuinely apologize for calling me a difficult customer, and we do the mutual review removal, I might be able to live with the half refund.",
+      "threat_signals": 0,
+      "ts": null,
+      "irp": "interest",
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "No intervention needed; the parties are making progress and proposing compromises."
+      }
+    },
+    {
+      "emotions": {
+        "anger": 0,
+        "compassion": 0.28,
+        "fear": 0,
+        "joy": 0.28,
+        "neutral": 0.32,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0.56
+      },
+      "idx": 5,
+      "meta": {
+        "irp_label": "Interest"
+      },
+      "negative_signals": 1,
+      "speaker": "Seller",
+      "text": "I appreciate you being open to that. I do sincerely apologize for how my review described you — that was unprofessional of me. So to be clear: I'll issue a 50% refund, we each remove our respective reviews, and I formally apologize. Does that work?",
+      "threat_signals": 1,
+      "ts": null,
+      "irp": "interest",
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The parties have reached a mutual understanding and are finalizing terms without escalation or miscommunication."
+      }
+    },
+    {
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 0.34,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "idx": 6,
+      "meta": {
+        "irp_label": "Interest"
+      },
+      "negative_signals": 0,
+      "speaker": "Buyer",
+      "text": "Yes. I accept those terms. Half refund, both reviews down, and your apology on record. I'd also like you to know that I hope this is a lesson in how to handle customer complaints better going forward.",
+      "threat_signals": 0,
+      "ts": null,
+      "irp": "interest",
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "No intervention is needed as the parties have reached an agreement and the conversation remains civil."
+      }
+    },
+    {
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0.56,
+        "neutral": 0.36,
+        "sadness": 0,
+        "surprise": 0.28,
+        "valence": 0.56
+      },
+      "idx": 7,
+      "meta": {
+        "irp_label": "Interest"
+      },
+      "negative_signals": 0,
+      "speaker": "Seller",
+      "text": "Agreed. I'll process the half refund today. I've already flagged both reviews for removal. And I take your feedback seriously — we are working to improve our customer service response times. Thank you for working through this with me.",
+      "threat_signals": 0,
+      "ts": null,
+      "irp": "interest",
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "No intervention is needed as both parties have reached an agreement and are concluding the conversation amicably."
+      }
+    }
+  ],
+  "op_summaries": [
+    {
+      "idx": 0,
+      "summary": "The buyer is demanding both a full refund and removal of a negative review, expressing frustration and low trust, with the conversation focused on rights and power rather than shared interests. Emotional tone is tense but not overtly hostile, and integrative potential is currently low due to unresolved grievances and lack of cooperative signals."
+    },
+    {
+      "idx": 1,
+      "summary": "Both parties are entrenched in their positions, focusing on rights and power with little movement toward mutual interests, and emotions are tense but controlled. Integrative potential is low at this stage, with dialogue marked by defensiveness, blame, and reciprocal demands."
+    },
+    {
+      "idx": 2,
+      "summary": "Positions are entrenched, with both parties focused on asserting rights and power—buyer demands a full refund and removal of a negative review, while seller insists on user damage and offers only a partial refund in exchange for review removal. Emotional tone is tense and accusatory, with little integrative potential or movement toward compromise so far."
+    },
+    {
+      "idx": 3,
+      "summary": "Positions remain entrenched with high emotional tension and mutual distrust, as both parties focus on rights and power (refunds, reviews) rather than underlying interests, limiting integrative potential. Dialogue has progressed to a partial concession from the seller, but the risk of impasse remains high unless the conversation shifts toward shared interests or creative solutions."
+    },
+    {
+      "idx": 4,
+      "summary": "Both parties have moved from rigid positions to concrete compromise proposals, with the buyer now open to a half refund and mutual review removal if accompanied by an apology, signaling strong integrative potential and a shift toward interest-based negotiation. Emotions have de-escalated, and the dialogue is progressing constructively with a balanced focus on interests and rights, while power threats remain low."
+    },
+    {
+      "idx": 5,
+      "summary": "Both parties have moved from initial rights- and power-based stances to a compromise integrating interests, with the seller offering a half refund, mutual review removal, and an apology, which the buyer appears ready to accept. Emotions have de-escalated from anger to cautious relief, and the negotiation now shows strong integrative potential with balanced IRP elements and low risk of breakdown."
+    },
+    {
+      "idx": 6,
+      "summary": "The parties have reached an agreement involving a half refund, mutual review removal, and a formal apology, with both sides making concessions and expressing a desire to move forward. The dialogue shifted from high emotion and rights-based claims to a more integrative, interest-focused resolution, with power dynamics balanced and emotional intensity de-escalated."
+    },
+    {
+      "idx": 7,
+      "summary": "The parties reached a mutually acceptable agreement involving a half refund, mutual review removal, and a formal apology, with both sides making concessions and expressing willingness to move forward. The dialogue showed a shift from rights- and power-based arguments to integrative problem-solving, with emotions de-escalating and interests ultimately balanced."
+    }
+  ],
+  "final_outcome": {
+    "buyer_apology": 0,
+    "buyer_review": 1,
+    "buyer_util": 57.5,
+    "refund": 0.5,
+    "refund_label": "Half",
+    "seller_apology": 1,
+    "seller_review": 1,
+    "seller_util": 47.5
+  },
+  "country": {
+    "buyer": {
+      "confidence": 0.37,
+      "country": "Mexico",
+      "flag": "🇲🇽",
+      "lat": 23.63,
+      "lng": -102.55,
+      "probabilities": {
+        "Mexico": 0.370709,
+        "South Africa": 0.180933,
+        "United Kingdom": 0.248703,
+        "United States": 0.199656
+      }
+    },
+    "seller": {
+      "confidence": 0.32,
+      "country": "United Kingdom",
+      "flag": "🇬🇧",
+      "lat": 55.37,
+      "lng": -3.43,
+      "probabilities": {
+        "Mexico": 0.294293,
+        "South Africa": 0.188464,
+        "United Kingdom": 0.323471,
+        "United States": 0.193772
+      }
+    }
+  },
+  "step_cache": {
+    "0": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 0,
+        "rationale_short": "Buyer demands multiple outcomes and expresses strong negative emotions; trust and cooperation are low.",
+        "risk_0_100": 85,
+        "score": 0.85,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Escalation of Conflict",
+        "should_intervene": false,
+        "statement": "The buyer's language is becoming accusatory and could escalate the conflict if not addressed."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.61,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.611633,
+            "South Africa": 0.126515,
+            "United Kingdom": 0.140133,
+            "United States": 0.121719
+          }
+        },
+        "seller": {
+          "confidence": 0,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {}
+        }
+      },
+      "operational_summary": "The buyer is demanding both a full refund and removal of a negative review, expressing frustration and low trust, with the conversation focused on rights and power rather than shared interests. Emotional tone is tense but not overtly hostile, and integrative potential is currently low due to unresolved grievances and lack of cooperative signals."
+    },
+    "1": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 0,
+        "rationale_short": "Both parties are defensive, demands are uncompromising, and trust appears low.",
+        "risk_0_100": 85,
+        "score": 0.85,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "There are signs of miscommunication regarding the cause of the laptop's defect and the expectations around reviews and refunds."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.61,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.611633,
+            "South Africa": 0.126515,
+            "United Kingdom": 0.140133,
+            "United States": 0.121719
+          }
+        },
+        "seller": {
+          "confidence": 0.68,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.67835,
+            "South Africa": 0.066122,
+            "United Kingdom": 0.142484,
+            "United States": 0.113044
+          }
+        }
+      },
+      "operational_summary": "Both parties are entrenched in their positions, focusing on rights and power with little movement toward mutual interests, and emotions are tense but controlled. Integrative potential is low at this stage, with dialogue marked by defensiveness, blame, and reciprocal demands."
+    },
+    "2": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 0,
+        "rationale_short": "Positions entrenched, mutual accusations, no willingness to compromise shown.",
+        "risk_0_100": 90,
+        "score": 0.9,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Escalation of Conflict",
+        "should_intervene": false,
+        "statement": "The conversation is becoming heated, with both parties making strong accusations and demands, but it has not yet reached a level requiring immediate intervention."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.53,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.527849,
+            "South Africa": 0.12823,
+            "United Kingdom": 0.184254,
+            "United States": 0.159667
+          }
+        },
+        "seller": {
+          "confidence": 0.68,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.67835,
+            "South Africa": 0.066122,
+            "United Kingdom": 0.142484,
+            "United States": 0.113044
+          }
+        }
+      },
+      "operational_summary": "Positions are entrenched, with both parties focused on asserting rights and power—buyer demands a full refund and removal of a negative review, while seller insists on user damage and offers only a partial refund in exchange for review removal. Emotional tone is tense and accusatory, with little integrative potential or movement toward compromise so far."
+    },
+    "3": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 0,
+        "rationale_short": "Positions entrenched, mutual distrust, and emotional escalation hinder agreement likelihood.",
+        "risk_0_100": 85,
+        "score": 0.85,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The parties are repeating their positions and seem unable to reach an agreement, but the conversation remains civil and could still progress."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.53,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.527849,
+            "South Africa": 0.12823,
+            "United Kingdom": 0.184254,
+            "United States": 0.159667
+          }
+        },
+        "seller": {
+          "confidence": 0.42,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.417825,
+            "South Africa": 0.174242,
+            "United Kingdom": 0.279158,
+            "United States": 0.128775
+          }
+        }
+      },
+      "operational_summary": "Positions remain entrenched with high emotional tension and mutual distrust, as both parties focus on rights and power (refunds, reviews) rather than underlying interests, limiting integrative potential. Dialogue has progressed to a partial concession from the seller, but the risk of impasse remains high unless the conversation shifts toward shared interests or creative solutions."
+    },
+    "4": {
+      "ready": true,
+      "risk": {
+        "label": "Low",
+        "negative_signals": 0,
+        "rationale_short": "Buyer is open to compromise; both parties seek resolution and propose concrete terms.",
+        "risk_0_100": 30,
+        "score": 0.3,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "No intervention needed; the parties are making progress and proposing compromises."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.42,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.421911,
+            "South Africa": 0.159217,
+            "United Kingdom": 0.246697,
+            "United States": 0.172174
+          }
+        },
+        "seller": {
+          "confidence": 0.42,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.417825,
+            "South Africa": 0.174242,
+            "United Kingdom": 0.279158,
+            "United States": 0.128775
+          }
+        }
+      },
+      "operational_summary": "Both parties have moved from rigid positions to concrete compromise proposals, with the buyer now open to a half refund and mutual review removal if accompanied by an apology, signaling strong integrative potential and a shift toward interest-based negotiation. Emotions have de-escalated, and the dialogue is progressing constructively with a balanced focus on interests and rights, while power threats remain low."
+    },
+    "5": {
+      "ready": true,
+      "risk": {
+        "label": "Low",
+        "negative_signals": 1,
+        "rationale_short": "Both parties reached compromise; apology and terms accepted, reducing risk of negotiation failure.",
+        "risk_0_100": 20,
+        "score": 0.2,
+        "threats": 1
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The parties have reached a mutual understanding and are finalizing terms without escalation or miscommunication."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.42,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.421911,
+            "South Africa": 0.159217,
+            "United Kingdom": 0.246697,
+            "United States": 0.172174
+          }
+        },
+        "seller": {
+          "confidence": 0.34,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.336649,
+            "South Africa": 0.163018,
+            "United Kingdom": 0.306405,
+            "United States": 0.193927
+          }
+        }
+      },
+      "operational_summary": "Both parties have moved from initial rights- and power-based stances to a compromise integrating interests, with the seller offering a half refund, mutual review removal, and an apology, which the buyer appears ready to accept. Emotions have de-escalated from anger to cautious relief, and the negotiation now shows strong integrative potential with balanced IRP elements and low risk of breakdown."
+    },
+    "6": {
+      "ready": true,
+      "risk": {
+        "label": "Low",
+        "negative_signals": 1,
+        "rationale_short": "Agreement reached with concessions, apology, and mutual review removal.",
+        "risk_0_100": 10,
+        "score": 0.1,
+        "threats": 1
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "No intervention is needed as the parties have reached an agreement and the conversation remains civil."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.37,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.370709,
+            "South Africa": 0.180933,
+            "United Kingdom": 0.248703,
+            "United States": 0.199656
+          }
+        },
+        "seller": {
+          "confidence": 0.34,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.336649,
+            "South Africa": 0.163018,
+            "United Kingdom": 0.306405,
+            "United States": 0.193927
+          }
+        }
+      },
+      "operational_summary": "The parties have reached an agreement involving a half refund, mutual review removal, and a formal apology, with both sides making concessions and expressing a desire to move forward. The dialogue shifted from high emotion and rights-based claims to a more integrative, interest-focused resolution, with power dynamics balanced and emotional intensity de-escalated."
+    },
+    "7": {
+      "ready": true,
+      "risk": {
+        "label": "Low",
+        "negative_signals": 1,
+        "rationale_short": "Both parties reached agreement with concessions and apologies; risk of failure is minimal.",
+        "risk_0_100": 10,
+        "score": 0.1,
+        "threats": 1
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "No intervention is needed as both parties have reached an agreement and are concluding the conversation amicably."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.37,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.370709,
+            "South Africa": 0.180933,
+            "United Kingdom": 0.248703,
+            "United States": 0.199656
+          }
+        },
+        "seller": {
+          "confidence": 0.32,
+          "country": "United Kingdom",
+          "flag": "🇬🇧",
+          "lat": 55.37,
+          "lng": -3.43,
+          "probabilities": {
+            "Mexico": 0.294293,
+            "South Africa": 0.188464,
+            "United Kingdom": 0.323471,
+            "United States": 0.193772
+          }
+        }
+      },
+      "operational_summary": "The parties reached a mutually acceptable agreement involving a half refund, mutual review removal, and a formal apology, with both sides making concessions and expressing willingness to move forward. The dialogue showed a shift from rights- and power-based arguments to integrative problem-solving, with emotions de-escalating and interests ultimately balanced."
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{"buyer_weights": {"buyer_apology": 0, "buyer_review": 0, "refund": 95, "seller_apology": 0, "seller_review": 5}, "seller_weights": {"buyer_apology": 10, "buyer_review": 25, "refund": 50, "seller_apology": 0, "seller_review": 15}, "pre_dispute_justifications": {"buyer_review": {"buyer": "I want to warn others that he is shady.", "seller": "To maintain the good reputation of my store."}, "receive_apology": {"buyer": "I want the seller to tell everyone he is sorry.", "seller": "To make clear for future buyers that the store is good."}, "refund": {"buyer": "I want my money back since I did not get what I ordered.", "seller": "The conditions of the item and sale were clearly stated, he has no basis to request a refund."}, "seller_review": {"buyer": "I want to buy other things on the site and a negative review might prevent me from buying.", "seller": "To prevent others from being scammed."}}}
+{"speaker": "Buyer", "text": "I would like you to issue a refund, I did not receive a Kobe Bryant jersey as promised", "irp": "I"}
+{"speaker": "Seller", "text": "The condition of the itesm and the sale were pretty clear, I'm so sorry but we won't be able to help you with that.", "irp": "R"}
+{"speaker": "Buyer", "text": "This is for a sick child who wanted this jersey as a gift to feel better. You promised it was a kobe jersey, that is poor business practices", "irp": "I"}
+{"speaker": "Seller", "text": "It was clearly stated in the description of the product that this was a replica and it had no name on the jersey. You can go ahead and read it in the website. And I'm sorry about the kid but this doesn't change my policies.", "irp": "R"}
+{"speaker": "Buyer", "text": "The description stated that the name was Kobe Bryant", "irp": "R"}
+{"speaker": "Seller", "text": "Sorry sir but I think you saw that in other store, not mine", "irp": "I"}
+{"speaker": "Buyer", "text": "Looks like I will have to dispute it with my credit card since you will not issue a refund", "irp": "P"}
+{"speaker": "Seller", "text": "Your credit card will ask for proof to my business in order to issue the refund and I will send everything that proves that you received exactly what you purchased. I don't think that you'll get the refund that way. And could you please remove that negative review?", "irp": "P"}
+{"speaker": "Buyer", "text": "I will be adding to the negative review since you did not send me what I ordered and refuse to make it right.", "irp": "P"}
+{"speaker": "Seller", "text": "Sir again, you don't have any proof of this. Let's find another solution that works for both of us. Do you have anything in mind?", "irp": "I"}
+{"speaker": "Buyer", "text": "If I receive a refund then I will remove my negative review and leave you a glowing review", "irp": "I"}
+{"speaker": "Seller", "text": "Per store policies, we cannot issue any kind of refund. All sales are final, however, I'm open to giving you store credit once I receive the jersey back.", "irp": "R"}
+{"speaker": "Buyer", "text": "That sounds fair, thank you", "irp": "I"}
+{"speaker": "Seller", "text": "What about the review? If you retract yours, I'll retact mine.", "irp": "I"}
+{"speaker": "Buyer", "text": "Agreed.", "irp": "I"}
+{"speaker": "Seller", "text": "Submitted agreement: Buyer gets no refund, seller retracted their review, buyer retracted their review, seller did apologize, and buyer didn't apologize.", "irp": "NA"}
+{"speaker": "Buyer", "text": "Reject Deal", "irp": "NA"}
+{"speaker": "Buyer", "text": "Submitted agreement: Buyer gets full refund, seller retracted their review, buyer retracted their review, seller didn't apologize, and buyer didn't apologize.", "irp": "NA"}
+{"speaker": "Seller", "text": "Reject Deal", "irp": "NA"}
+{"speaker": "Seller", "text": "There was no refund, it's store credit.", "irp": "R"}
+{"speaker": "Buyer", "text": "I Walk Away.", "irp": "NA"}

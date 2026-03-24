@@ -1,0 +1,1114 @@
+{
+  "language": "EN",
+  "buyer_weights": {
+    "buyer_apology": 0,
+    "buyer_review": 40,
+    "refund": 40,
+    "seller_apology": 10,
+    "seller_review": 10
+  },
+  "seller_weights": {
+    "buyer_apology": 5,
+    "buyer_review": 50,
+    "refund": 25,
+    "seller_apology": 0,
+    "seller_review": 20
+  },
+  "pre_dispute_justifications": {
+    "buyer_review": {
+      "buyer": "I would keep my negative comment to alert other people not to buy misled, because reviews are something that helps the rest of us every time we buy something.",
+      "seller": "So other customers are not lied to."
+    },
+    "receive_apology": {
+      "buyer": "I believe that the seller should have values and be honest despite lying at the beginning, things can always be solved with an apology and repairing the damage.",
+      "seller": "So customers who saw the bad review can realise the initial confusion."
+    },
+    "refund": {
+      "buyer": "because he tricked me into paying for something specific he wanted and it turned out to be something else, I earned that money at my job only to lose it to a scammer",
+      "seller": "To not set a precedent."
+    },
+    "seller_review": {
+      "buyer": "If I would ask him to delete the bad review about me because I am not really lying about what happened, I was deceived.",
+      "seller": "So other customers can put his review in perspective."
+    }
+  },
+  "turns": [
+    {
+      "idx": 0,
+      "meta": {
+        "irp_label": "Interest"
+      },
+      "speaker": "Buyer",
+      "text": "Hello, I bought a shirt about Kobe Bryant and another one arrived",
+      "ts": null,
+      "irp": "I",
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "There seems to be a misunderstanding about the purchase; clarification may be needed."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 1,
+      "meta": {
+        "irp_label": "Right"
+      },
+      "speaker": "Seller",
+      "text": "Hello, the website clearly stated that the jersey was a team one with no player names on the back. I'm sorry about the confusion but the sale is final.",
+      "ts": null,
+      "irp": "R",
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "There seems to be a misunderstanding about the product description and what was expected."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 1,
+      "threat_signals": 0
+    },
+    {
+      "idx": 2,
+      "meta": {
+        "irp_label": "Interest"
+      },
+      "speaker": "Buyer",
+      "text": "I read perfectly what it said about Kobe Bryant, my intention is not to have a discussion, I would like to be able to receive a refund and an apology without causing you problems on the page, since it was for a person important to me who has a terminal illness",
+      "ts": null,
+      "irp": "I",
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "There seems to be a misunderstanding about the product description and the buyer's expectations."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0.5,
+        "fear": 0.3,
+        "joy": 0,
+        "neutral": 0,
+        "sadness": 0.2,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 3,
+      "meta": {
+        "irp_label": "Right"
+      },
+      "speaker": "Seller",
+      "text": "I'm sorry about your situation but as stated on the website there is nothing I can do it. I can't offer a refund for an already purchased item, as stated on the website all sales are final.",
+      "ts": null,
+      "irp": "R",
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The buyer and seller seem to be at a deadlock regarding the refund request."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 1,
+      "threat_signals": 0
+    },
+    {
+      "idx": 4,
+      "meta": {
+        "irp_label": "Power"
+      },
+      "speaker": "Buyer",
+      "text": "I'm also sorry for the situation, but it's not fair that they lie about the product information and are so negative about it. If I come with good intentions, if you don't give me an apology and a refund, I'm going to have to give it a bad review.",
+      "ts": null,
+      "irp": "P",
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "There seems to be a misunderstanding about the product description and the buyer's expectations."
+      },
+      "emotions": {
+        "anger": 0.5,
+        "compassion": 0.3,
+        "fear": 0.2,
+        "joy": 0,
+        "neutral": 0,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": -0.4
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 5,
+      "meta": {
+        "irp_label": "Power"
+      },
+      "speaker": "Seller",
+      "text": "I'm afraid the terms of service won't allow it. If you refer yourself to the product information once more you will see that it was indeed a team's shirt with no name attatched. Hence a bad review would not be accurate. If you were to leave such a review I would have to leave a bad one myself on your profile.",
+      "ts": null,
+      "irp": "P",
+      "advisor": {
+        "action": "Intervene",
+        "rating": 4,
+        "reason": "Escalation of Conflict",
+        "should_intervene": true,
+        "statement": "The conversation is becoming heated with threats of negative reviews from both parties."
+      },
+      "emotions": {
+        "anger": 0.3,
+        "compassion": 0,
+        "fear": 0.4,
+        "joy": 0,
+        "neutral": 0.3,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": -0.7
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 6,
+      "meta": {
+        "irp_label": "Right"
+      },
+      "speaker": "Buyer",
+      "text": "and also the terms of service comment that the page is safe to buy and with you it was not like that, I require that you give me at least an apology",
+      "ts": null,
+      "irp": "R",
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Escalation of Conflict",
+        "should_intervene": false,
+        "statement": "The conversation is becoming more confrontational with threats of negative reviews."
+      },
+      "emotions": {
+        "anger": 0.7,
+        "compassion": 0.1,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 0,
+        "sadness": 0.2,
+        "surprise": 0,
+        "valence": -0.8
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 7,
+      "meta": {
+        "irp_label": "Right"
+      },
+      "speaker": "Seller",
+      "text": "Our website is indeed safe to buy and our terms are stated clearly. However I'm sorry you had to experience this situation shopping with us.",
+      "ts": null,
+      "irp": "R",
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "The seller has offered an apology, which may help de-escalate the situation."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 1,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 0,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 1
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 8,
+      "meta": {
+        "irp_label": "Interest"
+      },
+      "speaker": "Buyer",
+      "text": "I need at least a partial refund, I really don't have enough money to buy another shirt, I really need your support and understanding",
+      "ts": null,
+      "irp": "I",
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The conversation seems to be at a standstill with both parties repeating their positions."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0.5,
+        "fear": 0.3,
+        "joy": 0,
+        "neutral": 0,
+        "sadness": 0.2,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 9,
+      "meta": {
+        "irp_label": "Interest"
+      },
+      "speaker": "Seller",
+      "text": "What I can offer you is a partial refund as long as you revise your review.",
+      "ts": null,
+      "irp": "I",
+      "advisor": {
+        "action": "Observe",
+        "rating": 2,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The conversation is progressing with the seller offering a partial refund, which may help resolve the issue."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 10,
+      "meta": {
+        "irp_label": "Interest"
+      },
+      "speaker": "Buyer",
+      "text": "ok it seems perfect to me as long as I receive my partial refund, I won't give you a bad review either for me",
+      "ts": null,
+      "irp": "I",
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The buyer and seller have agreed on a partial refund and resolved the issue amicably."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 11,
+      "meta": {
+        "irp_label": "NA"
+      },
+      "speaker": "Seller",
+      "text": "Submitted agreement: Buyer gets partial refund, buyer retracted their review, seller retracted their review, buyer did apologize, and seller didn't apologize.",
+      "ts": null,
+      "irp": "NA",
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The parties have reached an agreement on a partial refund and review retraction."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 12,
+      "meta": {
+        "irp_label": "NA"
+      },
+      "speaker": "Buyer",
+      "text": "Accept Deal",
+      "ts": null,
+      "irp": "NA",
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The parties have reached an agreement and accepted the deal."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    }
+  ],
+  "op_summaries": [
+    {
+      "idx": 0,
+      "summary": "The dialogue indicates a straightforward order fulfillment issue with the buyer asserting their right to receive the correct item, while both parties maintain a neutral emotional tone, suggesting a low-risk situation with potential for integrative resolution."
+    },
+    {
+      "idx": 1,
+      "summary": "The negotiation is at a high risk of failure due to the seller's firm stance on a final sale policy, with both parties focusing on rights rather than interests or power, and maintaining a neutral emotional tone. The buyer, likely from Mexico, is dissatisfied with receiving the wrong item, while the seller, likely from the United States, insists on the clarity of the original sale terms."
+    },
+    {
+      "idx": 2,
+      "summary": "The buyer is seeking a refund and an apology due to receiving the wrong item, emphasizing the emotional significance of the purchase, while the seller maintains that the sale is final based on the website's description, leading to a high-risk negotiation focused on rights and power rather than interests. The dialogue shows potential for integrative solutions if emotional and compassionate elements are addressed, but currently lacks progression towards mutual understanding."
+    },
+    {
+      "idx": 3,
+      "summary": "The dialogue is currently at an impasse, with the seller firmly adhering to their policy of no refunds and the buyer making an emotional appeal for a refund due to personal circumstances, which the seller has not acknowledged. The interaction is dominated by rights-based arguments, with a high risk of escalation as the buyer's emotional needs remain unmet."
+    },
+    {
+      "idx": 4,
+      "summary": "The negotiation is tense, with the buyer expressing emotional distress and threatening a negative review if not compensated, while the seller remains firm on their final sale policy, highlighting a power imbalance and a focus on rights over interests. The dialogue lacks integrative potential, as both parties are entrenched in their positions without exploring mutual benefits or solutions."
+    },
+    {
+      "idx": 5,
+      "summary": "The dialogue is highly contentious, with both parties firmly asserting their rights and escalating tensions through threats of negative reviews, while emotional undertones of anger and fear are evident. The interaction lacks integrative potential as both the buyer and seller are entrenched in power and rights-based arguments, with no interest-based solutions being explored."
+    },
+    {
+      "idx": 6,
+      "summary": "The negotiation is highly contentious, with both parties entrenched in a rights-based and power-driven exchange, as the buyer demands a refund and apology under threat of a negative review, while the seller firmly denies any wrongdoing and counters with a threat of their own. Emotional tensions are escalating, with the buyer expressing increasing anger and the seller maintaining a defensive stance, indicating a need for mediation to shift focus towards interests and potential integrative solutions."
+    },
+    {
+      "idx": 7,
+      "summary": "The negotiation is highly contentious, with the buyer threatening a negative review unless a refund and apology are provided, while the seller firmly adheres to the final sale policy but eventually offers an apology, indicating a slight shift towards compassion. The dialogue is dominated by rights and power assertions, with the buyer's emotional trajectory escalating from neutral to anger, and the seller maintaining a mostly neutral stance until the final compassionate response."
+    },
+    {
+      "idx": 8,
+      "summary": "The dialogue is tense, with the buyer seeking a refund and apology due to a perceived misrepresentation, while the seller firmly denies the refund citing final sale terms, leading to an escalation in emotional intensity and potential negative reviews. The interaction shows a high reliance on power and rights, with limited integrative potential, as both parties are entrenched in their positions, though the buyer's recent appeal for understanding suggests a slight opening for compromise."
+    },
+    {
+      "idx": 9,
+      "summary": "The negotiation has progressed from initial resistance to a partial refund agreement, with both parties showing a mix of power and rights-based arguments, while the buyer's emotional appeal and the seller's eventual concession indicate moderate integrative potential. The emotional trajectory shifted from neutral to more compassionate and tense, reflecting a balance of interests and rights, but with a notable power dynamic as the seller conditions the refund on a review revision."
+    },
+    {
+      "idx": 10,
+      "summary": "The negotiation reached a resolution with the seller agreeing to a partial refund in exchange for the buyer revising their review, reflecting a shift from a power-based to a more interest-based dialogue. The emotional trajectory moved from initial neutrality and tension to a more cooperative and neutral stance, with both parties showing willingness to compromise."
+    },
+    {
+      "idx": 11,
+      "summary": "The negotiation concluded with a mutual agreement where the buyer received a partial refund in exchange for retracting a negative review, while the seller maintained their stance on the terms of service but expressed some compassion. The dialogue showed a shift from power-based exchanges to a more interest-focused resolution, with emotions stabilizing towards neutrality."
+    },
+    {
+      "idx": 12,
+      "summary": "The negotiation concluded with a mutual agreement where the buyer received a partial refund in exchange for retracting a negative review, highlighting a shift from power-based to interest-based dialogue with a low emotional risk. The seller maintained a firm stance on terms but showed flexibility by offering a partial refund, balancing interests and rights effectively."
+    }
+  ],
+  "final_outcome": {
+    "buyer_apology": 1,
+    "buyer_review": 1,
+    "buyer_util": 30,
+    "refund": 0.5,
+    "refund_label": "Half",
+    "seller_apology": 0,
+    "seller_review": 1,
+    "seller_util": 67.5
+  },
+  "country": {
+    "buyer": {
+      "confidence": 0.5,
+      "country": "Mexico",
+      "flag": "🇲🇽",
+      "lat": 23.63,
+      "lng": -102.55,
+      "probabilities": {
+        "Mexico": 0.502295,
+        "South Africa": 0.173978,
+        "United Kingdom": 0.158185,
+        "United States": 0.165542
+      }
+    },
+    "seller": {
+      "confidence": 0.3,
+      "country": "United Kingdom",
+      "flag": "🇬🇧",
+      "lat": 55.37,
+      "lng": -3.43,
+      "probabilities": {
+        "Mexico": 0.256095,
+        "South Africa": 0.211185,
+        "United Kingdom": 0.29756,
+        "United States": 0.23516
+      }
+    }
+  },
+  "step_cache": {
+    "0": {
+      "ready": true,
+      "risk": {
+        "label": "Low",
+        "negative_signals": 0,
+        "rationale_short": "Initial contact suggests a simple order fulfillment issue.",
+        "risk_0_100": 30,
+        "score": 0.3,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "There seems to be a misunderstanding about the purchase; clarification may be needed."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.47,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.471098,
+            "South Africa": 0.252757,
+            "United Kingdom": 0.12817,
+            "United States": 0.147975
+          }
+        },
+        "seller": {
+          "confidence": 0,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {}
+        }
+      },
+      "operational_summary": "The dialogue indicates a straightforward order fulfillment issue with the buyer asserting their right to receive the correct item, while both parties maintain a neutral emotional tone, suggesting a low-risk situation with potential for integrative resolution."
+    },
+    "1": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 1,
+        "rationale_short": "Seller's firm stance and final sale policy increase negotiation failure risk.",
+        "risk_0_100": 75,
+        "score": 0.75,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "There seems to be a misunderstanding about the product description and what was expected."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.47,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.471098,
+            "South Africa": 0.252757,
+            "United Kingdom": 0.12817,
+            "United States": 0.147975
+          }
+        },
+        "seller": {
+          "confidence": 0.43,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.239559,
+            "South Africa": 0.138645,
+            "United Kingdom": 0.187853,
+            "United States": 0.433943
+          }
+        }
+      },
+      "operational_summary": "The negotiation is at a high risk of failure due to the seller's firm stance on a final sale policy, with both parties focusing on rights rather than interests or power, and maintaining a neutral emotional tone. The buyer, likely from Mexico, is dissatisfied with receiving the wrong item, while the seller, likely from the United States, insists on the clarity of the original sale terms."
+    },
+    "2": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 1,
+        "rationale_short": "Buyer insists on refund; seller claims sale is final.",
+        "risk_0_100": 75,
+        "score": 0.75,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "There seems to be a misunderstanding about the product description and the buyer's expectations."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.47,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.468621,
+            "South Africa": 0.19748,
+            "United Kingdom": 0.156778,
+            "United States": 0.177121
+          }
+        },
+        "seller": {
+          "confidence": 0.43,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.239559,
+            "South Africa": 0.138645,
+            "United Kingdom": 0.187853,
+            "United States": 0.433943
+          }
+        }
+      },
+      "operational_summary": "The buyer is seeking a refund and an apology due to receiving the wrong item, emphasizing the emotional significance of the purchase, while the seller maintains that the sale is final based on the website's description, leading to a high-risk negotiation focused on rights and power rather than interests. The dialogue shows potential for integrative solutions if emotional and compassionate elements are addressed, but currently lacks progression towards mutual understanding."
+    },
+    "3": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 2,
+        "rationale_short": "Seller is firm on policy; buyer's emotional appeal ignored.",
+        "risk_0_100": 85,
+        "score": 0.85,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The buyer and seller seem to be at a deadlock regarding the refund request."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.47,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.468621,
+            "South Africa": 0.19748,
+            "United Kingdom": 0.156778,
+            "United States": 0.177121
+          }
+        },
+        "seller": {
+          "confidence": 0.32,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.197733,
+            "South Africa": 0.241766,
+            "United Kingdom": 0.241032,
+            "United States": 0.31947
+          }
+        }
+      },
+      "operational_summary": "The dialogue is currently at an impasse, with the seller firmly adhering to their policy of no refunds and the buyer making an emotional appeal for a refund due to personal circumstances, which the seller has not acknowledged. The interaction is dominated by rights-based arguments, with a high risk of escalation as the buyer's emotional needs remain unmet."
+    },
+    "4": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 2,
+        "rationale_short": "Buyer threatens negative review; seller insists on final sale policy.",
+        "risk_0_100": 85,
+        "score": 0.85,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "There seems to be a misunderstanding about the product description and the buyer's expectations."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.5,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.504222,
+            "South Africa": 0.183946,
+            "United Kingdom": 0.136251,
+            "United States": 0.175581
+          }
+        },
+        "seller": {
+          "confidence": 0.32,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.197733,
+            "South Africa": 0.241766,
+            "United Kingdom": 0.241032,
+            "United States": 0.31947
+          }
+        }
+      },
+      "operational_summary": "The negotiation is tense, with the buyer expressing emotional distress and threatening a negative review if not compensated, while the seller remains firm on their final sale policy, highlighting a power imbalance and a focus on rights over interests. The dialogue lacks integrative potential, as both parties are entrenched in their positions without exploring mutual benefits or solutions."
+    },
+    "5": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 2,
+        "rationale_short": "Both parties are firm, threats of negative reviews escalate tension.",
+        "risk_0_100": 85,
+        "score": 0.85,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Intervene",
+        "rating": 4,
+        "reason": "Escalation of Conflict",
+        "should_intervene": true,
+        "statement": "The conversation is becoming heated with threats of negative reviews from both parties."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.5,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.504222,
+            "South Africa": 0.183946,
+            "United Kingdom": 0.136251,
+            "United States": 0.175581
+          }
+        },
+        "seller": {
+          "confidence": 0.28,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.28358,
+            "South Africa": 0.22065,
+            "United Kingdom": 0.247592,
+            "United States": 0.248179
+          }
+        }
+      },
+      "operational_summary": "The dialogue is highly contentious, with both parties firmly asserting their rights and escalating tensions through threats of negative reviews, while emotional undertones of anger and fear are evident. The interaction lacks integrative potential as both the buyer and seller are entrenched in power and rights-based arguments, with no interest-based solutions being explored."
+    },
+    "6": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 2,
+        "rationale_short": "Buyer threatens negative review; seller refuses refund or apology, escalating conflict.",
+        "risk_0_100": 85,
+        "score": 0.85,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Escalation of Conflict",
+        "should_intervene": false,
+        "statement": "The conversation is becoming more confrontational with threats of negative reviews."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.51,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.506106,
+            "South Africa": 0.196598,
+            "United Kingdom": 0.126264,
+            "United States": 0.171032
+          }
+        },
+        "seller": {
+          "confidence": 0.28,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.28358,
+            "South Africa": 0.22065,
+            "United Kingdom": 0.247592,
+            "United States": 0.248179
+          }
+        }
+      },
+      "operational_summary": "The negotiation is highly contentious, with both parties entrenched in a rights-based and power-driven exchange, as the buyer demands a refund and apology under threat of a negative review, while the seller firmly denies any wrongdoing and counters with a threat of their own. Emotional tensions are escalating, with the buyer expressing increasing anger and the seller maintaining a defensive stance, indicating a need for mediation to shift focus towards interests and potential integrative solutions."
+    },
+    "7": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 2,
+        "rationale_short": "Buyer threatens negative review; seller refuses refund, escalating conflict.",
+        "risk_0_100": 75,
+        "score": 0.75,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "The seller has offered an apology, which may help de-escalate the situation."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.51,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.506106,
+            "South Africa": 0.196598,
+            "United Kingdom": 0.126264,
+            "United States": 0.171032
+          }
+        },
+        "seller": {
+          "confidence": 0.27,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.269655,
+            "South Africa": 0.251382,
+            "United Kingdom": 0.249228,
+            "United States": 0.229734
+          }
+        }
+      },
+      "operational_summary": "The negotiation is highly contentious, with the buyer threatening a negative review unless a refund and apology are provided, while the seller firmly adheres to the final sale policy but eventually offers an apology, indicating a slight shift towards compassion. The dialogue is dominated by rights and power assertions, with the buyer's emotional trajectory escalating from neutral to anger, and the seller maintaining a mostly neutral stance until the final compassionate response."
+    },
+    "8": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 2,
+        "rationale_short": "Buyer insists on refund; seller firmly denies, escalating tension and potential negative reviews.",
+        "risk_0_100": 85,
+        "score": 0.85,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The conversation seems to be at a standstill with both parties repeating their positions."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.52,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.521012,
+            "South Africa": 0.179341,
+            "United Kingdom": 0.14176,
+            "United States": 0.157887
+          }
+        },
+        "seller": {
+          "confidence": 0.27,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.269655,
+            "South Africa": 0.251382,
+            "United Kingdom": 0.249228,
+            "United States": 0.229734
+          }
+        }
+      },
+      "operational_summary": "The dialogue is tense, with the buyer seeking a refund and apology due to a perceived misrepresentation, while the seller firmly denies the refund citing final sale terms, leading to an escalation in emotional intensity and potential negative reviews. The interaction shows a high reliance on power and rights, with limited integrative potential, as both parties are entrenched in their positions, though the buyer's recent appeal for understanding suggests a slight opening for compromise."
+    },
+    "9": {
+      "ready": true,
+      "risk": {
+        "label": "Medium",
+        "negative_signals": 2,
+        "rationale_short": "Negotiation reached partial refund agreement, but initial resistance indicates moderate risk.",
+        "risk_0_100": 40,
+        "score": 0.4,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 2,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The conversation is progressing with the seller offering a partial refund, which may help resolve the issue."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.52,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.521012,
+            "South Africa": 0.179341,
+            "United Kingdom": 0.14176,
+            "United States": 0.157887
+          }
+        },
+        "seller": {
+          "confidence": 0.28,
+          "country": "United Kingdom",
+          "flag": "🇬🇧",
+          "lat": 55.37,
+          "lng": -3.43,
+          "probabilities": {
+            "Mexico": 0.251651,
+            "South Africa": 0.220612,
+            "United Kingdom": 0.27842,
+            "United States": 0.249317
+          }
+        }
+      },
+      "operational_summary": "The negotiation has progressed from initial resistance to a partial refund agreement, with both parties showing a mix of power and rights-based arguments, while the buyer's emotional appeal and the seller's eventual concession indicate moderate integrative potential. The emotional trajectory shifted from neutral to more compassionate and tense, reflecting a balance of interests and rights, but with a notable power dynamic as the seller conditions the refund on a review revision."
+    },
+    "10": {
+      "ready": true,
+      "risk": {
+        "label": "Low",
+        "negative_signals": 2,
+        "rationale_short": "Negotiation reached a resolution with a partial refund agreement.",
+        "risk_0_100": 30,
+        "score": 0.3,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The buyer and seller have agreed on a partial refund and resolved the issue amicably."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.5,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.50051,
+            "South Africa": 0.167803,
+            "United Kingdom": 0.159754,
+            "United States": 0.171933
+          }
+        },
+        "seller": {
+          "confidence": 0.28,
+          "country": "United Kingdom",
+          "flag": "🇬🇧",
+          "lat": 55.37,
+          "lng": -3.43,
+          "probabilities": {
+            "Mexico": 0.251651,
+            "South Africa": 0.220612,
+            "United Kingdom": 0.27842,
+            "United States": 0.249317
+          }
+        }
+      },
+      "operational_summary": "The negotiation reached a resolution with the seller agreeing to a partial refund in exchange for the buyer revising their review, reflecting a shift from a power-based to a more interest-based dialogue. The emotional trajectory moved from initial neutrality and tension to a more cooperative and neutral stance, with both parties showing willingness to compromise."
+    },
+    "11": {
+      "ready": true,
+      "risk": {
+        "label": "Low",
+        "negative_signals": 2,
+        "rationale_short": "Negotiation concluded with mutual agreement and partial refund offered.",
+        "risk_0_100": 20,
+        "score": 0.2,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The parties have reached an agreement on a partial refund and review retraction."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.5,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.50051,
+            "South Africa": 0.167803,
+            "United Kingdom": 0.159754,
+            "United States": 0.171933
+          }
+        },
+        "seller": {
+          "confidence": 0.3,
+          "country": "United Kingdom",
+          "flag": "🇬🇧",
+          "lat": 55.37,
+          "lng": -3.43,
+          "probabilities": {
+            "Mexico": 0.256095,
+            "South Africa": 0.211185,
+            "United Kingdom": 0.29756,
+            "United States": 0.23516
+          }
+        }
+      },
+      "operational_summary": "The negotiation concluded with a mutual agreement where the buyer received a partial refund in exchange for retracting a negative review, while the seller maintained their stance on the terms of service but expressed some compassion. The dialogue showed a shift from power-based exchanges to a more interest-focused resolution, with emotions stabilizing towards neutrality."
+    },
+    "12": {
+      "ready": true,
+      "risk": {
+        "label": "Low",
+        "negative_signals": 2,
+        "rationale_short": "Negotiation concluded with mutual agreement and partial refund.",
+        "risk_0_100": 20,
+        "score": 0.2,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The parties have reached an agreement and accepted the deal."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.5,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.502295,
+            "South Africa": 0.173978,
+            "United Kingdom": 0.158185,
+            "United States": 0.165542
+          }
+        },
+        "seller": {
+          "confidence": 0.3,
+          "country": "United Kingdom",
+          "flag": "🇬🇧",
+          "lat": 55.37,
+          "lng": -3.43,
+          "probabilities": {
+            "Mexico": 0.256095,
+            "South Africa": 0.211185,
+            "United Kingdom": 0.29756,
+            "United States": 0.23516
+          }
+        }
+      },
+      "operational_summary": "The negotiation concluded with a mutual agreement where the buyer received a partial refund in exchange for retracting a negative review, highlighting a shift from power-based to interest-based dialogue with a low emotional risk. The seller maintained a firm stance on terms but showed flexibility by offering a partial refund, balancing interests and rights effectively."
+    }
+  }
+}

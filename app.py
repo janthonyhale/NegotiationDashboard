@@ -25,8 +25,8 @@ ALLOWED = {'txt', 'json', 'jsonl', 'csv'}
 # ── KODIS Issue Definitions ───────────────────────────────────────────────────
 KODIS_ISSUES = {
     'refund':          {'label': 'Refund',              'options': ['Full (100%)', 'Half (50%)', 'None (0%)'],  'values': [1.0, 0.5, 0.0]},
-    'buyer_review':    {'label': 'Buyer Review Removed', 'options': ['Yes', 'No'],                              'values': [1.0, 0.0]},
-    'seller_review':   {'label': 'Seller Review Removed','options': ['Yes', 'No'],                              'values': [1.0, 0.0]},
+    'buyer_review':    {'label': 'Buyer Review Kept / Removed', 'options': ['Yes', 'No'],                              'values': [1.0, 0.0]},
+    'seller_review':   {'label': 'Seller Review Kept / Removed','options': ['Yes', 'No'],                              'values': [1.0, 0.0]},
     'seller_apology':  {'label': 'Receive Apology',    'options': ['Yes', 'No'],                              'values': [1.0, 0.0]},
     'buyer_apology':   {'label': 'Buyer Apologizes',    'options': ['Yes', 'No'],                              'values': [1.0, 0.0]},
 }
@@ -668,7 +668,7 @@ def score_emo(text):
 def enrich(turns):
     for t in turns:
         tl = t['text'].lower()
-        t['emotions'] = score_emo(t['text'])
+        # t['emotions'] = score_emo(t['text'])
         t['negative_signals'] = sum(1 for s in NEG_SIGNALS if s in tl)
         t['threat_signals']   = sum(1 for s in ['sue','lawyer','court','legal action'] if s in tl)
     return turns
@@ -851,6 +851,7 @@ def llm_emotion_scores(text):
         "temperature": 0,
         "response_format": {"type": "json_object"}
     }
+    # print(payload)
     req = urllib.request.Request(
         'https://api.openai.com/v1/chat/completions',
         data=json.dumps(payload).encode('utf-8'),
@@ -1080,7 +1081,7 @@ def llm_operational_summary(turns_so_far, country_snapshot, risk_snapshot, irp_p
         "Treat country predictions as uncertain priors (not facts). "
         "Respond in English only.\n\n"
         f"Risk snapshot: {json.dumps(risk_snapshot)}\n"
-        f"Country snapshot: {json.dumps(country_snapshot)}\n"
+        # f"Country snapshot: {json.dumps(country_snapshot)}\n"
         f"IRP patterns: {json.dumps(irp_patterns or {})}\n"
         f"Observed turns:\n{transcript_excerpt}"
     )
@@ -2015,7 +2016,7 @@ def api_export_pdf():
     # Weights table
     story.append(Paragraph('KODIS Preference Weights', h2_s))
     issues = ['refund','buyer_review','seller_review','seller_apology','buyer_apology']
-    labels = ['Refund','Buyer Review Removed','Seller Review Removed','Seller Apologizes','Buyer Apologizes']
+    labels = ['Refund','Buyer Review Kept / Removed','Seller Review Kept / Removed','Seller Apologizes','Buyer Apologizes']
     w_data = [['Issue','Buyer Weight','Seller Weight']] + [[l, str(bw.get(i,0)), str(sw.get(i,0))] for l,i in zip(labels,issues)]
     wt = Table(w_data, colWidths=[2.8*inch,1.8*inch,1.8*inch])
     wt.setStyle(TableStyle([
@@ -2044,8 +2045,8 @@ def api_export_pdf():
         story.append(Paragraph('Final Agreed Outcome', h2_s))
         fa_items = [
             ['Refund', final_outcome.get('refund_label','—')],
-            ['Buyer Review Removed', 'Yes' if final_outcome.get('buyer_review') else 'No'],
-            ['Seller Review Removed','Yes' if final_outcome.get('seller_review') else 'No'],
+            ['Buyer Review Kept / Removed', 'Yes' if final_outcome.get('buyer_review') else 'No'],
+            ['Seller Review Kept / Removed','Yes' if final_outcome.get('seller_review') else 'No'],
             ['Seller Apologizes',    'Yes' if final_outcome.get('seller_apology') else 'No'],
             ['Buyer Apologizes',     'Yes' if final_outcome.get('buyer_apology') else 'No'],
             ['Buyer Utility',        (f"{bu:.0f}/100" if isinstance(bu, (int, float)) else '—')],

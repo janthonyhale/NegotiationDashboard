@@ -1,0 +1,1434 @@
+{
+  "language": "EN",
+  "buyer_weights": {
+    "buyer_apology": 0,
+    "buyer_review": 5,
+    "refund": 90,
+    "seller_apology": 1,
+    "seller_review": 4
+  },
+  "seller_weights": {
+    "buyer_apology": 20,
+    "buyer_review": 30,
+    "refund": 40,
+    "seller_apology": 0,
+    "seller_review": 10
+  },
+  "pre_dispute_justifications": {
+    "buyer_review": {
+      "buyer": "To prevent other people from buying from this seller.",
+      "seller": "Demanding the withdrawal of the negative review is crucial as it can help maintain a positive online reputation and prevent potential harm to my business."
+    },
+    "receive_apology": {
+      "buyer": "To see that their intentions weren't bad.",
+      "seller": "Requesting a formal apology and an update to the bad review is important to set the record straight, clarify any misconceptions."
+    },
+    "refund": {
+      "buyer": "As a compensation for the fraud.",
+      "seller": "Avoiding a refund is important because I explicitly stated that there were no returns, and honoring this policy reinforces the transparency and terms of the transaction."
+    },
+    "seller_review": {
+      "buyer": "So other sellers will still want to sell things to me.",
+      "seller": "Keeping the negative review may be desirable as it serves as a public record of the buyer's misunderstanding and can act as a counterpoint to any unfounded claims or disputes in the future."
+    }
+  },
+  "turns": [
+    {
+      "idx": 0,
+      "meta": {
+        "irp_label": "Interest"
+      },
+      "speaker": "Buyer",
+      "text": "My item arrived broken, is there a possibility of getting a refund?",
+      "ts": null,
+      "irp": "interest",
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The conversation is at an early stage and there is no indication of conflict or misunderstanding."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 1,
+      "meta": {
+        "irp_label": "Right"
+      },
+      "speaker": "Seller",
+      "text": "Hello, I'm sorry, but the website policies are very clear: no refunds.",
+      "ts": null,
+      "irp": "right",
+      "advisor": {
+        "action": "Observe",
+        "rating": 2,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The conversation is at a standstill, but it's not yet heated or unreasonable."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 2,
+      "meta": {
+        "irp_label": "Right"
+      },
+      "speaker": "Buyer",
+      "text": "I coudn't find the policies on the site. Why is there no refunds?",
+      "ts": null,
+      "irp": "right",
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "The buyer seems to be unaware of the refund policy, which could lead to further misunderstanding."
+      },
+      "emotions": {
+        "anger": 0.7,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 0,
+        "sadness": 0,
+        "surprise": 0.3,
+        "valence": -0.7
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 3,
+      "meta": {
+        "irp_label": "Right"
+      },
+      "speaker": "Seller",
+      "text": "It might be unusual that you couldn't find the no-refund policy; it's there for consistency and clear expectations with all our customers. that’s why there is no refund.",
+      "ts": null,
+      "irp": "right",
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "There seems to be a misunderstanding about the visibility and clarity of the refund policy on the website."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 4,
+      "meta": {
+        "irp_label": "Interest"
+      },
+      "speaker": "Buyer",
+      "text": "Is there another way of a compensation for the broken item I received then?",
+      "ts": null,
+      "irp": "interest",
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The parties are communicating effectively and exploring options for resolution."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 5,
+      "meta": {
+        "irp_label": "Interest"
+      },
+      "speaker": "Seller",
+      "text": "I'm open to discussing alternative solutions or compensation options for the issue you've encountered.Would you be open to receiving a discount coupon for your next purchase as compensation?",
+      "ts": null,
+      "irp": "interest",
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The parties are communicating effectively and working towards a resolution."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 1,
+      "threat_signals": 1
+    },
+    {
+      "idx": 6,
+      "meta": {
+        "irp_label": "Interest"
+      },
+      "speaker": "Buyer",
+      "text": "That's nice of you, but I'm not sure I want to purchase anything anymore since the policies aren't in customers' favor when it comes to the independent issues.",
+      "ts": null,
+      "irp": "interest",
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The parties are communicating effectively and exploring alternative solutions."
+      },
+      "emotions": {
+        "anger": 0.2,
+        "compassion": 0,
+        "fear": 0.3,
+        "joy": 0,
+        "neutral": 0.2,
+        "sadness": 0.3,
+        "surprise": 0,
+        "valence": -0.8
+      },
+      "negative_signals": 1,
+      "threat_signals": 1
+    },
+    {
+      "idx": 7,
+      "meta": {
+        "irp_label": "Interest"
+      },
+      "speaker": "Seller",
+      "text": "Thank you for sharing your concerns. Although I respect your decision not to make another purchase, I want to express my commitment to resolving this issue. As an alternative, I'm open to discussing other forms of compensation or solutions that might address your dissatisfaction. Please let me know how I can better assist you in this situation",
+      "ts": null,
+      "irp": "interest",
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The parties are communicating effectively and working towards a solution."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 1,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 0,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 1
+      },
+      "negative_signals": 1,
+      "threat_signals": 1
+    },
+    {
+      "idx": 8,
+      "meta": {
+        "irp_label": "Interest"
+      },
+      "speaker": "Buyer",
+      "text": "Since the item arrived broken,could you re-send me the same item without any fees from my side?",
+      "ts": null,
+      "irp": "interest",
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The buyer and seller are communicating effectively and exploring solutions."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 9,
+      "meta": {
+        "irp_label": "Interest"
+      },
+      "speaker": "Seller",
+      "text": "I understand your frustration. To make amends, I'd be happy to resend the same item to you without any additional fees on your part. Please confirm if this solution works for you, and we'll proceed accordingly.",
+      "ts": null,
+      "irp": "interest",
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The conversation is progressing positively towards a resolution."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 1,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 0,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 1
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 10,
+      "meta": {
+        "irp_label": "Interest"
+      },
+      "speaker": "Buyer",
+      "text": "Sure, I'm content with this solution, thank you.",
+      "ts": null,
+      "irp": "interest",
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The buyer and seller have reached an agreement on a resolution."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0.2,
+        "fear": 0,
+        "joy": 0.8,
+        "neutral": 0,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 1
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 11,
+      "meta": {
+        "irp_label": "Power"
+      },
+      "speaker": "Seller",
+      "text": "Could you take down the bad review?",
+      "ts": null,
+      "irp": "power",
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The buyer and seller have resolved the issue amicably."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 12,
+      "meta": {
+        "irp_label": "Interest"
+      },
+      "speaker": "Buyer",
+      "text": "Yes. Would you do the same with your negative comment?",
+      "ts": null,
+      "irp": "interest",
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The parties have reached a mutual agreement and are resolving the issue without conflict."
+      },
+      "emotions": {
+        "anger": 0.7,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 0.3,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": -0.7
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 13,
+      "meta": {
+        "irp_label": "Interest"
+      },
+      "speaker": "Seller",
+      "text": "Yes, i think that´s a great solution for both",
+      "ts": null,
+      "irp": "interest",
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The conversation has reached a satisfactory resolution without the need for intervention."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0.3,
+        "fear": 0,
+        "joy": 0.7,
+        "neutral": 0,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 1
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 14,
+      "meta": {
+        "irp_label": "Interest"
+      },
+      "speaker": "Buyer",
+      "text": "Exactly, thank you for the cooperation.",
+      "ts": null,
+      "irp": "interest",
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The parties have reached a mutual agreement and are cooperating well."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0.3,
+        "fear": 0,
+        "joy": 0.7,
+        "neutral": 0,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 1
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 15,
+      "meta": {
+        "irp_label": "Interest"
+      },
+      "speaker": "Seller",
+      "text": "Submitted agreement: Buyer gets no refund, seller retracted their review, buyer retracted their review, seller didn't apologize, and buyer didn't apologize.",
+      "ts": null,
+      "irp": "interest",
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The conversation has concluded positively with both parties agreeing on a solution."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 16,
+      "meta": {
+        "irp_label": "Interest"
+      },
+      "speaker": "Buyer",
+      "text": "Accept Deal",
+      "ts": null,
+      "irp": "interest",
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The buyer and seller have successfully resolved their dispute and confirmed their agreement."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    }
+  ],
+  "op_summaries": [
+    {
+      "idx": 0,
+      "summary": "The buyer has expressed an interest in obtaining a refund due to receiving a broken item, maintaining a neutral emotional tone, while the seller has yet to respond, leaving the outcome dependent on their return policy and response. The dialogue is currently focused on interests, with no rights or power dynamics evident."
+    },
+    {
+      "idx": 1,
+      "summary": "The buyer expressed interest in a refund due to receiving a broken item, but the seller cited strict policy rights, limiting negotiation flexibility and maintaining a neutral emotional tone. The dialogue shows a high-risk scenario with limited integrative potential, as the seller's adherence to policy restricts options for resolution."
+    },
+    {
+      "idx": 2,
+      "summary": "The negotiation is at a high risk of failure due to the seller's strict adherence to a no-refund policy and the buyer's growing dissatisfaction and frustration over the lack of accessible policy information. The dialogue has primarily focused on rights, with the buyer expressing interest in a resolution and the seller maintaining a neutral stance, indicating a need for integrative solutions to address the buyer's concerns."
+    },
+    {
+      "idx": 3,
+      "summary": "The negotiation is at a high risk of failure due to the seller's rigid adherence to a no-refund policy, which has led to the buyer's increasing dissatisfaction and anger, with the dialogue heavily focused on rights rather than exploring mutual interests. The buyer's emotional trajectory indicates growing frustration, while the seller maintains a neutral stance, suggesting a need for the mediator to facilitate a shift towards integrative solutions."
+    },
+    {
+      "idx": 4,
+      "summary": "The dialogue shows a high-risk negotiation with the seller strictly adhering to a no-refund policy, limiting options for resolution, while the buyer, initially surprised and angry, seeks alternative compensation for a broken item. The interaction is primarily rights-focused, with minimal integrative potential and no power dynamics evident, suggesting a need for creative solutions to address the buyer's interests."
+    },
+    {
+      "idx": 5,
+      "summary": "The dialogue shows a shift from a rights-based to an interest-based negotiation, with the seller offering alternative compensation to address the buyer's concerns about a broken item, which reduces the risk of negotiation failure. The emotional trajectory has stabilized from initial buyer anger to a neutral tone, indicating potential for integrative solutions."
+    },
+    {
+      "idx": 6,
+      "summary": "The dialogue reveals a high-risk situation with the buyer expressing dissatisfaction and hesitance to continue purchasing due to unclear refund policies, while the seller remains firm on policy adherence but shows willingness to explore alternative compensations. The emotional trajectory indicates growing frustration and skepticism from the buyer, with the IRP balance showing a focus on interests and rights, lacking power dynamics."
+    },
+    {
+      "idx": 7,
+      "summary": "The dialogue shows integrative potential as the seller is open to alternative solutions, but the buyer's trust is shaken due to unclear policies, leading to a medium risk level. The emotional trajectory indicates initial buyer anger and surprise, shifting to a more neutral and slightly fearful stance, while the seller maintains a neutral and compassionate approach, focusing on interests and rights without exerting power."
+    },
+    {
+      "idx": 8,
+      "summary": "The dialogue shows a shift from initial rigidity to a more collaborative approach, with the seller expressing willingness to explore alternative compensations beyond the no-refund policy, while the buyer remains cautious but open to solutions like a replacement item. The emotional trajectory indicates a decrease in buyer's anger and an increase in seller's compassion, suggesting potential for integrative outcomes if the seller can align compensation with the buyer's interests."
+    },
+    {
+      "idx": 9,
+      "summary": "The dialogue has progressed from initial tension over refund policies to a more collaborative tone, with the seller offering to resend the item at no extra cost, demonstrating a shift towards integrative potential and a balanced focus on interests. The emotional trajectory has moved from buyer frustration to a more positive and solution-oriented exchange, reducing the risk of negotiation failure."
+    },
+    {
+      "idx": 10,
+      "summary": "The negotiation concluded successfully with the seller agreeing to resend the item at no additional cost, addressing the buyer's interest and resolving the issue amicably. The dialogue progressed from initial tension to a cooperative resolution, with both parties focusing on interests rather than rights or power, leading to a low-risk outcome."
+    },
+    {
+      "idx": 11,
+      "summary": "The dialogue progressed from initial tension over a broken item and refund policy to a collaborative resolution, with the seller agreeing to resend the item at no cost, which satisfied the buyer. The interaction maintained a focus on interests, with the seller showing flexibility and compassion, ultimately leading to a low-risk agreement."
+    },
+    {
+      "idx": 12,
+      "summary": "The dialogue has progressed from initial tension over a broken item and refund policy to a mutually agreeable resolution where the seller offers to resend the item without additional fees, leading to the buyer's satisfaction. The emotional trajectory shifted from anger and surprise to compassion and joy, with a balanced focus on interests and rights, indicating successful integrative negotiation despite a minor power assertion by the seller."
+    },
+    {
+      "idx": 13,
+      "summary": "The dialogue progressed from initial tension over a broken item and refund policy to a collaborative resolution, with the seller agreeing to resend the item at no cost and both parties agreeing to remove negative reviews. The emotional trajectory shifted from frustration to mutual satisfaction, with a strong focus on interests and a balanced IRP approach, indicating successful integrative negotiation."
+    },
+    {
+      "idx": 14,
+      "summary": "The negotiation concluded positively with both parties reaching a mutual agreement to resend the item without additional fees and to remove negative reviews, demonstrating strong integrative potential and a balanced IRP focus on interests. The emotional trajectory shifted from initial frustration to cooperation and satisfaction, reflecting effective dialogue progression and resolution."
+    },
+    {
+      "idx": 15,
+      "summary": "The negotiation concluded with both parties reaching a mutual agreement where the seller agreed to resend the item without additional fees, and both parties agreed to retract their negative reviews, demonstrating a shift from initial rights-based positions to a more interest-focused resolution. The emotional trajectory moved from initial frustration and anger to cooperation and satisfaction, with a balanced IRP pattern favoring interests over rights and power."
+    },
+    {
+      "idx": 16,
+      "summary": "The negotiation concluded with both parties agreeing on a resolution where the seller will resend the item without additional fees, and both parties will retract their negative reviews, reflecting a balanced IRP with a focus on interests and a low-risk outcome. The emotional trajectory shifted from initial buyer frustration to mutual satisfaction, indicating successful integrative potential and dialogue progression."
+    }
+  ],
+  "final_outcome": {
+    "buyer_apology": 0,
+    "buyer_review": 1,
+    "buyer_util": 4,
+    "refund": 0,
+    "refund_label": "None",
+    "seller_apology": 0,
+    "seller_review": 1,
+    "seller_util": 70
+  },
+  "country": {
+    "buyer": {
+      "confidence": 0.29,
+      "country": "South Africa",
+      "flag": "🇿🇦",
+      "lat": -30.56,
+      "lng": 22.94,
+      "probabilities": {
+        "Mexico": 0.234851,
+        "South Africa": 0.286229,
+        "United Kingdom": 0.230853,
+        "United States": 0.248068
+      }
+    },
+    "seller": {
+      "confidence": 0.28,
+      "country": "Mexico",
+      "flag": "🇲🇽",
+      "lat": 23.63,
+      "lng": -102.55,
+      "probabilities": {
+        "Mexico": 0.275186,
+        "South Africa": 0.258635,
+        "United Kingdom": 0.238745,
+        "United States": 0.227434
+      }
+    }
+  },
+  "step_cache": {
+    "0": {
+      "ready": true,
+      "risk": {
+        "label": "Medium",
+        "negative_signals": 0,
+        "rationale_short": "Initial request for refund; outcome depends on seller's response and return policy.",
+        "risk_0_100": 40,
+        "score": 0.4,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The conversation is at an early stage and there is no indication of conflict or misunderstanding."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.33,
+          "country": "South Africa",
+          "flag": "🇿🇦",
+          "lat": -30.56,
+          "lng": 22.94,
+          "probabilities": {
+            "Mexico": 0.228373,
+            "South Africa": 0.327055,
+            "United Kingdom": 0.19194,
+            "United States": 0.252633
+          }
+        },
+        "seller": {
+          "confidence": 0,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {}
+        }
+      },
+      "operational_summary": "The buyer has expressed an interest in obtaining a refund due to receiving a broken item, maintaining a neutral emotional tone, while the seller has yet to respond, leaving the outcome dependent on their return policy and response. The dialogue is currently focused on interests, with no rights or power dynamics evident."
+    },
+    "1": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 0,
+        "rationale_short": "Seller's strict policy limits negotiation options for a refund.",
+        "risk_0_100": 85,
+        "score": 0.85,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 2,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The conversation is at a standstill, but it's not yet heated or unreasonable."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.33,
+          "country": "South Africa",
+          "flag": "🇿🇦",
+          "lat": -30.56,
+          "lng": 22.94,
+          "probabilities": {
+            "Mexico": 0.228373,
+            "South Africa": 0.327055,
+            "United Kingdom": 0.19194,
+            "United States": 0.252633
+          }
+        },
+        "seller": {
+          "confidence": 0.34,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.337468,
+            "South Africa": 0.247612,
+            "United Kingdom": 0.169116,
+            "United States": 0.245804
+          }
+        }
+      },
+      "operational_summary": "The buyer expressed interest in a refund due to receiving a broken item, but the seller cited strict policy rights, limiting negotiation flexibility and maintaining a neutral emotional tone. The dialogue shows a high-risk scenario with limited integrative potential, as the seller's adherence to policy restricts options for resolution."
+    },
+    "2": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 0,
+        "rationale_short": "Seller's strict policy and buyer's dissatisfaction increase negotiation failure risk.",
+        "risk_0_100": 75,
+        "score": 0.75,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "The buyer seems to be unaware of the refund policy, which could lead to further misunderstanding."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.32,
+          "country": "South Africa",
+          "flag": "🇿🇦",
+          "lat": -30.56,
+          "lng": 22.94,
+          "probabilities": {
+            "Mexico": 0.230946,
+            "South Africa": 0.318928,
+            "United Kingdom": 0.17633,
+            "United States": 0.273795
+          }
+        },
+        "seller": {
+          "confidence": 0.34,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.337468,
+            "South Africa": 0.247612,
+            "United Kingdom": 0.169116,
+            "United States": 0.245804
+          }
+        }
+      },
+      "operational_summary": "The negotiation is at a high risk of failure due to the seller's strict adherence to a no-refund policy and the buyer's growing dissatisfaction and frustration over the lack of accessible policy information. The dialogue has primarily focused on rights, with the buyer expressing interest in a resolution and the seller maintaining a neutral stance, indicating a need for integrative solutions to address the buyer's concerns."
+    },
+    "3": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 0,
+        "rationale_short": "Seller's rigid policy and buyer's dissatisfaction increase negotiation failure risk.",
+        "risk_0_100": 85,
+        "score": 0.85,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "There seems to be a misunderstanding about the visibility and clarity of the refund policy on the website."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.32,
+          "country": "South Africa",
+          "flag": "🇿🇦",
+          "lat": -30.56,
+          "lng": 22.94,
+          "probabilities": {
+            "Mexico": 0.230946,
+            "South Africa": 0.318928,
+            "United Kingdom": 0.17633,
+            "United States": 0.273795
+          }
+        },
+        "seller": {
+          "confidence": 0.33,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.330231,
+            "South Africa": 0.285654,
+            "United Kingdom": 0.147969,
+            "United States": 0.236146
+          }
+        }
+      },
+      "operational_summary": "The negotiation is at a high risk of failure due to the seller's rigid adherence to a no-refund policy, which has led to the buyer's increasing dissatisfaction and anger, with the dialogue heavily focused on rights rather than exploring mutual interests. The buyer's emotional trajectory indicates growing frustration, while the seller maintains a neutral stance, suggesting a need for the mediator to facilitate a shift towards integrative solutions."
+    },
+    "4": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 0,
+        "rationale_short": "Seller strictly adheres to no-refund policy, limiting negotiation options.",
+        "risk_0_100": 75,
+        "score": 0.75,
+        "threats": 0
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The parties are communicating effectively and exploring options for resolution."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.34,
+          "country": "South Africa",
+          "flag": "🇿🇦",
+          "lat": -30.56,
+          "lng": 22.94,
+          "probabilities": {
+            "Mexico": 0.182586,
+            "South Africa": 0.342951,
+            "United Kingdom": 0.191982,
+            "United States": 0.282482
+          }
+        },
+        "seller": {
+          "confidence": 0.33,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.330231,
+            "South Africa": 0.285654,
+            "United Kingdom": 0.147969,
+            "United States": 0.236146
+          }
+        }
+      },
+      "operational_summary": "The dialogue shows a high-risk negotiation with the seller strictly adhering to a no-refund policy, limiting options for resolution, while the buyer, initially surprised and angry, seeks alternative compensation for a broken item. The interaction is primarily rights-focused, with minimal integrative potential and no power dynamics evident, suggesting a need for creative solutions to address the buyer's interests."
+    },
+    "5": {
+      "ready": true,
+      "risk": {
+        "label": "Medium",
+        "negative_signals": 1,
+        "rationale_short": "Seller offers alternative compensation, reducing negotiation failure risk.",
+        "risk_0_100": 40,
+        "score": 0.4,
+        "threats": 1
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The parties are communicating effectively and working towards a resolution."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.34,
+          "country": "South Africa",
+          "flag": "🇿🇦",
+          "lat": -30.56,
+          "lng": 22.94,
+          "probabilities": {
+            "Mexico": 0.182586,
+            "South Africa": 0.342951,
+            "United Kingdom": 0.191982,
+            "United States": 0.282482
+          }
+        },
+        "seller": {
+          "confidence": 0.28,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.282946,
+            "South Africa": 0.275108,
+            "United Kingdom": 0.181574,
+            "United States": 0.260373
+          }
+        }
+      },
+      "operational_summary": "The dialogue shows a shift from a rights-based to an interest-based negotiation, with the seller offering alternative compensation to address the buyer's concerns about a broken item, which reduces the risk of negotiation failure. The emotional trajectory has stabilized from initial buyer anger to a neutral tone, indicating potential for integrative solutions."
+    },
+    "6": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 2,
+        "rationale_short": "Buyer is dissatisfied with policies and hesitant to continue purchasing.",
+        "risk_0_100": 70,
+        "score": 0.7,
+        "threats": 2
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The parties are communicating effectively and exploring alternative solutions."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.31,
+          "country": "South Africa",
+          "flag": "🇿🇦",
+          "lat": -30.56,
+          "lng": 22.94,
+          "probabilities": {
+            "Mexico": 0.222214,
+            "South Africa": 0.310285,
+            "United Kingdom": 0.195611,
+            "United States": 0.27189
+          }
+        },
+        "seller": {
+          "confidence": 0.28,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.282946,
+            "South Africa": 0.275108,
+            "United Kingdom": 0.181574,
+            "United States": 0.260373
+          }
+        }
+      },
+      "operational_summary": "The dialogue reveals a high-risk situation with the buyer expressing dissatisfaction and hesitance to continue purchasing due to unclear refund policies, while the seller remains firm on policy adherence but shows willingness to explore alternative compensations. The emotional trajectory indicates growing frustration and skepticism from the buyer, with the IRP balance showing a focus on interests and rights, lacking power dynamics."
+    },
+    "7": {
+      "ready": true,
+      "risk": {
+        "label": "Medium",
+        "negative_signals": 3,
+        "rationale_short": "Seller is open to alternative solutions, but buyer's trust is shaken.",
+        "risk_0_100": 40,
+        "score": 0.4,
+        "threats": 3
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The parties are communicating effectively and working towards a solution."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.31,
+          "country": "South Africa",
+          "flag": "🇿🇦",
+          "lat": -30.56,
+          "lng": 22.94,
+          "probabilities": {
+            "Mexico": 0.222214,
+            "South Africa": 0.310285,
+            "United Kingdom": 0.195611,
+            "United States": 0.27189
+          }
+        },
+        "seller": {
+          "confidence": 0.27,
+          "country": "South Africa",
+          "flag": "🇿🇦",
+          "lat": -30.56,
+          "lng": 22.94,
+          "probabilities": {
+            "Mexico": 0.266074,
+            "South Africa": 0.27137,
+            "United Kingdom": 0.235277,
+            "United States": 0.227279
+          }
+        }
+      },
+      "operational_summary": "The dialogue shows integrative potential as the seller is open to alternative solutions, but the buyer's trust is shaken due to unclear policies, leading to a medium risk level. The emotional trajectory indicates initial buyer anger and surprise, shifting to a more neutral and slightly fearful stance, while the seller maintains a neutral and compassionate approach, focusing on interests and rights without exerting power."
+    },
+    "8": {
+      "ready": true,
+      "risk": {
+        "label": "Medium",
+        "negative_signals": 3,
+        "rationale_short": "Seller is open to alternative solutions, reducing negotiation failure risk.",
+        "risk_0_100": 40,
+        "score": 0.4,
+        "threats": 3
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The buyer and seller are communicating effectively and exploring solutions."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.3,
+          "country": "South Africa",
+          "flag": "🇿🇦",
+          "lat": -30.56,
+          "lng": 22.94,
+          "probabilities": {
+            "Mexico": 0.19187,
+            "South Africa": 0.301268,
+            "United Kingdom": 0.259265,
+            "United States": 0.247597
+          }
+        },
+        "seller": {
+          "confidence": 0.27,
+          "country": "South Africa",
+          "flag": "🇿🇦",
+          "lat": -30.56,
+          "lng": 22.94,
+          "probabilities": {
+            "Mexico": 0.266074,
+            "South Africa": 0.27137,
+            "United Kingdom": 0.235277,
+            "United States": 0.227279
+          }
+        }
+      },
+      "operational_summary": "The dialogue shows a shift from initial rigidity to a more collaborative approach, with the seller expressing willingness to explore alternative compensations beyond the no-refund policy, while the buyer remains cautious but open to solutions like a replacement item. The emotional trajectory indicates a decrease in buyer's anger and an increase in seller's compassion, suggesting potential for integrative outcomes if the seller can align compensation with the buyer's interests."
+    },
+    "9": {
+      "ready": true,
+      "risk": {
+        "label": "Low",
+        "negative_signals": 3,
+        "rationale_short": "Seller offers a satisfactory resolution, reducing negotiation failure risk.",
+        "risk_0_100": 20,
+        "score": 0.2,
+        "threats": 3
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The conversation is progressing positively towards a resolution."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.3,
+          "country": "South Africa",
+          "flag": "🇿🇦",
+          "lat": -30.56,
+          "lng": 22.94,
+          "probabilities": {
+            "Mexico": 0.19187,
+            "South Africa": 0.301268,
+            "United Kingdom": 0.259265,
+            "United States": 0.247597
+          }
+        },
+        "seller": {
+          "confidence": 0.27,
+          "country": "United Kingdom",
+          "flag": "🇬🇧",
+          "lat": 55.37,
+          "lng": -3.43,
+          "probabilities": {
+            "Mexico": 0.261302,
+            "South Africa": 0.260823,
+            "United Kingdom": 0.270403,
+            "United States": 0.207472
+          }
+        }
+      },
+      "operational_summary": "The dialogue has progressed from initial tension over refund policies to a more collaborative tone, with the seller offering to resend the item at no extra cost, demonstrating a shift towards integrative potential and a balanced focus on interests. The emotional trajectory has moved from buyer frustration to a more positive and solution-oriented exchange, reducing the risk of negotiation failure."
+    },
+    "10": {
+      "ready": true,
+      "risk": {
+        "label": "Low",
+        "negative_signals": 3,
+        "rationale_short": "Negotiation concluded successfully with mutual agreement on compensation.",
+        "risk_0_100": 20,
+        "score": 0.2,
+        "threats": 3
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The buyer and seller have reached an agreement on a resolution."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.3,
+          "country": "South Africa",
+          "flag": "🇿🇦",
+          "lat": -30.56,
+          "lng": 22.94,
+          "probabilities": {
+            "Mexico": 0.188603,
+            "South Africa": 0.300205,
+            "United Kingdom": 0.268459,
+            "United States": 0.242733
+          }
+        },
+        "seller": {
+          "confidence": 0.27,
+          "country": "United Kingdom",
+          "flag": "🇬🇧",
+          "lat": 55.37,
+          "lng": -3.43,
+          "probabilities": {
+            "Mexico": 0.261302,
+            "South Africa": 0.260823,
+            "United Kingdom": 0.270403,
+            "United States": 0.207472
+          }
+        }
+      },
+      "operational_summary": "The negotiation concluded successfully with the seller agreeing to resend the item at no additional cost, addressing the buyer's interest and resolving the issue amicably. The dialogue progressed from initial tension to a cooperative resolution, with both parties focusing on interests rather than rights or power, leading to a low-risk outcome."
+    },
+    "11": {
+      "ready": true,
+      "risk": {
+        "label": "Low",
+        "negative_signals": 3,
+        "rationale_short": "Agreement reached with satisfactory resolution for both parties.",
+        "risk_0_100": 20,
+        "score": 0.2,
+        "threats": 3
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The buyer and seller have resolved the issue amicably."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.3,
+          "country": "South Africa",
+          "flag": "🇿🇦",
+          "lat": -30.56,
+          "lng": 22.94,
+          "probabilities": {
+            "Mexico": 0.188603,
+            "South Africa": 0.300205,
+            "United Kingdom": 0.268459,
+            "United States": 0.242733
+          }
+        },
+        "seller": {
+          "confidence": 0.26,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.259767,
+            "South Africa": 0.248372,
+            "United Kingdom": 0.250973,
+            "United States": 0.240887
+          }
+        }
+      },
+      "operational_summary": "The dialogue progressed from initial tension over a broken item and refund policy to a collaborative resolution, with the seller agreeing to resend the item at no cost, which satisfied the buyer. The interaction maintained a focus on interests, with the seller showing flexibility and compassion, ultimately leading to a low-risk agreement."
+    },
+    "12": {
+      "ready": true,
+      "risk": {
+        "label": "Low",
+        "negative_signals": 3,
+        "rationale_short": "Agreement reached on compensation; both parties satisfied with resolution.",
+        "risk_0_100": 20,
+        "score": 0.2,
+        "threats": 3
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The parties have reached a mutual agreement and are resolving the issue without conflict."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.28,
+          "country": "South Africa",
+          "flag": "🇿🇦",
+          "lat": -30.56,
+          "lng": 22.94,
+          "probabilities": {
+            "Mexico": 0.196568,
+            "South Africa": 0.275277,
+            "United Kingdom": 0.257681,
+            "United States": 0.270473
+          }
+        },
+        "seller": {
+          "confidence": 0.26,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.259767,
+            "South Africa": 0.248372,
+            "United Kingdom": 0.250973,
+            "United States": 0.240887
+          }
+        }
+      },
+      "operational_summary": "The dialogue has progressed from initial tension over a broken item and refund policy to a mutually agreeable resolution where the seller offers to resend the item without additional fees, leading to the buyer's satisfaction. The emotional trajectory shifted from anger and surprise to compassion and joy, with a balanced focus on interests and rights, indicating successful integrative negotiation despite a minor power assertion by the seller."
+    },
+    "13": {
+      "ready": true,
+      "risk": {
+        "label": "Low",
+        "negative_signals": 3,
+        "rationale_short": "Both parties reached a satisfactory agreement and resolved the issue amicably.",
+        "risk_0_100": 20,
+        "score": 0.2,
+        "threats": 3
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The conversation has reached a satisfactory resolution without the need for intervention."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.28,
+          "country": "South Africa",
+          "flag": "🇿🇦",
+          "lat": -30.56,
+          "lng": 22.94,
+          "probabilities": {
+            "Mexico": 0.196568,
+            "South Africa": 0.275277,
+            "United Kingdom": 0.257681,
+            "United States": 0.270473
+          }
+        },
+        "seller": {
+          "confidence": 0.29,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.286255,
+            "South Africa": 0.237794,
+            "United Kingdom": 0.236176,
+            "United States": 0.239775
+          }
+        }
+      },
+      "operational_summary": "The dialogue progressed from initial tension over a broken item and refund policy to a collaborative resolution, with the seller agreeing to resend the item at no cost and both parties agreeing to remove negative reviews. The emotional trajectory shifted from frustration to mutual satisfaction, with a strong focus on interests and a balanced IRP approach, indicating successful integrative negotiation."
+    },
+    "14": {
+      "ready": true,
+      "risk": {
+        "label": "Low",
+        "negative_signals": 3,
+        "rationale_short": "Negotiation concluded positively with mutual agreement and cooperation.",
+        "risk_0_100": 10,
+        "score": 0.1,
+        "threats": 3
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The parties have reached a mutual agreement and are cooperating well."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.3,
+          "country": "South Africa",
+          "flag": "🇿🇦",
+          "lat": -30.56,
+          "lng": 22.94,
+          "probabilities": {
+            "Mexico": 0.200082,
+            "South Africa": 0.295629,
+            "United Kingdom": 0.241113,
+            "United States": 0.263176
+          }
+        },
+        "seller": {
+          "confidence": 0.29,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.286255,
+            "South Africa": 0.237794,
+            "United Kingdom": 0.236176,
+            "United States": 0.239775
+          }
+        }
+      },
+      "operational_summary": "The negotiation concluded positively with both parties reaching a mutual agreement to resend the item without additional fees and to remove negative reviews, demonstrating strong integrative potential and a balanced IRP focus on interests. The emotional trajectory shifted from initial frustration to cooperation and satisfaction, reflecting effective dialogue progression and resolution."
+    },
+    "15": {
+      "ready": true,
+      "risk": {
+        "label": "Low",
+        "negative_signals": 3,
+        "rationale_short": "Negotiation concluded with mutual agreement and resolution.",
+        "risk_0_100": 20,
+        "score": 0.2,
+        "threats": 3
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The conversation has concluded positively with both parties agreeing on a solution."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.3,
+          "country": "South Africa",
+          "flag": "🇿🇦",
+          "lat": -30.56,
+          "lng": 22.94,
+          "probabilities": {
+            "Mexico": 0.200082,
+            "South Africa": 0.295629,
+            "United Kingdom": 0.241113,
+            "United States": 0.263176
+          }
+        },
+        "seller": {
+          "confidence": 0.28,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.275186,
+            "South Africa": 0.258635,
+            "United Kingdom": 0.238745,
+            "United States": 0.227434
+          }
+        }
+      },
+      "operational_summary": "The negotiation concluded with both parties reaching a mutual agreement where the seller agreed to resend the item without additional fees, and both parties agreed to retract their negative reviews, demonstrating a shift from initial rights-based positions to a more interest-focused resolution. The emotional trajectory moved from initial frustration and anger to cooperation and satisfaction, with a balanced IRP pattern favoring interests over rights and power."
+    },
+    "16": {
+      "ready": true,
+      "risk": {
+        "label": "Low",
+        "negative_signals": 3,
+        "rationale_short": "Both parties reached a mutually agreeable solution and accepted the deal.",
+        "risk_0_100": 20,
+        "score": 0.2,
+        "threats": 3
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The buyer and seller have successfully resolved their dispute and confirmed their agreement."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.29,
+          "country": "South Africa",
+          "flag": "🇿🇦",
+          "lat": -30.56,
+          "lng": 22.94,
+          "probabilities": {
+            "Mexico": 0.234851,
+            "South Africa": 0.286229,
+            "United Kingdom": 0.230853,
+            "United States": 0.248068
+          }
+        },
+        "seller": {
+          "confidence": 0.28,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.275186,
+            "South Africa": 0.258635,
+            "United Kingdom": 0.238745,
+            "United States": 0.227434
+          }
+        }
+      },
+      "operational_summary": "The negotiation concluded with both parties agreeing on a resolution where the seller will resend the item without additional fees, and both parties will retract their negative reviews, reflecting a balanced IRP with a focus on interests and a low-risk outcome. The emotional trajectory shifted from initial buyer frustration to mutual satisfaction, indicating successful integrative potential and dialogue progression."
+    }
+  }
+}

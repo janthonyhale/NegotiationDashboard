@@ -1,0 +1,1745 @@
+{
+  "language": "EN",
+  "buyer_weights": {
+    "buyer_apology": 0,
+    "buyer_review": 0,
+    "refund": 95,
+    "seller_apology": 0,
+    "seller_review": 5
+  },
+  "seller_weights": {
+    "buyer_apology": 10,
+    "buyer_review": 25,
+    "refund": 50,
+    "seller_apology": 0,
+    "seller_review": 15
+  },
+  "pre_dispute_justifications": {
+    "buyer_review": {
+      "buyer": "I want to warn others that he is shady.",
+      "seller": "To maintain the good reputation of my store."
+    },
+    "receive_apology": {
+      "buyer": "I want the seller to tell everyone he is sorry.",
+      "seller": "To make clear for future buyers that the store is good."
+    },
+    "refund": {
+      "buyer": "I want my money back since I did not get what I ordered.",
+      "seller": "The conditions of the item and sale were clearly stated, he has no basis to request a refund."
+    },
+    "seller_review": {
+      "buyer": "I want to buy other things on the site and a negative review might prevent me from buying.",
+      "seller": "To prevent others from being scammed."
+    }
+  },
+  "turns": [
+    {
+      "idx": 0,
+      "meta": {
+        "irp_label": "Right"
+      },
+      "speaker": "Buyer",
+      "text": "I would like you to issue a refund, I did not receive a Kobe Bryant jersey as promised",
+      "ts": null,
+      "irp": "right",
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The buyer has made a clear request for a refund; no intervention is needed at this point."
+      },
+      "emotions": {
+        "anger": 0.7,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 0,
+        "sadness": 0.3,
+        "surprise": 0,
+        "valence": -1
+      },
+      "negative_signals": 1,
+      "threat_signals": 1
+    },
+    {
+      "idx": 1,
+      "meta": {
+        "irp_label": "Right"
+      },
+      "speaker": "Seller",
+      "text": "The condition of the itesm and the sale were pretty clear, I'm so sorry but we won't be able to help you with that.",
+      "ts": null,
+      "irp": "right",
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "There seems to be a misunderstanding about the item received versus what was promised."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 2,
+      "meta": {
+        "irp_label": "Power"
+      },
+      "speaker": "Buyer",
+      "text": "This is for a sick child who wanted this jersey as a gift to feel better. You promised it was a kobe jersey, that is poor business practices",
+      "ts": null,
+      "irp": "power",
+      "advisor": {
+        "action": "Observe",
+        "rating": 2,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "The buyer and seller may need to clarify the terms of the sale and what was promised."
+      },
+      "emotions": {
+        "anger": 0.5,
+        "compassion": 0.2,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 0,
+        "sadness": 0.3,
+        "surprise": 0,
+        "valence": -0.6
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 3,
+      "meta": {
+        "irp_label": "Right"
+      },
+      "speaker": "Seller",
+      "text": "It was clearly stated in the description of the product that this was a replica and it had no name on the jersey. You can go ahead and read it in the website. And I'm sorry about the kid but this doesn't change my policies.",
+      "ts": null,
+      "irp": "right",
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "There seems to be a misunderstanding about the product description and what was promised."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 4,
+      "meta": {
+        "irp_label": "Right"
+      },
+      "speaker": "Buyer",
+      "text": "The description stated that the name was Kobe Bryant",
+      "ts": null,
+      "irp": "right",
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "There seems to be a misunderstanding about the product description regarding the name on the jersey."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 5,
+      "meta": {
+        "irp_label": "Right"
+      },
+      "speaker": "Seller",
+      "text": "Sorry sir but I think you saw that in other store, not mine",
+      "ts": null,
+      "irp": "right",
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "There seems to be a misunderstanding about the product description that needs clarification."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 6,
+      "meta": {
+        "irp_label": "Power"
+      },
+      "speaker": "Buyer",
+      "text": "Looks like I will have to dispute it with my credit card since you will not issue a refund",
+      "ts": null,
+      "irp": "power",
+      "advisor": {
+        "action": "Observe",
+        "rating": 2,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The conversation is at a standstill with the buyer threatening to dispute the charge, but it remains civil."
+      },
+      "emotions": {
+        "anger": 0.7,
+        "compassion": 0,
+        "fear": 0.2,
+        "joy": 0,
+        "neutral": 0,
+        "sadness": 0.1,
+        "surprise": 0,
+        "valence": -1
+      },
+      "negative_signals": 1,
+      "threat_signals": 1
+    },
+    {
+      "idx": 7,
+      "meta": {
+        "irp_label": "Power"
+      },
+      "speaker": "Seller",
+      "text": "Your credit card will ask for proof to my business in order to issue the refund and I will send everything that proves that you received exactly what you purchased. I don't think that you'll get the refund that way. And could you please remove that negative review?",
+      "ts": null,
+      "irp": "power",
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The conversation has reached a deadlock with both parties standing firm on their positions."
+      },
+      "emotions": {
+        "anger": 0.2,
+        "compassion": 0,
+        "fear": 0.3,
+        "joy": 0,
+        "neutral": 0.5,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": -0.5
+      },
+      "negative_signals": 1,
+      "threat_signals": 1
+    },
+    {
+      "idx": 8,
+      "meta": {
+        "irp_label": "Power"
+      },
+      "speaker": "Buyer",
+      "text": "I will be adding to the negative review since you did not send me what I ordered and refuse to make it right.",
+      "ts": null,
+      "irp": "power",
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The conversation has reached a deadlock with both parties standing firm on their positions."
+      },
+      "emotions": {
+        "anger": 0.8,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 0,
+        "sadness": 0.2,
+        "surprise": 0,
+        "valence": -1
+      },
+      "negative_signals": 1,
+      "threat_signals": 0
+    },
+    {
+      "idx": 9,
+      "meta": {
+        "irp_label": "Interest"
+      },
+      "speaker": "Seller",
+      "text": "Sir again, you don't have any proof of this. Let's find another solution that works for both of us. Do you have anything in mind?",
+      "ts": null,
+      "irp": "interest",
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The conversation has reached a deadlock with both parties standing firm on their positions."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0.7,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 0.3,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0.7
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 10,
+      "meta": {
+        "irp_label": "Power"
+      },
+      "speaker": "Buyer",
+      "text": "If I receive a refund then I will remove my negative review and leave you a glowing review",
+      "ts": null,
+      "irp": "power",
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The conversation seems to be at a standstill with both parties repeating their positions without progress."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 11,
+      "meta": {
+        "irp_label": "Right"
+      },
+      "speaker": "Seller",
+      "text": "Per store policies, we cannot issue any kind of refund. All sales are final, however, I'm open to giving you store credit once I receive the jersey back.",
+      "ts": null,
+      "irp": "right",
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The conversation has reached a deadlock with both parties unable to agree on a resolution."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0.5,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 0.5,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0.5
+      },
+      "negative_signals": 2,
+      "threat_signals": 1
+    },
+    {
+      "idx": 12,
+      "meta": {
+        "irp_label": "Interest"
+      },
+      "speaker": "Buyer",
+      "text": "That sounds fair, thank you",
+      "ts": null,
+      "irp": "interest",
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The parties have reached a resolution on their own with the offer of store credit."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0.3,
+        "fear": 0,
+        "joy": 0.7,
+        "neutral": 0,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 1
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 13,
+      "meta": {
+        "irp_label": "Power"
+      },
+      "speaker": "Seller",
+      "text": "What about the review? If you retract yours, I'll retact mine.",
+      "ts": null,
+      "irp": "power",
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The buyer and seller have agreed on a solution involving store credit and are discussing reviews amicably."
+      },
+      "emotions": {
+        "anger": 0.2,
+        "compassion": 0,
+        "fear": 0.2,
+        "joy": 0,
+        "neutral": 0.6,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": -0.4
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 14,
+      "meta": {
+        "irp_label": "Interest"
+      },
+      "speaker": "Buyer",
+      "text": "Agreed.",
+      "ts": null,
+      "irp": "interest",
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The buyer and seller have agreed on a solution involving store credit and review retraction."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 15,
+      "meta": {
+        "irp_label": "Power"
+      },
+      "speaker": "Seller",
+      "text": "Submitted agreement: Buyer gets no refund, seller retracted their review, buyer retracted their review, seller did apologize, and buyer didn't apologize.",
+      "ts": null,
+      "irp": "power",
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The buyer and seller have come to a mutual agreement regarding the dispute."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 16,
+      "meta": {
+        "irp_label": "Power"
+      },
+      "speaker": "Buyer",
+      "text": "Reject Deal",
+      "ts": null,
+      "irp": "power",
+      "advisor": {
+        "action": "Observe",
+        "rating": 2,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The buyer has rejected the deal after initially agreeing, indicating a potential impasse."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 1,
+      "threat_signals": 0
+    },
+    {
+      "idx": 17,
+      "meta": {
+        "irp_label": "Power"
+      },
+      "speaker": "Buyer",
+      "text": "Submitted agreement: Buyer gets full refund, seller retracted their review, buyer retracted their review, seller didn't apologize, and buyer didn't apologize.",
+      "ts": null,
+      "irp": "power",
+      "advisor": {
+        "action": "Observe",
+        "rating": 2,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The parties have reached a deadlock with conflicting agreement submissions."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 18,
+      "meta": {
+        "irp_label": "Power"
+      },
+      "speaker": "Seller",
+      "text": "Reject Deal",
+      "ts": null,
+      "irp": "power",
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The parties have reached a deadlock with conflicting agreement submissions."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 1,
+        "sadness": 0,
+        "surprise": 0,
+        "valence": 0
+      },
+      "negative_signals": 1,
+      "threat_signals": 0
+    },
+    {
+      "idx": 19,
+      "meta": {
+        "irp_label": "Right"
+      },
+      "speaker": "Seller",
+      "text": "There was no refund, it's store credit.",
+      "ts": null,
+      "irp": "right",
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The parties have reached a deadlock with conflicting agreements and need assistance to move forward."
+      },
+      "emotions": {
+        "anger": 0.7,
+        "compassion": 0,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 0,
+        "sadness": 0.3,
+        "surprise": 0,
+        "valence": -1
+      },
+      "negative_signals": 0,
+      "threat_signals": 0
+    },
+    {
+      "idx": 20,
+      "meta": {
+        "irp_label": "Power"
+      },
+      "speaker": "Buyer",
+      "text": "I Walk Away.",
+      "ts": null,
+      "irp": "power",
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The parties have reached a deadlock with conflicting agreements and the buyer walking away."
+      },
+      "emotions": {
+        "anger": 0,
+        "compassion": 0.3,
+        "fear": 0,
+        "joy": 0,
+        "neutral": 0,
+        "sadness": 0.7,
+        "surprise": 0,
+        "valence": -0.4
+      },
+      "negative_signals": 1,
+      "threat_signals": 0
+    }
+  ],
+  "op_summaries": [
+    {
+      "idx": 0,
+      "summary": "The negotiation is currently high-risk due to a dispute over the non-delivery of a specific item, with the buyer expressing anger and asserting their rights for a refund, while the seller has yet to respond. The dialogue lacks integrative potential as it is focused on rights rather than interests or power, and the emotional trajectory is negative, indicating a need for de-escalation and constructive engagement."
+    },
+    {
+      "idx": 1,
+      "summary": "The negotiation is at a high risk of failure due to the seller's firm refusal to issue a refund, with both parties focusing on rights rather than interests, and the buyer expressing significant anger. The dialogue lacks integrative potential, as neither side has shown willingness to explore mutual interests or alternative solutions."
+    },
+    {
+      "idx": 2,
+      "summary": "The negotiation is at a high risk of failure due to the seller's firm refusal to issue a refund and the buyer's emotional appeal highlighting poor business practices, with the dialogue heavily focused on rights and power rather than interests. The buyer, likely from the United States, is expressing significant anger and sadness, while the seller, likely from Mexico, maintains a neutral stance, indicating a need for the mediator to shift the focus towards integrative solutions."
+    },
+    {
+      "idx": 3,
+      "summary": "The dialogue is currently at a high risk of escalation, with the buyer expressing anger and disappointment over not receiving the expected product, while the seller remains firm on their policy and rights, showing no emotional engagement or flexibility. The interaction is dominated by rights-based arguments, with no integrative potential or interest-based solutions explored, indicating a need for mediation to address the emotional and rights imbalance."
+    },
+    {
+      "idx": 4,
+      "summary": "The negotiation is currently at a high-risk impasse, with the buyer's emotional appeals and rights-based arguments failing to sway the seller, who remains neutral and firm on their policy. Both parties are entrenched in rights-based positions, with no integrative solutions or interests being explored."
+    },
+    {
+      "idx": 5,
+      "summary": "The buyer is emotionally invested and expressing dissatisfaction over not receiving the promised product, while the seller remains firm on their policy, emphasizing the clarity of the product description and showing no willingness to accommodate the buyer's request. The dialogue is dominated by rights-based arguments, with a high risk of escalation due to the buyer's emotional state and the seller's rigid stance."
+    },
+    {
+      "idx": 6,
+      "summary": "The dialogue is highly contentious, with the buyer expressing anger and threatening a credit card dispute over a misrepresented product, while the seller remains neutral and firm on their no-refund policy, indicating a strong focus on rights and power rather than interests. The emotional trajectory is escalating, with little integrative potential as both parties are entrenched in their positions, leading to a high-risk negotiation environment."
+    },
+    {
+      "idx": 7,
+      "summary": "The dialogue is highly contentious, with the buyer threatening a credit card dispute over a misrepresented product and the seller firmly denying any wrongdoing, relying on policy adherence and documentation to counter the buyer's claims. The interaction is dominated by rights and power assertions, with little room for integrative solutions, and the emotional tone is tense, marked by buyer frustration and seller defensiveness."
+    },
+    {
+      "idx": 8,
+      "summary": "The negotiation is at a high-risk impasse with escalating tensions, as the buyer is focused on rights and power, expressing anger over not receiving the promised item, while the seller maintains a neutral stance, citing policy adherence and challenging the buyer's claims. Both parties are entrenched in their positions, with the buyer threatening a credit card dispute and negative reviews, and the seller emphasizing proof of transaction compliance, leaving little room for integrative solutions."
+    },
+    {
+      "idx": 9,
+      "summary": "The dialogue is highly contentious, with the buyer expressing significant anger and threatening a credit card dispute due to unmet expectations, while the seller maintains a neutral stance, denying fault and suggesting a willingness to explore alternative solutions. The interaction is dominated by rights and power assertions, with a recent shift towards interest-based negotiation as the seller seeks a mutually agreeable resolution."
+    },
+    {
+      "idx": 10,
+      "summary": "The dialogue is highly contentious, with the buyer threatening a dispute and negative review due to unmet expectations, while the seller maintains their stance based on product descriptions and policies, showing a slight shift towards seeking a mutually beneficial solution. The emotional trajectory is dominated by buyer anger and seller neutrality, with a recent move towards potential integrative negotiation as the seller expresses willingness to explore alternative solutions."
+    },
+    {
+      "idx": 11,
+      "summary": "The negotiation is at a high-risk impasse, with the buyer demanding a refund due to receiving an incorrect item and threatening a credit card dispute and negative reviews, while the seller stands firm on store policies but offers store credit as a compromise. The dialogue shows a shift from rights and power-based arguments to a slight opening for integrative solutions, as the seller expresses willingness to explore alternative resolutions."
+    },
+    {
+      "idx": 12,
+      "summary": "The negotiation concluded with a mutually agreeable solution, as the seller offered store credit in exchange for the return of the jersey, which the buyer accepted, shifting the emotional trajectory from anger to satisfaction. The dialogue progressed from a rights and power-based conflict to an interest-based resolution, demonstrating integrative potential despite initial tensions."
+    },
+    {
+      "idx": 13,
+      "summary": "The negotiation reached a compromise with the buyer agreeing to accept store credit in exchange for returning the jersey, and both parties agreeing to retract their negative reviews. The dialogue showed a shift from a power struggle to a more integrative approach, with emotions moving from anger and frustration to a more neutral and positive resolution."
+    },
+    {
+      "idx": 14,
+      "summary": "The negotiation concluded with a mutual agreement where the buyer accepted store credit in exchange for returning the jersey, and both parties agreed to retract their negative reviews. The dialogue showed a shift from a power and rights-based approach to a more interest-based resolution, with emotions transitioning from anger to neutrality and cooperation."
+    },
+    {
+      "idx": 15,
+      "summary": "The negotiation concluded with both parties agreeing to a compromise where the buyer receives store credit in exchange for returning the jersey, and both parties retract their negative reviews, reflecting a shift from a power-based to an interest-based resolution. Despite initial emotional tension and rights-based arguments, the dialogue progressed towards a mutually acceptable solution, maintaining a low overall risk."
+    },
+    {
+      "idx": 16,
+      "summary": "The negotiation remains unresolved as the buyer rejected the final agreement, despite a temporary consensus on store credit and mutual review retraction, indicating persistent conflict and a high reliance on power dynamics. Emotional tensions have fluctuated, with the buyer expressing significant dissatisfaction and the seller maintaining a neutral stance, highlighting a need for further integrative solutions to address underlying interests."
+    },
+    {
+      "idx": 17,
+      "summary": "The negotiation is at a high-risk impasse with both parties initially entrenched in their positions, but recent dialogue shows a shift towards potential resolution through store credit and mutual retraction of negative reviews, although the buyer's latest submission indicates a desire for a full refund, suggesting unresolved tensions. The emotional trajectory has moved from anger and frustration to a more neutral stance, with the IRP balance heavily skewed towards power dynamics, but recent integrative efforts hint at possible compromise."
+    },
+    {
+      "idx": 18,
+      "summary": "The negotiation is at a high risk of failure, with both parties rejecting each other's proposals and primarily relying on power dynamics rather than interests, despite a brief moment of potential resolution through store credit. Emotional tensions remain high, particularly from the buyer, and the dialogue has regressed to a stalemate with unresolved issues around refunds and reviews."
+    },
+    {
+      "idx": 19,
+      "summary": "The negotiation is at a high risk of failure, with both parties rejecting proposed agreements and displaying a strong reliance on power dynamics over interests, leading to a deadlock despite attempts to find a mutually acceptable solution. Emotional tensions remain high, particularly with the buyer's dissatisfaction over the lack of a refund, while the seller maintains a firm stance on store policies, offering only store credit."
+    },
+    {
+      "idx": 20,
+      "summary": "The negotiation reached a high-risk impasse with both parties rejecting proposed agreements, as the buyer demanded a full refund and the seller offered only store credit, leading to the buyer walking away. The dialogue was dominated by power dynamics and emotional tension, with limited integrative potential and unresolved interests."
+    }
+  ],
+  "final_outcome": null,
+  "country": {
+    "buyer": {
+      "confidence": 0.31,
+      "country": "United States",
+      "flag": "🇺🇸",
+      "lat": 37.09,
+      "lng": -95.71,
+      "probabilities": {
+        "Mexico": 0.179782,
+        "South Africa": 0.246378,
+        "United Kingdom": 0.262395,
+        "United States": 0.311446
+      }
+    },
+    "seller": {
+      "confidence": 0.26,
+      "country": "South Africa",
+      "flag": "🇿🇦",
+      "lat": -30.56,
+      "lng": 22.94,
+      "probabilities": {
+        "Mexico": 0.235134,
+        "South Africa": 0.264009,
+        "United Kingdom": 0.249343,
+        "United States": 0.251513
+      }
+    }
+  },
+  "step_cache": {
+    "0": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 1,
+        "rationale_short": "Dispute over non-delivery of a specific item increases negotiation failure risk.",
+        "risk_0_100": 70,
+        "score": 0.7,
+        "threats": 1
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The buyer has made a clear request for a refund; no intervention is needed at this point."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.33,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.108591,
+            "South Africa": 0.317682,
+            "United Kingdom": 0.240336,
+            "United States": 0.333391
+          }
+        },
+        "seller": {
+          "confidence": 0,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {}
+        }
+      },
+      "operational_summary": "The negotiation is currently high-risk due to a dispute over the non-delivery of a specific item, with the buyer expressing anger and asserting their rights for a refund, while the seller has yet to respond. The dialogue lacks integrative potential as it is focused on rights rather than interests or power, and the emotional trajectory is negative, indicating a need for de-escalation and constructive engagement."
+    },
+    "1": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 1,
+        "rationale_short": "Seller's refusal to refund increases negotiation failure risk significantly.",
+        "risk_0_100": 85,
+        "score": 0.85,
+        "threats": 1
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "There seems to be a misunderstanding about the item received versus what was promised."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.33,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.108591,
+            "South Africa": 0.317682,
+            "United Kingdom": 0.240336,
+            "United States": 0.333391
+          }
+        },
+        "seller": {
+          "confidence": 0.41,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.408347,
+            "South Africa": 0.23629,
+            "United Kingdom": 0.255844,
+            "United States": 0.099519
+          }
+        }
+      },
+      "operational_summary": "The negotiation is at a high risk of failure due to the seller's firm refusal to issue a refund, with both parties focusing on rights rather than interests, and the buyer expressing significant anger. The dialogue lacks integrative potential, as neither side has shown willingness to explore mutual interests or alternative solutions."
+    },
+    "2": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 1,
+        "rationale_short": "Seller's refusal and emotional appeal increase negotiation failure risk.",
+        "risk_0_100": 85,
+        "score": 0.85,
+        "threats": 1
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 2,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "The buyer and seller may need to clarify the terms of the sale and what was promised."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.31,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.251344,
+            "South Africa": 0.21627,
+            "United Kingdom": 0.218991,
+            "United States": 0.313395
+          }
+        },
+        "seller": {
+          "confidence": 0.41,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.408347,
+            "South Africa": 0.23629,
+            "United Kingdom": 0.255844,
+            "United States": 0.099519
+          }
+        }
+      },
+      "operational_summary": "The negotiation is at a high risk of failure due to the seller's firm refusal to issue a refund and the buyer's emotional appeal highlighting poor business practices, with the dialogue heavily focused on rights and power rather than interests. The buyer, likely from the United States, is expressing significant anger and sadness, while the seller, likely from Mexico, maintains a neutral stance, indicating a need for the mediator to shift the focus towards integrative solutions."
+    },
+    "3": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 1,
+        "rationale_short": "Seller is firm on policy, buyer's emotional appeal ignored.",
+        "risk_0_100": 85,
+        "score": 0.85,
+        "threats": 1
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "There seems to be a misunderstanding about the product description and what was promised."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.31,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.251344,
+            "South Africa": 0.21627,
+            "United Kingdom": 0.218991,
+            "United States": 0.313395
+          }
+        },
+        "seller": {
+          "confidence": 0.36,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.357615,
+            "South Africa": 0.170141,
+            "United Kingdom": 0.284706,
+            "United States": 0.187538
+          }
+        }
+      },
+      "operational_summary": "The dialogue is currently at a high risk of escalation, with the buyer expressing anger and disappointment over not receiving the expected product, while the seller remains firm on their policy and rights, showing no emotional engagement or flexibility. The interaction is dominated by rights-based arguments, with no integrative potential or interest-based solutions explored, indicating a need for mediation to address the emotional and rights imbalance."
+    },
+    "4": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 1,
+        "rationale_short": "Seller is firm on policy; buyer's emotional appeal is ineffective.",
+        "risk_0_100": 85,
+        "score": 0.85,
+        "threats": 1
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "There seems to be a misunderstanding about the product description regarding the name on the jersey."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.34,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.223188,
+            "South Africa": 0.245561,
+            "United Kingdom": 0.187684,
+            "United States": 0.343568
+          }
+        },
+        "seller": {
+          "confidence": 0.36,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.357615,
+            "South Africa": 0.170141,
+            "United Kingdom": 0.284706,
+            "United States": 0.187538
+          }
+        }
+      },
+      "operational_summary": "The negotiation is currently at a high-risk impasse, with the buyer's emotional appeals and rights-based arguments failing to sway the seller, who remains neutral and firm on their policy. Both parties are entrenched in rights-based positions, with no integrative solutions or interests being explored."
+    },
+    "5": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 1,
+        "rationale_short": "Seller is firm on policy, buyer is emotionally invested.",
+        "risk_0_100": 85,
+        "score": 0.85,
+        "threats": 1
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Miscommunication",
+        "should_intervene": false,
+        "statement": "There seems to be a misunderstanding about the product description that needs clarification."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.34,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.223188,
+            "South Africa": 0.245561,
+            "United Kingdom": 0.187684,
+            "United States": 0.343568
+          }
+        },
+        "seller": {
+          "confidence": 0.31,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.312317,
+            "South Africa": 0.239387,
+            "United Kingdom": 0.270109,
+            "United States": 0.178187
+          }
+        }
+      },
+      "operational_summary": "The buyer is emotionally invested and expressing dissatisfaction over not receiving the promised product, while the seller remains firm on their policy, emphasizing the clarity of the product description and showing no willingness to accommodate the buyer's request. The dialogue is dominated by rights-based arguments, with a high risk of escalation due to the buyer's emotional state and the seller's rigid stance."
+    },
+    "6": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 2,
+        "rationale_short": "Buyer threatens credit card dispute; seller firm on no refund policy.",
+        "risk_0_100": 85,
+        "score": 0.85,
+        "threats": 2
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 2,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The conversation is at a standstill with the buyer threatening to dispute the charge, but it remains civil."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.33,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.208595,
+            "South Africa": 0.263144,
+            "United Kingdom": 0.200383,
+            "United States": 0.327878
+          }
+        },
+        "seller": {
+          "confidence": 0.31,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.312317,
+            "South Africa": 0.239387,
+            "United Kingdom": 0.270109,
+            "United States": 0.178187
+          }
+        }
+      },
+      "operational_summary": "The dialogue is highly contentious, with the buyer expressing anger and threatening a credit card dispute over a misrepresented product, while the seller remains neutral and firm on their no-refund policy, indicating a strong focus on rights and power rather than interests. The emotional trajectory is escalating, with little integrative potential as both parties are entrenched in their positions, leading to a high-risk negotiation environment."
+    },
+    "7": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 3,
+        "rationale_short": "Buyer threatens dispute; seller refuses refund, escalating conflict and reducing resolution likelihood.",
+        "risk_0_100": 85,
+        "score": 0.85,
+        "threats": 3
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The conversation has reached a deadlock with both parties standing firm on their positions."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.33,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.208595,
+            "South Africa": 0.263144,
+            "United Kingdom": 0.200383,
+            "United States": 0.327878
+          }
+        },
+        "seller": {
+          "confidence": 0.29,
+          "country": "United Kingdom",
+          "flag": "🇬🇧",
+          "lat": 55.37,
+          "lng": -3.43,
+          "probabilities": {
+            "Mexico": 0.273221,
+            "South Africa": 0.231714,
+            "United Kingdom": 0.289651,
+            "United States": 0.205415
+          }
+        }
+      },
+      "operational_summary": "The dialogue is highly contentious, with the buyer threatening a credit card dispute over a misrepresented product and the seller firmly denying any wrongdoing, relying on policy adherence and documentation to counter the buyer's claims. The interaction is dominated by rights and power assertions, with little room for integrative solutions, and the emotional tone is tense, marked by buyer frustration and seller defensiveness."
+    },
+    "8": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 4,
+        "rationale_short": "Buyer and seller are at an impasse with escalating tensions and threats of disputes.",
+        "risk_0_100": 85,
+        "score": 0.85,
+        "threats": 3
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The conversation has reached a deadlock with both parties standing firm on their positions."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.31,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.193404,
+            "South Africa": 0.276565,
+            "United Kingdom": 0.216321,
+            "United States": 0.31371
+          }
+        },
+        "seller": {
+          "confidence": 0.29,
+          "country": "United Kingdom",
+          "flag": "🇬🇧",
+          "lat": 55.37,
+          "lng": -3.43,
+          "probabilities": {
+            "Mexico": 0.273221,
+            "South Africa": 0.231714,
+            "United Kingdom": 0.289651,
+            "United States": 0.205415
+          }
+        }
+      },
+      "operational_summary": "The negotiation is at a high-risk impasse with escalating tensions, as the buyer is focused on rights and power, expressing anger over not receiving the promised item, while the seller maintains a neutral stance, citing policy adherence and challenging the buyer's claims. Both parties are entrenched in their positions, with the buyer threatening a credit card dispute and negative reviews, and the seller emphasizing proof of transaction compliance, leaving little room for integrative solutions."
+    },
+    "9": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 4,
+        "rationale_short": "Buyer threatens dispute; seller denies fault, increasing conflict likelihood.",
+        "risk_0_100": 75,
+        "score": 0.75,
+        "threats": 3
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The conversation has reached a deadlock with both parties standing firm on their positions."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.31,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.193404,
+            "South Africa": 0.276565,
+            "United Kingdom": 0.216321,
+            "United States": 0.31371
+          }
+        },
+        "seller": {
+          "confidence": 0.29,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.287488,
+            "South Africa": 0.217011,
+            "United Kingdom": 0.280344,
+            "United States": 0.215158
+          }
+        }
+      },
+      "operational_summary": "The dialogue is highly contentious, with the buyer expressing significant anger and threatening a credit card dispute due to unmet expectations, while the seller maintains a neutral stance, denying fault and suggesting a willingness to explore alternative solutions. The interaction is dominated by rights and power assertions, with a recent shift towards interest-based negotiation as the seller seeks a mutually agreeable resolution."
+    },
+    "10": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 4,
+        "rationale_short": "Buyer threatens dispute and negative review; seller refuses refund, escalating conflict.",
+        "risk_0_100": 85,
+        "score": 0.85,
+        "threats": 3
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The conversation seems to be at a standstill with both parties repeating their positions without progress."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.32,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.186369,
+            "South Africa": 0.264777,
+            "United Kingdom": 0.227026,
+            "United States": 0.321827
+          }
+        },
+        "seller": {
+          "confidence": 0.29,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.287488,
+            "South Africa": 0.217011,
+            "United Kingdom": 0.280344,
+            "United States": 0.215158
+          }
+        }
+      },
+      "operational_summary": "The dialogue is highly contentious, with the buyer threatening a dispute and negative review due to unmet expectations, while the seller maintains their stance based on product descriptions and policies, showing a slight shift towards seeking a mutually beneficial solution. The emotional trajectory is dominated by buyer anger and seller neutrality, with a recent move towards potential integrative negotiation as the seller expresses willingness to explore alternative solutions."
+    },
+    "11": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 6,
+        "rationale_short": "Buyer and seller are at an impasse with no agreement on refund or resolution.",
+        "risk_0_100": 85,
+        "score": 0.85,
+        "threats": 4
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The conversation has reached a deadlock with both parties unable to agree on a resolution."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.32,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.186369,
+            "South Africa": 0.264777,
+            "United Kingdom": 0.227026,
+            "United States": 0.321827
+          }
+        },
+        "seller": {
+          "confidence": 0.27,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.268364,
+            "South Africa": 0.237544,
+            "United Kingdom": 0.258923,
+            "United States": 0.235169
+          }
+        }
+      },
+      "operational_summary": "The negotiation is at a high-risk impasse, with the buyer demanding a refund due to receiving an incorrect item and threatening a credit card dispute and negative reviews, while the seller stands firm on store policies but offers store credit as a compromise. The dialogue shows a shift from rights and power-based arguments to a slight opening for integrative solutions, as the seller expresses willingness to explore alternative resolutions."
+    },
+    "12": {
+      "ready": true,
+      "risk": {
+        "label": "Low",
+        "negative_signals": 6,
+        "rationale_short": "Negotiation concluded with a mutually agreeable solution.",
+        "risk_0_100": 20,
+        "score": 0.2,
+        "threats": 4
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The parties have reached a resolution on their own with the offer of store credit."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.33,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.181599,
+            "South Africa": 0.267413,
+            "United Kingdom": 0.220799,
+            "United States": 0.330189
+          }
+        },
+        "seller": {
+          "confidence": 0.27,
+          "country": "Mexico",
+          "flag": "🇲🇽",
+          "lat": 23.63,
+          "lng": -102.55,
+          "probabilities": {
+            "Mexico": 0.268364,
+            "South Africa": 0.237544,
+            "United Kingdom": 0.258923,
+            "United States": 0.235169
+          }
+        }
+      },
+      "operational_summary": "The negotiation concluded with a mutually agreeable solution, as the seller offered store credit in exchange for the return of the jersey, which the buyer accepted, shifting the emotional trajectory from anger to satisfaction. The dialogue progressed from a rights and power-based conflict to an interest-based resolution, demonstrating integrative potential despite initial tensions."
+    },
+    "13": {
+      "ready": true,
+      "risk": {
+        "label": "Low",
+        "negative_signals": 6,
+        "rationale_short": "Parties reached a compromise with store credit and review retraction.",
+        "risk_0_100": 30,
+        "score": 0.3,
+        "threats": 4
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The buyer and seller have agreed on a solution involving store credit and are discussing reviews amicably."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.33,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.181599,
+            "South Africa": 0.267413,
+            "United Kingdom": 0.220799,
+            "United States": 0.330189
+          }
+        },
+        "seller": {
+          "confidence": 0.27,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.2638,
+            "South Africa": 0.224184,
+            "United Kingdom": 0.240634,
+            "United States": 0.271381
+          }
+        }
+      },
+      "operational_summary": "The negotiation reached a compromise with the buyer agreeing to accept store credit in exchange for returning the jersey, and both parties agreeing to retract their negative reviews. The dialogue showed a shift from a power struggle to a more integrative approach, with emotions moving from anger and frustration to a more neutral and positive resolution."
+    },
+    "14": {
+      "ready": true,
+      "risk": {
+        "label": "Low",
+        "negative_signals": 6,
+        "rationale_short": "Negotiation concluded with mutual agreement and resolution.",
+        "risk_0_100": 20,
+        "score": 0.2,
+        "threats": 4
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The buyer and seller have agreed on a solution involving store credit and review retraction."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.32,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.196287,
+            "South Africa": 0.264828,
+            "United Kingdom": 0.215506,
+            "United States": 0.323379
+          }
+        },
+        "seller": {
+          "confidence": 0.27,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.2638,
+            "South Africa": 0.224184,
+            "United Kingdom": 0.240634,
+            "United States": 0.271381
+          }
+        }
+      },
+      "operational_summary": "The negotiation concluded with a mutual agreement where the buyer accepted store credit in exchange for returning the jersey, and both parties agreed to retract their negative reviews. The dialogue showed a shift from a power and rights-based approach to a more interest-based resolution, with emotions transitioning from anger to neutrality and cooperation."
+    },
+    "15": {
+      "ready": true,
+      "risk": {
+        "label": "Low",
+        "negative_signals": 6,
+        "rationale_short": "Negotiation concluded with mutual agreement and resolution.",
+        "risk_0_100": 20,
+        "score": 0.2,
+        "threats": 4
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 1,
+        "reason": "None",
+        "should_intervene": false,
+        "statement": "The buyer and seller have come to a mutual agreement regarding the dispute."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.32,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.196287,
+            "South Africa": 0.264828,
+            "United Kingdom": 0.215506,
+            "United States": 0.323379
+          }
+        },
+        "seller": {
+          "confidence": 0.26,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.251436,
+            "South Africa": 0.251349,
+            "United Kingdom": 0.241991,
+            "United States": 0.255224
+          }
+        }
+      },
+      "operational_summary": "The negotiation concluded with both parties agreeing to a compromise where the buyer receives store credit in exchange for returning the jersey, and both parties retract their negative reviews, reflecting a shift from a power-based to an interest-based resolution. Despite initial emotional tension and rights-based arguments, the dialogue progressed towards a mutually acceptable solution, maintaining a low overall risk."
+    },
+    "16": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 7,
+        "rationale_short": "Buyer rejected the final agreement, indicating unresolved conflict.",
+        "risk_0_100": 85,
+        "score": 0.85,
+        "threats": 4
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 2,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The buyer has rejected the deal after initially agreeing, indicating a potential impasse."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.31,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.185767,
+            "South Africa": 0.263749,
+            "United Kingdom": 0.244349,
+            "United States": 0.306135
+          }
+        },
+        "seller": {
+          "confidence": 0.26,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.251436,
+            "South Africa": 0.251349,
+            "United Kingdom": 0.241991,
+            "United States": 0.255224
+          }
+        }
+      },
+      "operational_summary": "The negotiation remains unresolved as the buyer rejected the final agreement, despite a temporary consensus on store credit and mutual review retraction, indicating persistent conflict and a high reliance on power dynamics. Emotional tensions have fluctuated, with the buyer expressing significant dissatisfaction and the seller maintaining a neutral stance, highlighting a need for further integrative solutions to address underlying interests."
+    },
+    "17": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 7,
+        "rationale_short": "Buyer and seller have conflicting demands and no mutual agreement reached.",
+        "risk_0_100": 85,
+        "score": 0.85,
+        "threats": 4
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 2,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The parties have reached a deadlock with conflicting agreement submissions."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.29,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.187774,
+            "South Africa": 0.251701,
+            "United Kingdom": 0.265534,
+            "United States": 0.29499
+          }
+        },
+        "seller": {
+          "confidence": 0.26,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.251436,
+            "South Africa": 0.251349,
+            "United Kingdom": 0.241991,
+            "United States": 0.255224
+          }
+        }
+      },
+      "operational_summary": "The negotiation is at a high-risk impasse with both parties initially entrenched in their positions, but recent dialogue shows a shift towards potential resolution through store credit and mutual retraction of negative reviews, although the buyer's latest submission indicates a desire for a full refund, suggesting unresolved tensions. The emotional trajectory has moved from anger and frustration to a more neutral stance, with the IRP balance heavily skewed towards power dynamics, but recent integrative efforts hint at possible compromise."
+    },
+    "18": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 8,
+        "rationale_short": "Both parties rejected each other's proposals, indicating high negotiation failure risk.",
+        "risk_0_100": 85,
+        "score": 0.85,
+        "threats": 4
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The parties have reached a deadlock with conflicting agreement submissions."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.29,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.187774,
+            "South Africa": 0.251701,
+            "United Kingdom": 0.265534,
+            "United States": 0.29499
+          }
+        },
+        "seller": {
+          "confidence": 0.27,
+          "country": "United Kingdom",
+          "flag": "🇬🇧",
+          "lat": 55.37,
+          "lng": -3.43,
+          "probabilities": {
+            "Mexico": 0.234788,
+            "South Africa": 0.251768,
+            "United Kingdom": 0.267891,
+            "United States": 0.245553
+          }
+        }
+      },
+      "operational_summary": "The negotiation is at a high risk of failure, with both parties rejecting each other's proposals and primarily relying on power dynamics rather than interests, despite a brief moment of potential resolution through store credit. Emotional tensions remain high, particularly from the buyer, and the dialogue has regressed to a stalemate with unresolved issues around refunds and reviews."
+    },
+    "19": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 8,
+        "rationale_short": "Both parties rejected agreements, indicating high negotiation failure risk.",
+        "risk_0_100": 85,
+        "score": 0.85,
+        "threats": 4
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The parties have reached a deadlock with conflicting agreements and need assistance to move forward."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.29,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.187774,
+            "South Africa": 0.251701,
+            "United Kingdom": 0.265534,
+            "United States": 0.29499
+          }
+        },
+        "seller": {
+          "confidence": 0.26,
+          "country": "South Africa",
+          "flag": "🇿🇦",
+          "lat": -30.56,
+          "lng": 22.94,
+          "probabilities": {
+            "Mexico": 0.235134,
+            "South Africa": 0.264009,
+            "United Kingdom": 0.249343,
+            "United States": 0.251513
+          }
+        }
+      },
+      "operational_summary": "The negotiation is at a high risk of failure, with both parties rejecting proposed agreements and displaying a strong reliance on power dynamics over interests, leading to a deadlock despite attempts to find a mutually acceptable solution. Emotional tensions remain high, particularly with the buyer's dissatisfaction over the lack of a refund, while the seller maintains a firm stance on store policies, offering only store credit."
+    },
+    "20": {
+      "ready": true,
+      "risk": {
+        "label": "High",
+        "negative_signals": 9,
+        "rationale_short": "Both parties rejected agreements and buyer walked away.",
+        "risk_0_100": 90,
+        "score": 0.9,
+        "threats": 4
+      },
+      "advisor": {
+        "action": "Observe",
+        "rating": 3,
+        "reason": "Impasse",
+        "should_intervene": false,
+        "statement": "The parties have reached a deadlock with conflicting agreements and the buyer walking away."
+      },
+      "country": {
+        "buyer": {
+          "confidence": 0.31,
+          "country": "United States",
+          "flag": "🇺🇸",
+          "lat": 37.09,
+          "lng": -95.71,
+          "probabilities": {
+            "Mexico": 0.179782,
+            "South Africa": 0.246378,
+            "United Kingdom": 0.262395,
+            "United States": 0.311446
+          }
+        },
+        "seller": {
+          "confidence": 0.26,
+          "country": "South Africa",
+          "flag": "🇿🇦",
+          "lat": -30.56,
+          "lng": 22.94,
+          "probabilities": {
+            "Mexico": 0.235134,
+            "South Africa": 0.264009,
+            "United Kingdom": 0.249343,
+            "United States": 0.251513
+          }
+        }
+      },
+      "operational_summary": "The negotiation reached a high-risk impasse with both parties rejecting proposed agreements, as the buyer demanded a full refund and the seller offered only store credit, leading to the buyer walking away. The dialogue was dominated by power dynamics and emotional tension, with limited integrative potential and unresolved interests."
+    }
+  }
+}
