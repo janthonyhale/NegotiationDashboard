@@ -316,16 +316,82 @@ CN_PROVINCE_ALIASES = {
 }
 
 
+def _canonicalize_geo_name(raw):
+    s = str(raw or '').strip().lower()
+    if not s:
+        return ''
+    for ch in ['_', '-', '.', '·', '•', '，', ',']:
+        s = s.replace(ch, ' ')
+    s = ' '.join(s.split())
+    # English administrative suffixes
+    suffixes = [
+        ' province', ' autonomous region', ' municipality', ' city', ' region',
+        ' special administrative region'
+    ]
+    for suf in suffixes:
+        if s.endswith(suf):
+            s = s[: -len(suf)].strip()
+    # Chinese administrative suffixes
+    for suf in ['省', '市', '自治区', '特别行政区']:
+        s = s.replace(suf, '')
+    return s.strip()
+
+
+CN_PROVINCE_KEYWORDS = {
+    'beijing': ['beijing', '北京'],
+    'tianjin': ['tianjin', '天津'],
+    'hebei': ['hebei', '河北'],
+    'shanxi': ['shanxi', '山西'],
+    'inner mongolia': ['inner mongolia', 'neimenggu', '内蒙古'],
+    'liaoning': ['liaoning', '辽宁'],
+    'jilin': ['jilin', '吉林'],
+    'heilongjiang': ['heilongjiang', '黑龙江'],
+    'shanghai': ['shanghai', '上海'],
+    'jiangsu': ['jiangsu', '江苏'],
+    'zhejiang': ['zhejiang', '浙江'],
+    'anhui': ['anhui', '安徽'],
+    'fujian': ['fujian', '福建'],
+    'jiangxi': ['jiangxi', '江西'],
+    'shandong': ['shandong', '山东'],
+    'henan': ['henan', '河南'],
+    'hubei': ['hubei', '湖北'],
+    'hunan': ['hunan', '湖南'],
+    'guangdong': ['guangdong', '广东'],
+    'guangxi': ['guangxi', '广西'],
+    'hainan': ['hainan', '海南'],
+    'chongqing': ['chongqing', '重庆'],
+    'sichuan': ['sichuan', '四川'],
+    'guizhou': ['guizhou', '贵州'],
+    'yunnan': ['yunnan', '云南'],
+    'tibet': ['tibet', 'xizang', '西藏'],
+    'shaanxi': ['shaanxi', '陕西'],
+    'gansu': ['gansu', '甘肃'],
+    'qinghai': ['qinghai', '青海'],
+    'ningxia': ['ningxia', '宁夏'],
+    'xinjiang': ['xinjiang', '新疆'],
+    'hong kong': ['hong kong', '香港'],
+    'macau': ['macau', '澳门'],
+    'taiwan': ['taiwan', '台湾'],
+}
+
+
 def _normalize_cn_province_name(raw):
-    key = str(raw or '').strip()
+    key = _canonicalize_geo_name(raw)
     if not key:
         return None
-    return CN_PROVINCE_ALIASES.get(key.lower(), CN_PROVINCE_ALIASES.get(key, None))
+    direct = CN_PROVINCE_ALIASES.get(key, CN_PROVINCE_ALIASES.get(key.lower()))
+    if direct:
+        return direct
+    for prov, kws in CN_PROVINCE_KEYWORDS.items():
+        for kw in kws:
+            if _canonicalize_geo_name(kw) in key or key in _canonicalize_geo_name(kw):
+                return prov
+    return None
 
 
 def _extract_name_from_feature(feature):
     props = feature.get('properties', {}) if isinstance(feature, dict) else {}
-    for key in ['name', 'NAME_1', 'NL_NAME_1', 'province', 'prov_name', 'NAME_CHN', 'name_zh', 'NAME']:
+    for key in ['name', 'NAME_1', 'NL_NAME_1', 'province', 'prov_name', 'NAME_CHN', 'name_zh', 'NAME', 'NAME_EN', 'ENGTYPE_1', 'admin']:
         if key in props:
             normalized = _normalize_cn_province_name(props.get(key))
             if normalized:
