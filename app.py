@@ -256,6 +256,21 @@ CN_PROVINCES = {
     'macau': ['macau', '澳门'], 'taiwan': ['taiwan', '台湾']
 }
 
+CN_PROVINCE_CENTROIDS = {
+    'beijing': (116.40, 39.90), 'tianjin': (117.20, 39.13), 'hebei': (114.53, 38.04),
+    'shanxi': (112.55, 37.87), 'inner mongolia': (111.67, 40.82), 'liaoning': (123.43, 41.80),
+    'jilin': (125.32, 43.90), 'heilongjiang': (126.53, 45.80), 'shanghai': (121.47, 31.23),
+    'jiangsu': (118.78, 32.07), 'zhejiang': (120.15, 30.28), 'anhui': (117.27, 31.86),
+    'fujian': (119.30, 26.08), 'jiangxi': (115.89, 28.68), 'shandong': (117.00, 36.65),
+    'henan': (113.63, 34.75), 'hubei': (114.31, 30.60), 'hunan': (112.98, 28.20),
+    'guangdong': (113.27, 23.13), 'guangxi': (108.32, 22.82), 'hainan': (110.35, 20.02),
+    'chongqing': (106.55, 29.56), 'sichuan': (104.07, 30.67), 'guizhou': (106.71, 26.58),
+    'yunnan': (102.71, 25.04), 'tibet': (91.11, 29.97), 'shaanxi': (108.95, 34.27),
+    'gansu': (103.84, 36.06), 'qinghai': (101.78, 36.62), 'ningxia': (106.23, 38.48),
+    'xinjiang': (87.62, 43.82), 'hong kong': (114.17, 22.32), 'macau': (113.54, 22.20),
+    'taiwan': (121.56, 25.04),
+}
+
 
 def infer_cn_province_distribution(turns, role):
     role_turns = [str(t.get('text', '')) for t in turns if str(t.get('speaker', '')).lower() == role.lower()]
@@ -275,6 +290,63 @@ def infer_cn_province_distribution(turns, role):
 
     total = sum(counts.values()) or 1.0
     return {k: round(v / total, 6) for k, v in counts.items()}
+
+
+def make_cn_province_map(province_probs, role='buyer'):
+    probs = {k: float(v) for k, v in (province_probs or {}).items() if k in CN_PROVINCE_CENTROIDS}
+    if not probs:
+        return None
+    total = sum(probs.values()) or 1.0
+    probs = {k: v / total for k, v in probs.items()}
+    top = sorted(probs.items(), key=lambda kv: kv[1], reverse=True)[:8]
+
+    bg = '#07111f'
+    fg = '#d1e6ff'
+    primary = '#4f91ff' if str(role).lower() == 'buyer' else '#f43f5e'
+    accent = '#22d3a5'
+
+    fig, ax = plt.subplots(figsize=(6.4, 4.8), facecolor=bg)
+    ax.set_facecolor(bg)
+
+    # Approximate China bounding outline (for dark-mode context map).
+    outline_lon = [74, 86, 94, 102, 112, 120, 130, 123, 112, 100, 90, 82, 74]
+    outline_lat = [39, 49, 48, 44, 46, 44, 47, 33, 21, 21, 28, 32, 39]
+    ax.plot(outline_lon, outline_lat, color='#35506f', linewidth=1.6, alpha=0.9, zorder=1)
+    ax.fill(outline_lon, outline_lat, color='#0d2036', alpha=0.35, zorder=0)
+
+    lons = []
+    lats = []
+    sizes = []
+    colors = []
+    for prov, (lon, lat) in CN_PROVINCE_CENTROIDS.items():
+        p = probs.get(prov, 0.0)
+        lons.append(lon)
+        lats.append(lat)
+        sizes.append(18 + p * 1300)
+        colors.append(primary if p > 0.001 else '#27425e')
+
+    ax.scatter(lons, lats, s=sizes, c=colors, alpha=0.85, edgecolors='#dbeafe', linewidths=0.35, zorder=3)
+
+    for prov, p in top:
+        lon, lat = CN_PROVINCE_CENTROIDS[prov]
+        label = f"{prov.title()} {p*100:.1f}%"
+        ax.scatter([lon], [lat], s=40 + p * 1000, c=accent, alpha=0.15, zorder=4)
+        ax.text(lon + 0.6, lat + 0.4, label, fontsize=7.5, color=fg, zorder=5)
+
+    ax.set_xlim(72, 136)
+    ax.set_ylim(17, 54)
+    ax.grid(color='#1f334a', linewidth=0.5, alpha=0.45)
+    ax.set_title(
+        f"China Province Confidence ({'Buyer' if str(role).lower() == 'buyer' else 'Seller'})",
+        color=fg, fontsize=11, pad=8
+    )
+    ax.tick_params(colors='#8fb3d9', labelsize=8)
+    for spine in ax.spines.values():
+        spine.set_color('#2a425f')
+    ax.set_xlabel('Longitude', color='#8fb3d9', fontsize=8)
+    ax.set_ylabel('Latitude', color='#8fb3d9', fontsize=8)
+    fig.tight_layout()
+    return plot_to_b64(fig)
 
 def score_emo(text):
     tl = text.lower()
@@ -899,22 +971,33 @@ def predict_country_with_model(turns, role):
 
 def predict_cn_region_with_model(turns, role):
     role_turns = [t.get('text', '').strip() for t in turns if t.get('speaker') == role and t.get('text', '').strip()]
+    province_probs = infer_cn_province_distribution(turns, role)
     if not role_turns:
-        return {'country': 'China', 'confidence': 0.0, 'probabilities': {'North': 0.25, 'Central': 0.25, 'Wu_Min': 0.25, 'Xian_Yue': 0.25}}
+        return {
+            'country': 'China',
+            'confidence': 0.0,
+            'probabilities': {'North': 0.25, 'Central': 0.25, 'Wu_Min': 0.25, 'Xian_Yue': 0.25},
+            'province_probabilities': province_probs,
+        }
 
     if PREDICTOR_ZH is None:
         # fallback to lightweight heuristic if chinese model is unavailable
-        probs = infer_cn_province_distribution(turns, role)
         proxy = {
-            'North': probs.get('beijing', 0) + probs.get('tianjin', 0) + probs.get('hebei', 0) + probs.get('shandong', 0),
-            'Central': probs.get('henan', 0) + probs.get('hubei', 0) + probs.get('hunan', 0) + probs.get('sichuan', 0),
-            'Wu_Min': probs.get('shanghai', 0) + probs.get('jiangsu', 0) + probs.get('zhejiang', 0) + probs.get('fujian', 0),
-            'Xian_Yue': probs.get('guangdong', 0) + probs.get('guangxi', 0) + probs.get('hainan', 0) + probs.get('hong kong', 0),
+            'North': province_probs.get('beijing', 0) + province_probs.get('tianjin', 0) + province_probs.get('hebei', 0) + province_probs.get('shandong', 0),
+            'Central': province_probs.get('henan', 0) + province_probs.get('hubei', 0) + province_probs.get('hunan', 0) + province_probs.get('sichuan', 0),
+            'Wu_Min': province_probs.get('shanghai', 0) + province_probs.get('jiangsu', 0) + province_probs.get('zhejiang', 0) + province_probs.get('fujian', 0),
+            'Xian_Yue': province_probs.get('guangdong', 0) + province_probs.get('guangxi', 0) + province_probs.get('hainan', 0) + province_probs.get('hong kong', 0),
         }
         total = sum(proxy.values()) or 1.0
         normalized = {k: round(v / total, 6) for k, v in proxy.items()}
         pred, conf = max(normalized.items(), key=lambda item: item[1])
-        return {'country': 'China', 'confidence': round(conf, 2), 'probabilities': normalized, 'region': pred}
+        return {
+            'country': 'China',
+            'confidence': round(conf, 2),
+            'probabilities': normalized,
+            'region': pred,
+            'province_probabilities': province_probs,
+        }
 
     outputs = PREDICTOR_ZH.predict_batch(role_turns)
     combined = {}
@@ -926,7 +1009,13 @@ def predict_cn_region_with_model(turns, role):
     total = sum(averaged.values()) or 1.0
     normalized = {k: round(v / total, 6) for k, v in averaged.items()}
     pred, conf = max(normalized.items(), key=lambda item: item[1])
-    return {'country': 'China', 'confidence': round(conf, 2), 'probabilities': normalized, 'region': pred}
+    return {
+        'country': 'China',
+        'confidence': round(conf, 2),
+        'probabilities': normalized,
+        'region': pred,
+        'province_probabilities': province_probs,
+    }
 
 def predict_country(turns, role):
     text  = ' '.join(t['text'] for t in turns if t['speaker']==role).lower()
@@ -1171,6 +1260,8 @@ def api_step():
     if language == 'CN':
         buyer_c = predict_cn_region_with_model(turns_so_far, 'Buyer')
         seller_c = predict_cn_region_with_model(turns_so_far, 'Seller')
+        buyer_c['province_map_b64'] = make_cn_province_map(buyer_c.get('province_probabilities', {}), role='buyer')
+        seller_c['province_map_b64'] = make_cn_province_map(seller_c.get('province_probabilities', {}), role='seller')
     else:
         buyer_c = predict_country_with_model(turns_so_far, 'Buyer')
         seller_c = predict_country_with_model(turns_so_far, 'Seller')
