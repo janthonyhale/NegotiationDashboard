@@ -119,7 +119,7 @@ function downloadSample(){
 
 function downloadSampleCN(){
   const lines=[
-    '{"language":"CN"}',
+    '{"language":"CN","buyer_weights":{"refund":60,"buyer_review":15,"seller_review":15,"seller_apology":10,"buyer_apology":0},"seller_weights":{"refund":30,"buyer_review":30,"seller_review":10,"seller_apology":0,"buyer_apology":30},"pre_dispute_justifications":{"refund":{"buyer":"我收到的是有缺陷的电脑，所以我坚持要有实质性的退款补偿。","seller":"我愿意补偿，但全额退款超出我的权限，也和平台规则不一致。"},"buyer_review":{"buyer":"我的评价是基于真实经历，我希望保留。","seller":"我认为这条评价有不准确之处，影响店铺信誉，希望删除。"},"seller_review":{"buyer":"你对我的评价带有情绪且不公平，我希望撤下。","seller":"我的评价是交易记录的一部分，除非达成方案，否则我倾向保留。"},"receive_apology":{"buyer":"我希望得到明确道歉，这对我很重要。","seller":"我可以为沟通语气道歉，但不代表承认全部责任。"}}}',
     '{"speaker":"Buyer","text":"你好，我收到的笔记本电脑两周就坏了，我希望全额退款，并且请你删除对我的差评。"}',
     '{"speaker":"Seller","text":"我理解你的不满，但我们的检测显示可能有人为损坏。全额退款很难，不过我可以考虑部分退款。"}',
     '{"speaker":"Buyer","text":"我不能接受这个说法。产品到手时电池就有问题，至少要50%退款，而且我希望你撤掉评论。"}',
