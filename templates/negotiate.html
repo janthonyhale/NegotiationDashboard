@@ -534,10 +534,14 @@ async function step(dir) {
 
   renderDialogueUpTo(ni);
   document.getElementById('spin').style.display = 'block';
+  const nextBtn = document.getElementById('btn-next');
+  if (nextBtn) nextBtn.disabled = true;
   setOperationalSummaryLoading();
   try {
     await ensureStepData(ni);
     applyCachedStepState(ni);
+    // Re-render current turn so IRP tag appears immediately when LLM result arrives.
+    renderDialogueUpTo(ni);
     persistSessionState();
     updateEmoChart();
     syncBubbleEmotions(ni);

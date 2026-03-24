@@ -928,44 +928,7 @@ def llm_irp_label(turns_so_far, current_turn):
         method='POST'
     )
     try:
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            data = json.loads(resp.read().decode('utf-8'))
-        obj = json.loads(data['choices'][0]['message']['content'] or '{}')
-        v = str(obj.get('irp_label', '')).strip().lower()
-        if v.startswith('interest'): return 'Interest'
-        if v.startswith('right'): return 'Right'
-        if v.startswith('power'): return 'Power'
-    except Exception:
-        pass
-    return current_turn.get('meta', {}).get('irp_label') or 'Interest'
-
-
-def llm_irp_label(turns_so_far, current_turn):
-    api_key = os.getenv('OPENAI_API_KEY')
-    if not api_key:
-        return current_turn.get('meta', {}).get('irp_label') or 'Interest'
-    excerpt = "\n".join(f"{t.get('speaker','Unknown')}: {t.get('text','')}" for t in turns_so_far[-8:])
-    payload = {
-        "model": "gpt-4.1",
-        "messages": [
-            {"role": "system", "content": "Classify negotiation utterances into Interest, Right, or Power. Respond in English JSON only."},
-            {"role": "user", "content": (
-                "Label ONLY the final utterance in this context as one of: Interest, Right, Power. "
-                "Return JSON: {\"irp_label\":\"Interest|Right|Power\"}.\n\n"
-                f"{excerpt}"
-            )}
-        ],
-        "temperature": 0,
-        "response_format": {"type": "json_object"}
-    }
-    req = urllib.request.Request(
-        'https://api.openai.com/v1/chat/completions',
-        data=json.dumps(payload).encode('utf-8'),
-        headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {api_key}'},
-        method='POST'
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=60) as resp:
+        with urllib.request.urlopen(req, timeout=12) as resp:
             data = json.loads(resp.read().decode('utf-8'))
         obj = json.loads(data['choices'][0]['message']['content'] or '{}')
         v = str(obj.get('irp_label', '')).strip().lower()
@@ -1149,7 +1112,7 @@ def llm_failure_risk(turns_so_far):
         method='POST'
     )
     try:
-        with urllib.request.urlopen(req, timeout=60) as resp:
+        with urllib.request.urlopen(req, timeout=12) as resp:
             data = json.loads(resp.read().decode('utf-8'))
         obj = json.loads(data['choices'][0]['message']['content'] or '{}')
         risk_100 = max(0, min(100, int(float(obj.get('risk_0_100', base['risk_0_100'])))))
