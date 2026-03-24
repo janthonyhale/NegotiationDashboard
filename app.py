@@ -42,19 +42,29 @@ def kodis_utility(outcome, weights, role):
     """
     total_w = sum(weights.values()) or 1
     if role == 'buyer':
-        # Buyer wants: high refund, seller review removed, seller apology, buyer review NOT removed
-        u  = weights['refund']         * outcome['refund']
-        u += weights['seller_review']  * outcome['seller_review']
-        u += weights['seller_apology'] * outcome['seller_apology']
-        u += weights['buyer_review']   * (1 - outcome['buyer_review'])  # buyer doesn't want own review removed
-        u += weights['buyer_apology']  * (1 - outcome['buyer_apology']) # buyer doesn't want to apologize
+        own_review_removed = outcome['buyer_review']
+        other_review_removed = outcome['seller_review']
+        own_apology = outcome['buyer_apology']
+        other_apology = outcome['seller_apology']
+        refund_component = outcome['refund']
+        # Buyer gets points when own review stays up (remove=no) and when seller removes theirs (remove=yes).
+        u  = weights['refund']         * refund_component
+        u += weights['buyer_review']   * (1 - own_review_removed)
+        u += weights['seller_review']  * other_review_removed
+        u += weights['seller_apology'] * other_apology
+        u += weights['buyer_apology']  * (1 - own_apology)
     else:  # seller
-        # Seller wants: low refund, buyer review removed, buyer apology, seller review NOT removed
-        u  = weights['refund']         * (1 - outcome['refund'])
-        u += weights['buyer_review']   * outcome['buyer_review']
-        u += weights['buyer_apology']  * outcome['buyer_apology']
-        u += weights['seller_review']  * (1 - outcome['seller_review'])  # seller doesn't want own review removed
-        u += weights['seller_apology'] * (1 - outcome['seller_apology']) # seller doesn't want to apologize
+        own_review_removed = outcome['seller_review']
+        other_review_removed = outcome['buyer_review']
+        own_apology = outcome['seller_apology']
+        other_apology = outcome['buyer_apology']
+        refund_component = (1 - outcome['refund'])
+        # Seller gets points when own review stays up (remove=no) and when buyer removes theirs (remove=yes).
+        u  = weights['refund']         * refund_component
+        u += weights['seller_review']  * (1 - own_review_removed)
+        u += weights['buyer_review']   * other_review_removed
+        u += weights['buyer_apology']  * other_apology
+        u += weights['seller_apology'] * (1 - own_apology)
     return round(u / total_w * 100, 1)
 
 def generate_all_outcomes(bw, sw):
