@@ -117,7 +117,7 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
 
 .map-title{font-family:var(--mono);font-size:0.62rem;letter-spacing:0.8px;text-transform:uppercase;color:var(--muted);padding:2px 4px;}
 .map-scale-note{font-family:var(--mono);font-size:0.56rem;color:#8da2bf;padding:0 4px 3px 4px;}
-#active-map{width:100%;height:100%;min-height:0;}
+#active-map{width:100%;flex:1;min-height:240px;display:flex;align-items:center;justify-content:center;overflow:hidden;}
 
 /* Risk */
 .risk-card{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:10px 12px;margin-bottom:10px;}
@@ -387,7 +387,7 @@ function init() {
     }
   });
   renderTxList();
-  renderCountry();
+  renderCountry(S.country);
   document.getElementById('btn-next').disabled = false;
   document.getElementById('btn-runall').disabled = false;
   document.getElementById('turn-pill').textContent = `Turn 0 / ${S.turns.length}`;
@@ -872,14 +872,24 @@ function renderChinaRegionMap(selector, dist, topCode, role){
   }
 }
 
-function renderRoleMap(selector, role, dist, topCode, topProb){
+function renderRoleMap(selector, role, dist, topCode, topProb, cnMapB64){
   const palette = role === 'buyer'
     ? ['#dbeafe','#93c5fd','#60a5fa','#2563eb']
     : ['#fee2e2','#fca5a5','#f87171','#dc2626'];
 
   const isCN = S.language === 'CN';
   if (isCN) {
-    renderChinaRegionMap(selector, dist, topCode, role);
+    if (S.activeMap) {
+      S.activeMap.destroy();
+      S.activeMap = null;
+    }
+    const host = document.querySelector(selector);
+    if (!host) return;
+    if (cnMapB64) {
+      host.innerHTML = `<img alt="China province confidence map" style="width:100%;height:auto;max-height:100%;object-fit:contain;display:block;background:#07111f;border-radius:6px;" src="data:image/png;base64,${cnMapB64}">`;
+    } else {
+      renderChinaRegionMap(selector, dist, topCode, role);
+    }
     return;
   }
 
@@ -1036,7 +1046,8 @@ function normalizeCountryCode(raw){
 }
 
 function renderCountry(countrySnap){
-  if (S.currentIdx < 0 || !countrySnap){
+  const snap = countrySnap || S.lastCountry || S.country || null;
+  if (S.currentIdx < 0 || !snap){
     document.getElementById('map-title').textContent = S.mapRole === 'buyer' ? 'Buyer map' : 'Seller map';
     document.getElementById('map-scale-note').textContent = 'Turn 0 · awaiting first exchange';
     renderRoleMap('#active-map', S.mapRole, {}, null, 0);
@@ -1044,8 +1055,19 @@ function renderCountry(countrySnap){
     return;
   }
 
-  const buyer = countrySnap.buyer || {};
-  const seller = countrySnap.seller || {};
+  if (S.currentIdx < 0 && S.language === 'CN') {
+    const role = S.mapRole;
+    const initial = role === 'buyer' ? (snap.buyer || {}) : (snap.seller || {});
+    const emptyMapB64 = initial.province_map_b64_empty || null;
+    document.getElementById('map-title').textContent = role === 'buyer' ? 'Buyer map' : 'Seller map';
+    document.getElementById('map-scale-note').textContent = 'Turn 0 · empty province map (no turn processed yet)';
+    renderRoleMap('#active-map', role, {}, null, 0, emptyMapB64);
+    updateEmoChart();
+    return;
+  }
+
+  const buyer = snap.buyer || {};
+  const seller = snap.seller || {};
   const role = S.mapRole;
   const active = role === 'buyer' ? buyer : seller;
   const probs = active.probabilities || {};
@@ -1061,10 +1083,11 @@ function renderCountry(countrySnap){
   const sortedDist = Object.entries(dist).sort((a,b)=>b[1]-a[1]);
   const topCode = sortedDist[0]?.[0] || null;
   const topProb = sortedDist[0]?.[1] || 0;
+  const cnMapB64 = active.province_map_b64 || null;
   document.getElementById('map-title').textContent = role === 'buyer' ? 'Buyer map' : 'Seller map';
-  document.getElementById('map-scale-note').textContent = S.language==='CN' ? 'Dot size = higher confidence by China region' : (role === 'buyer' ? 'Blue = higher confidence' : 'Red = higher confidence');
+  document.getElementById('map-scale-note').textContent = S.language==='CN' ? 'Matplotlib dark-mode China province confidence map' : (role === 'buyer' ? 'Blue = higher confidence' : 'Red = higher confidence');
   const normalizedDist = normalizeDist(dist);
-  renderRoleMap('#active-map', role, normalizedDist, topCode, topProb);
+  renderRoleMap('#active-map', role, normalizedDist, topCode, topProb, cnMapB64);
 }
 
 function switchMapRole(role, btn){
