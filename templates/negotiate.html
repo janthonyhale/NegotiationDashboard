@@ -687,6 +687,11 @@ function renderIRPChart(){
     </div>`;
   };
   host.innerHTML = rowHtml('buyer') + rowHtml('seller');
+  requestAnimationFrame(()=>{
+    host.querySelectorAll('.irp-timeline').forEach((el)=>{
+      el.scrollLeft = el.scrollWidth;
+    });
+  });
 }
 
 function updateEmoChart() {
