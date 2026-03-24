@@ -393,10 +393,11 @@ def infer_cn_province_distribution(turns, role):
 
 def project_region_probs_to_provinces(region_probs, base_province_probs):
     region_map = {
-        'North': ['beijing', 'tianjin', 'hebei', 'shandong', 'shanxi', 'inner mongolia', 'liaoning', 'jilin', 'heilongjiang', 'ningxia', 'gansu', 'qinghai', 'xinjiang'],
-        'Central': ['henan', 'hubei', 'hunan', 'sichuan', 'chongqing', 'shaanxi', 'anhui', 'jiangxi', 'guizhou', 'yunnan'],
+        # Keep province scope aligned with chinese model classes in predictor.py.
+        'North': ['beijing', 'tianjin', 'hebei', 'shandong'],
+        'Central': ['henan', 'hubei', 'hunan', 'sichuan'],
         'Wu_Min': ['shanghai', 'jiangsu', 'zhejiang', 'fujian'],
-        'Xian_Yue': ['guangdong', 'guangxi', 'hainan', 'hong kong', 'macau', 'taiwan', 'tibet'],
+        'Xian_Yue': ['guangdong', 'guangxi', 'hainan', 'hong kong'],
     }
     out = {k: 0.0 for k in CN_PROVINCE_CENTROIDS.keys()}
     base = {k: float(v) for k, v in (base_province_probs or {}).items() if k in out}
@@ -415,6 +416,25 @@ def project_region_probs_to_provinces(region_probs, base_province_probs):
                 out[p] += rprob * (w / wsum)
     total = sum(out.values()) or 1.0
     return {k: round(v / total, 6) for k, v in out.items()}
+
+
+def constrain_cn_probs_to_model_scope(province_probs):
+    scoped = {k: 0.0 for k in CN_PROVINCE_CENTROIDS.keys()}
+    allowed = {
+        'beijing', 'tianjin', 'hebei', 'shandong',
+        'henan', 'hubei', 'hunan', 'sichuan',
+        'shanghai', 'jiangsu', 'zhejiang', 'fujian',
+        'guangdong', 'guangxi', 'hainan', 'hong kong',
+    }
+    for k in allowed:
+        scoped[k] = float((province_probs or {}).get(k, 0.0))
+    total = sum(scoped.values())
+    if total <= 0:
+        even = 1.0 / len(allowed)
+        for k in allowed:
+            scoped[k] = round(even, 6)
+        return scoped
+    return {k: round(v / total, 6) for k, v in scoped.items()}
 
 
 def make_cn_province_map(province_probs, role='buyer'):
@@ -1133,7 +1153,7 @@ def predict_country_with_model(turns, role):
 
 def predict_cn_region_with_model(turns, role):
     role_turns = [t.get('text', '').strip() for t in turns if t.get('speaker') == role and t.get('text', '').strip()]
-    base_province_probs = infer_cn_province_distribution(turns, role)
+    base_province_probs = constrain_cn_probs_to_model_scope(infer_cn_province_distribution(turns, role))
     if not role_turns:
         return {
             'country': 'China',
