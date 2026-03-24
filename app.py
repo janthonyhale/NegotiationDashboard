@@ -42,19 +42,29 @@ def kodis_utility(outcome, weights, role):
     """
     total_w = sum(weights.values()) or 1
     if role == 'buyer':
-        # Buyer wants: high refund, seller review removed, seller apology, buyer review NOT removed
-        u  = weights['refund']         * outcome['refund']
-        u += weights['seller_review']  * outcome['seller_review']
-        u += weights['seller_apology'] * outcome['seller_apology']
-        u += weights['buyer_review']   * (1 - outcome['buyer_review'])  # buyer doesn't want own review removed
-        u += weights['buyer_apology']  * (1 - outcome['buyer_apology']) # buyer doesn't want to apologize
+        own_review_removed = outcome['buyer_review']
+        other_review_removed = outcome['seller_review']
+        own_apology = outcome['buyer_apology']
+        other_apology = outcome['seller_apology']
+        refund_component = outcome['refund']
+        # Buyer gets points when own review stays up (remove=no) and when seller removes theirs (remove=yes).
+        u  = weights['refund']         * refund_component
+        u += weights['buyer_review']   * (1 - own_review_removed)
+        u += weights['seller_review']  * other_review_removed
+        u += weights['seller_apology'] * other_apology
+        u += weights['buyer_apology']  * (1 - own_apology)
     else:  # seller
-        # Seller wants: low refund, buyer review removed, buyer apology, seller review NOT removed
-        u  = weights['refund']         * (1 - outcome['refund'])
-        u += weights['buyer_review']   * outcome['buyer_review']
-        u += weights['buyer_apology']  * outcome['buyer_apology']
-        u += weights['seller_review']  * (1 - outcome['seller_review'])  # seller doesn't want own review removed
-        u += weights['seller_apology'] * (1 - outcome['seller_apology']) # seller doesn't want to apologize
+        own_review_removed = outcome['seller_review']
+        other_review_removed = outcome['buyer_review']
+        own_apology = outcome['seller_apology']
+        other_apology = outcome['buyer_apology']
+        refund_component = (1 - outcome['refund'])
+        # Seller gets points when own review stays up (remove=no) and when buyer removes theirs (remove=yes).
+        u  = weights['refund']         * refund_component
+        u += weights['seller_review']  * (1 - own_review_removed)
+        u += weights['buyer_review']   * other_review_removed
+        u += weights['buyer_apology']  * other_apology
+        u += weights['seller_apology'] * (1 - own_apology)
     return round(u / total_w * 100, 1)
 
 def generate_all_outcomes(bw, sw):
@@ -889,6 +899,18 @@ def detect_outcome_heuristic_last_two(turns):
     if not last_two:
         return None
     last_text = ' '.join(str(t.get('text', '')) for t in last_two).lower()
+    review_action = r'(?:remove|removed|retract|retracted|withdraw|withdrew|withdrawn|take\s*down|took\s*down|pull\s*down|pulled\s*down|delete|deleted)'
+
+    def _is_negated(snippet):
+        return bool(re.search(r"\b(?:don't|do not|did not|not|won't|will not|can't|cannot|keep|keeping|remain|stays?)\b", snippet))
+
+    def _matches_without_negation(pattern):
+        for m in re.finditer(pattern, last_text):
+            window = last_text[max(0, m.start() - 24):min(len(last_text), m.end() + 24)]
+            if not _is_negated(window):
+                return True
+        return False
+
     outcome = {
         'refund_label': 'None', 'refund': 0.0,
         'buyer_review': 0, 'seller_review': 0,
@@ -903,13 +925,20 @@ def detect_outcome_heuristic_last_two(turns):
     elif re.search(r'\b(no refund|0%)\b', last_text):
         outcome['refund_label'] = 'None'
         outcome['refund'] = 0.0
-    if re.search(r'(mutual|both reviews|each.*review|remove.*review)', last_text):
+    mutual_pattern = (
+        r'\b(?:mutual|both|each|respective)\b.*\breviews?\b.*' + review_action +
+        r'|' + review_action + r'.*\b(?:mutual|both|each|respective|our)\b.*\breviews?\b' +
+        r'|\bboth reviews?\s+(?:down|gone)\b'
+    )
+    if _matches_without_negation(mutual_pattern):
         outcome['buyer_review'] = 1
         outcome['seller_review'] = 1
     else:
-        if re.search(r'(buyer.*review|your review)', last_text):
+        buyer_pattern = r'(?:buyer.*review|your review|customer review).*(?:' + review_action + r')|' + review_action + r'.*(?:buyer.*review|your review|customer review)'
+        seller_pattern = r'(?:seller.*review|my review|our review).*(?:' + review_action + r')|' + review_action + r'.*(?:seller.*review|my review|our review)'
+        if _matches_without_negation(buyer_pattern):
             outcome['buyer_review'] = 1
-        if re.search(r'(seller.*review|my review)', last_text):
+        if _matches_without_negation(seller_pattern):
             outcome['seller_review'] = 1
     if re.search(r'(seller.*apolog|sincerely.*apolog|formally.*apolog)', last_text):
         outcome['seller_apology'] = 1
@@ -920,28 +949,32 @@ def detect_outcome_heuristic_last_two(turns):
     return outcome if agreed else None
 
 def llm_detect_agreement_last_two(turns):
-    """Detect whether the final two messages form an agreement and extract issue terms."""
-    last_two = turns[-2:] if isinstance(turns, list) else []
-    if len(last_two) < 2:
+    """Detect whether the latest turns form an agreement and extract issue terms via LLM."""
+    recent_turns = turns[-6:] if isinstance(turns, list) else []
+    if len(recent_turns) < 2:
         return None
     api_key = os.getenv('OPENAI_API_KEY')
     if not api_key:
         return detect_outcome_heuristic_last_two(turns)
 
-    excerpt = "\n".join(f"{t.get('speaker','Unknown')}: {t.get('text','')}" for t in last_two)
+    excerpt = "\n".join(f"{t.get('speaker','Unknown')}: {t.get('text','')}" for t in recent_turns)
+    recent_text = " ".join(str(t.get('text', '')) for t in recent_turns).lower()
     payload = {
         "model": "gpt-4.1",
         "messages": [
-            {"role": "system", "content": "Extract only explicit final agreement from the last two messages in a negotiation. Respond with JSON only."},
+            {"role": "system", "content": "Extract only explicit final agreement from the latest negotiation turns. Respond with JSON only."},
             {"role": "user", "content": (
-                "Decide whether the final two messages explicitly confirm a settlement package. "
+                "Decide whether the latest turns explicitly confirm a final settlement package. "
                 "If not explicit, set agreed=false and outcome=null.\n"
                 "If explicit, return agreed=true and outcome with:\n"
                 "refund_label: Full|Half|None,\n"
-                "buyer_review: 0|1,\n"
-                "seller_review: 0|1,\n"
-                "seller_apology: 0|1,\n"
-                "buyer_apology: 0|1.\n\n"
+                "buyer_review: 0|1 (1 means the BUYER'S review is removed/retracted),\n"
+                "seller_review: 0|1 (1 means the SELLER'S review is removed/retracted),\n"
+                "seller_apology: 0|1 (1 means seller gives an apology),\n"
+                "buyer_apology: 0|1 (1 means buyer gives an apology).\n\n"
+                "Review removals include remove/retract/withdraw/take down/pull down/delete.\n"
+                "Do NOT set buyer_review or seller_review when those actions are negated (e.g., do not retract, won't remove).\n"
+                "Only use terms that are explicitly accepted in the latest confirmed package.\n\n"
                 f"Messages:\n{excerpt}\n\n"
                 "JSON format: {\"agreed\":true|false,\"outcome\":{...}|null}"
             )}
@@ -965,19 +998,66 @@ def llm_detect_agreement_last_two(turns):
         refund_label = str(out.get('refund_label', 'None')).strip().capitalize()
         if refund_label not in {'Full', 'Half', 'None'}:
             refund_label = 'None'
-        return {
+
+        def _to_flag(v):
+            if isinstance(v, bool):
+                return 1 if v else 0
+            if isinstance(v, (int, float)):
+                return 1 if int(v) else 0
+            s = str(v).strip().lower()
+            return 1 if s in {'1', 'yes', 'true', 'y'} else 0
+
+        result = {
             'refund_label': refund_label,
             'refund': {'Full': 1.0, 'Half': 0.5, 'None': 0.0}[refund_label],
-            'buyer_review': 1 if int(out.get('buyer_review', 0)) else 0,
-            'seller_review': 1 if int(out.get('seller_review', 0)) else 0,
-            'seller_apology': 1 if int(out.get('seller_apology', 0)) else 0,
-            'buyer_apology': 1 if int(out.get('buyer_apology', 0)) else 0,
+            'buyer_review': _to_flag(out.get('buyer_review', 0)),
+            'seller_review': _to_flag(out.get('seller_review', 0)),
+            'seller_apology': _to_flag(out.get('seller_apology', 0)),
+            'buyer_apology': _to_flag(out.get('buyer_apology', 0)),
         }
+        heuristic = detect_outcome_heuristic_last_two(turns)
+        if (
+            heuristic
+            and heuristic.get('buyer_review') == 1 and heuristic.get('seller_review') == 1
+            and result['buyer_review'] == 0 and result['seller_review'] == 0
+            and re.search(r'(mutual|both|each|respective|our).*review|review.*(mutual|both|each|respective|our)', recent_text)
+        ):
+            result['buyer_review'] = 1
+            result['seller_review'] = 1
+        return result
     except Exception:
         return detect_outcome_heuristic_last_two(turns)
 
 
-def llm_operational_summary(turns_so_far, country_snapshot, risk_snapshot):
+def _irp_patterns(turns_so_far):
+    labels = ['Interest', 'Right', 'Power']
+    total = {k: 0 for k in labels}
+    by_speaker = {'buyer': {k: 0 for k in labels}, 'seller': {k: 0 for k in labels}}
+    timeline = []
+    for t in turns_so_far or []:
+        speaker = str(t.get('speaker', '')).strip().lower()
+        raw = (t.get('meta', {}) or {}).get('irp_label') or t.get('irp') or 'Interest'
+        v = str(raw).strip().lower()
+        label = 'Interest'
+        if v.startswith('right'):
+            label = 'Right'
+        elif v.startswith('power'):
+            label = 'Power'
+        total[label] += 1
+        if speaker == 'buyer':
+            by_speaker['buyer'][label] += 1
+        elif speaker == 'seller':
+            by_speaker['seller'][label] += 1
+        timeline.append(label)
+    return {
+        'total_counts': total,
+        'buyer_counts': by_speaker['buyer'],
+        'seller_counts': by_speaker['seller'],
+        'recent_sequence': timeline[-8:],
+    }
+
+
+def llm_operational_summary(turns_so_far, country_snapshot, risk_snapshot, irp_patterns=None):
     """Generate a succinct IRP-aware operational summary for the current state."""
     api_key = os.getenv('OPENAI_API_KEY')
     if not turns_so_far:
@@ -1001,6 +1081,7 @@ def llm_operational_summary(turns_so_far, country_snapshot, risk_snapshot):
         "Respond in English only.\n\n"
         f"Risk snapshot: {json.dumps(risk_snapshot)}\n"
         f"Country snapshot: {json.dumps(country_snapshot)}\n"
+        f"IRP patterns: {json.dumps(irp_patterns or {})}\n"
         f"Observed turns:\n{transcript_excerpt}"
     )
 
@@ -1810,7 +1891,8 @@ def api_step():
         buyer_c = predict_country_with_model(turns_so_far, 'Buyer')
         seller_c = predict_country_with_model(turns_so_far, 'Seller')
     country_snapshot = {'buyer':buyer_c,'seller':seller_c}
-    op_summary = llm_operational_summary(turns_so_far, country_snapshot, risk)
+    irp_patterns = _irp_patterns(turns_so_far)
+    op_summary = llm_operational_summary(turns_so_far, country_snapshot, risk, irp_patterns)
     return jsonify({
         'risk':risk,
         'advisor':adv,
