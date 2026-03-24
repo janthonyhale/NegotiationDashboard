@@ -870,9 +870,8 @@ function renderChinaRegionMap(selector, dist, topCode, role){
 }
 
 function renderRoleMap(selector, role, dist, topCode, topProb, cnMapB64){
-  const palette = role === 'buyer'
-    ? ['#dbeafe','#93c5fd','#60a5fa','#2563eb']
-    : ['#fee2e2','#fca5a5','#f87171','#dc2626'];
+  const lightColor = role === 'buyer' ? '#dbeafe' : '#fee2e2';
+  const darkColor  = role === 'buyer' ? '#1d4ed8' : '#b91c1c';
 
   const isCN = S.language === 'CN';
   if (isCN) {
@@ -900,13 +899,34 @@ function renderRoleMap(selector, role, dist, topCode, topProb, cnMapB64){
   const rawValues = {};
   const fillValues = {};
 
+  const hexToRgb = (hex) => {
+    const h = String(hex || '').replace('#', '');
+    const n = h.length === 3
+      ? h.split('').map(ch => ch + ch).join('')
+      : h.padEnd(6, '0');
+    return {
+      r: parseInt(n.slice(0, 2), 16),
+      g: parseInt(n.slice(2, 4), 16),
+      b: parseInt(n.slice(4, 6), 16),
+    };
+  };
+  const rgbToHex = ({ r, g, b }) => {
+    const c = (v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0');
+    return `#${c(r)}${c(g)}${c(b)}`;
+  };
+  const lerpColor = (fromHex, toHex, t) => {
+    const from = hexToRgb(fromHex);
+    const to = hexToRgb(toHex);
+    return rgbToHex({
+      r: from.r + (to.r - from.r) * t,
+      g: from.g + (to.g - from.g) * t,
+      b: from.b + (to.b - from.b) * t,
+    });
+  };
   const colorFor = (v) => {
     const n = Math.max(0, Math.min(1, Number(v) || 0));
-    if (n >= 0.65) return palette[3];
-    if (n >= 0.45) return palette[2];
-    if (n >= 0.25) return palette[1];
-    if (n > 0) return palette[0];
-    return '#1b2a3d';
+    if (n <= 0) return '#1b2a3d';
+    return lerpColor(lightColor, darkColor, n);
   };
 
   Object.entries(dist || {}).forEach(([code, val]) => {
