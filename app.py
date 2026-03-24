@@ -271,6 +271,105 @@ CN_PROVINCE_CENTROIDS = {
     'taiwan': (121.56, 25.04),
 }
 
+CHINA_GEOJSON_CANDIDATES = [
+    os.path.join(os.getcwd(), 'china_provinces.geojson'),
+    os.path.join(os.getcwd(), 'data', 'china_provinces.geojson'),
+    os.path.join(os.getcwd(), 'uploads', 'china_provinces.geojson'),
+]
+_CHINA_GEOJSON_CACHE = None
+
+CN_PROVINCE_ALIASES = {
+    'beijing': 'beijing', '北京市': 'beijing',
+    'tianjin': 'tianjin', '天津市': 'tianjin',
+    'hebei': 'hebei', '河北省': 'hebei',
+    'shanxi': 'shanxi', '山西省': 'shanxi',
+    'inner mongolia': 'inner mongolia', 'neimenggu': 'inner mongolia', '内蒙古自治区': 'inner mongolia', '内蒙古': 'inner mongolia',
+    'liaoning': 'liaoning', '辽宁省': 'liaoning',
+    'jilin': 'jilin', '吉林省': 'jilin',
+    'heilongjiang': 'heilongjiang', '黑龙江省': 'heilongjiang',
+    'shanghai': 'shanghai', '上海市': 'shanghai',
+    'jiangsu': 'jiangsu', '江苏省': 'jiangsu',
+    'zhejiang': 'zhejiang', '浙江省': 'zhejiang',
+    'anhui': 'anhui', '安徽省': 'anhui',
+    'fujian': 'fujian', '福建省': 'fujian',
+    'jiangxi': 'jiangxi', '江西省': 'jiangxi',
+    'shandong': 'shandong', '山东省': 'shandong',
+    'henan': 'henan', '河南省': 'henan',
+    'hubei': 'hubei', '湖北省': 'hubei',
+    'hunan': 'hunan', '湖南省': 'hunan',
+    'guangdong': 'guangdong', '广东省': 'guangdong',
+    'guangxi': 'guangxi', '广西壮族自治区': 'guangxi', '广西': 'guangxi',
+    'hainan': 'hainan', '海南省': 'hainan',
+    'chongqing': 'chongqing', '重庆市': 'chongqing',
+    'sichuan': 'sichuan', '四川省': 'sichuan',
+    'guizhou': 'guizhou', '贵州省': 'guizhou',
+    'yunnan': 'yunnan', '云南省': 'yunnan',
+    'tibet': 'tibet', '西藏自治区': 'tibet', 'xizang': 'tibet', '西藏': 'tibet',
+    'shaanxi': 'shaanxi', '陕西省': 'shaanxi',
+    'gansu': 'gansu', '甘肃省': 'gansu',
+    'qinghai': 'qinghai', '青海省': 'qinghai',
+    'ningxia': 'ningxia', '宁夏回族自治区': 'ningxia', '宁夏': 'ningxia',
+    'xinjiang': 'xinjiang', '新疆维吾尔自治区': 'xinjiang', '新疆': 'xinjiang',
+    'hong kong': 'hong kong', '香港特别行政区': 'hong kong', '香港': 'hong kong',
+    'macau': 'macau', '澳门特别行政区': 'macau', '澳门': 'macau',
+    'taiwan': 'taiwan', '台湾省': 'taiwan', '台湾': 'taiwan',
+}
+
+
+def _normalize_cn_province_name(raw):
+    key = str(raw or '').strip()
+    if not key:
+        return None
+    return CN_PROVINCE_ALIASES.get(key.lower(), CN_PROVINCE_ALIASES.get(key, None))
+
+
+def _extract_name_from_feature(feature):
+    props = feature.get('properties', {}) if isinstance(feature, dict) else {}
+    for key in ['name', 'NAME_1', 'NL_NAME_1', 'province', 'prov_name', 'NAME_CHN', 'name_zh', 'NAME']:
+        if key in props:
+            normalized = _normalize_cn_province_name(props.get(key))
+            if normalized:
+                return normalized
+    return None
+
+
+def _extract_polygon_rings(geometry):
+    if not isinstance(geometry, dict):
+        return []
+    gtype = geometry.get('type')
+    coords = geometry.get('coordinates', [])
+    rings = []
+    if gtype == 'Polygon':
+        if coords:
+            rings.append(coords[0])
+    elif gtype == 'MultiPolygon':
+        for poly in coords:
+            if poly and poly[0]:
+                rings.append(poly[0])
+    return rings
+
+
+def _load_china_geojson_features():
+    global _CHINA_GEOJSON_CACHE
+    if _CHINA_GEOJSON_CACHE is not None:
+        return _CHINA_GEOJSON_CACHE
+    env_path = os.getenv('CHINA_GEOJSON_PATH')
+    candidates = [env_path] if env_path else []
+    candidates.extend(CHINA_GEOJSON_CANDIDATES)
+    for path in candidates:
+        if not path:
+            continue
+        try:
+            with open(path, encoding='utf-8') as f:
+                gj = json.load(f)
+            feats = gj.get('features', []) if isinstance(gj, dict) else []
+            if isinstance(feats, list) and feats:
+                _CHINA_GEOJSON_CACHE = feats
+                return feats
+        except Exception:
+            continue
+    _CHINA_GEOJSON_CACHE = []
+    return _CHINA_GEOJSON_CACHE
 
 def infer_cn_province_distribution(turns, role):
     role_turns = [str(t.get('text', '')) for t in turns if str(t.get('speaker', '')).lower() == role.lower()]
@@ -305,46 +404,92 @@ def make_cn_province_map(province_probs, role='buyer'):
     primary = '#4f91ff' if str(role).lower() == 'buyer' else '#f43f5e'
     accent = '#22d3a5'
 
-    fig, ax = plt.subplots(figsize=(6.4, 4.8), facecolor=bg)
+    fig, ax = plt.subplots(figsize=(7.2, 5.4), facecolor=bg)
     ax.set_facecolor(bg)
+    features = _load_china_geojson_features()
+    drew_geojson = False
+    min_lon, max_lon, min_lat, max_lat = 200, -200, 90, -90
 
-    # Approximate China bounding outline (for dark-mode context map).
-    outline_lon = [74, 86, 94, 102, 112, 120, 130, 123, 112, 100, 90, 82, 74]
-    outline_lat = [39, 49, 48, 44, 46, 44, 47, 33, 21, 21, 28, 32, 39]
-    ax.plot(outline_lon, outline_lat, color='#35506f', linewidth=1.6, alpha=0.9, zorder=1)
-    ax.fill(outline_lon, outline_lat, color='#0d2036', alpha=0.35, zorder=0)
+    def color_for_prob(p):
+        p = max(0.0, min(1.0, p))
+        if p >= 0.20:
+            return primary
+        if p >= 0.08:
+            return '#6ea8ff' if str(role).lower() == 'buyer' else '#f87171'
+        if p >= 0.03:
+            return '#37567a'
+        return '#14263c'
 
-    lons = []
-    lats = []
-    sizes = []
-    colors = []
-    for prov, (lon, lat) in CN_PROVINCE_CENTROIDS.items():
-        p = probs.get(prov, 0.0)
-        lons.append(lon)
-        lats.append(lat)
-        sizes.append(18 + p * 1300)
-        colors.append(primary if p > 0.001 else '#27425e')
+    if features:
+        for feat in features:
+            pname = _extract_name_from_feature(feat)
+            rings = _extract_polygon_rings(feat.get('geometry', {}))
+            if not rings:
+                continue
+            p = probs.get(pname, 0.0) if pname else 0.0
+            face = color_for_prob(p)
+            for ring in rings:
+                if not ring:
+                    continue
+                xs = [pt[0] for pt in ring if isinstance(pt, (list, tuple)) and len(pt) >= 2]
+                ys = [pt[1] for pt in ring if isinstance(pt, (list, tuple)) and len(pt) >= 2]
+                if not xs or not ys:
+                    continue
+                min_lon, max_lon = min(min_lon, min(xs)), max(max_lon, max(xs))
+                min_lat, max_lat = min(min_lat, min(ys)), max(max_lat, max(ys))
+                poly = mpatches.Polygon(list(zip(xs, ys)), closed=True, facecolor=face, edgecolor='#3d5f83', linewidth=0.45, alpha=0.92)
+                ax.add_patch(poly)
+                drew_geojson = True
 
-    ax.scatter(lons, lats, s=sizes, c=colors, alpha=0.85, edgecolors='#dbeafe', linewidths=0.35, zorder=3)
+        if drew_geojson:
+            for prov, p in top:
+                lon, lat = CN_PROVINCE_CENTROIDS[prov]
+                ax.scatter([lon], [lat], s=280 + p * 2200, c=accent, alpha=0.18, zorder=5, edgecolors='none')
+                ax.text(
+                    lon + 0.35, lat + 0.35, f"{prov.title()} {p*100:.1f}%",
+                    fontsize=10.8, color=fg, zorder=6, fontweight='bold'
+                )
 
-    for prov, p in top:
-        lon, lat = CN_PROVINCE_CENTROIDS[prov]
-        label = f"{prov.title()} {p*100:.1f}%"
-        ax.scatter([lon], [lat], s=40 + p * 1000, c=accent, alpha=0.15, zorder=4)
-        ax.text(lon + 0.6, lat + 0.4, label, fontsize=7.5, color=fg, zorder=5)
+    if not drew_geojson:
+        # Fallback if geojson is missing or malformed.
+        lons = []
+        lats = []
+        sizes = []
+        colors = []
+        for prov, (lon, lat) in CN_PROVINCE_CENTROIDS.items():
+            p = probs.get(prov, 0.0)
+            lons.append(lon)
+            lats.append(lat)
+            sizes.append(140 + p * 2800)
+            colors.append(primary if p > 0.001 else '#27425e')
 
-    ax.set_xlim(72, 136)
-    ax.set_ylim(17, 54)
+        ax.scatter(lons, lats, s=sizes, c=colors, alpha=0.88, edgecolors='#dbeafe', linewidths=0.35, zorder=3)
+        for prov, p in top:
+            lon, lat = CN_PROVINCE_CENTROIDS[prov]
+            ax.scatter([lon], [lat], s=300 + p * 2500, c=accent, alpha=0.18, zorder=4, edgecolors='none')
+            ax.text(lon + 0.5, lat + 0.4, f"{prov.title()} {p*100:.1f}%", fontsize=10.8, color=fg, zorder=5, fontweight='bold')
+        min_lon, max_lon, min_lat, max_lat = 72, 136, 17, 54
+
+    ax.set_xlim(min_lon - 2.0, max_lon + 2.0)
+    ax.set_ylim(min_lat - 1.5, max_lat + 1.5)
     ax.grid(color='#1f334a', linewidth=0.5, alpha=0.45)
     ax.set_title(
         f"China Province Confidence ({'Buyer' if str(role).lower() == 'buyer' else 'Seller'})",
-        color=fg, fontsize=11, pad=8
+        color=fg, fontsize=13, pad=8, fontweight='bold'
     )
-    ax.tick_params(colors='#8fb3d9', labelsize=8)
+    ax.tick_params(colors='#8fb3d9', labelsize=9)
     for spine in ax.spines.values():
         spine.set_color('#2a425f')
-    ax.set_xlabel('Longitude', color='#8fb3d9', fontsize=8)
-    ax.set_ylabel('Latitude', color='#8fb3d9', fontsize=8)
+    ax.set_xlabel('Longitude', color='#8fb3d9', fontsize=10)
+    ax.set_ylabel('Latitude', color='#8fb3d9', fontsize=10)
+
+    # Large side panel with top confidence values.
+    summary_lines = [f"{name.title()}: {prob * 100:.1f}%" for name, prob in top[:6]]
+    ax.text(
+        1.01, 0.98, "Top Provinces\n" + "\n".join(summary_lines),
+        transform=ax.transAxes, va='top', ha='left', color='#e2e8f0', fontsize=11.5, fontweight='bold',
+        bbox=dict(boxstyle='round,pad=0.35', facecolor='#0f1e31', edgecolor='#35506f', alpha=0.9)
+    )
     fig.tight_layout()
     return fig_b64(fig)
 
