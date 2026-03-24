@@ -889,6 +889,18 @@ def detect_outcome_heuristic_last_two(turns):
     if not last_two:
         return None
     last_text = ' '.join(str(t.get('text', '')) for t in last_two).lower()
+    review_action = r'(?:remove|removed|retract|retracted|withdraw|withdrew|withdrawn|take\s*down|took\s*down|pull\s*down|pulled\s*down|delete|deleted)'
+
+    def _is_negated(snippet):
+        return bool(re.search(r"\b(?:don't|do not|did not|not|won't|will not|can't|cannot|keep|keeping|remain|stays?)\b", snippet))
+
+    def _matches_without_negation(pattern):
+        for m in re.finditer(pattern, last_text):
+            window = last_text[max(0, m.start() - 24):min(len(last_text), m.end() + 24)]
+            if not _is_negated(window):
+                return True
+        return False
+
     outcome = {
         'refund_label': 'None', 'refund': 0.0,
         'buyer_review': 0, 'seller_review': 0,
@@ -903,13 +915,20 @@ def detect_outcome_heuristic_last_two(turns):
     elif re.search(r'\b(no refund|0%)\b', last_text):
         outcome['refund_label'] = 'None'
         outcome['refund'] = 0.0
-    if re.search(r'(mutual|both reviews|each.*review|remove.*review)', last_text):
+    mutual_pattern = (
+        r'\b(?:mutual|both|each|respective)\b.*\breviews?\b.*' + review_action +
+        r'|' + review_action + r'.*\b(?:mutual|both|each|respective|our)\b.*\breviews?\b' +
+        r'|\bboth reviews?\s+(?:down|gone)\b'
+    )
+    if _matches_without_negation(mutual_pattern):
         outcome['buyer_review'] = 1
         outcome['seller_review'] = 1
     else:
-        if re.search(r'(buyer.*review|your review)', last_text):
+        buyer_pattern = r'(?:buyer.*review|your review|customer review).*(?:' + review_action + r')|' + review_action + r'.*(?:buyer.*review|your review|customer review)'
+        seller_pattern = r'(?:seller.*review|my review|our review).*(?:' + review_action + r')|' + review_action + r'.*(?:seller.*review|my review|our review)'
+        if _matches_without_negation(buyer_pattern):
             outcome['buyer_review'] = 1
-        if re.search(r'(seller.*review|my review)', last_text):
+        if _matches_without_negation(seller_pattern):
             outcome['seller_review'] = 1
     if re.search(r'(seller.*apolog|sincerely.*apolog|formally.*apolog)', last_text):
         outcome['seller_apology'] = 1
@@ -920,21 +939,21 @@ def detect_outcome_heuristic_last_two(turns):
     return outcome if agreed else None
 
 def llm_detect_agreement_last_two(turns):
-    """Detect whether the final two messages form an agreement and extract issue terms."""
-    last_two = turns[-2:] if isinstance(turns, list) else []
-    if len(last_two) < 2:
+    """Detect whether the latest turns form an agreement and extract issue terms via LLM."""
+    recent_turns = turns[-6:] if isinstance(turns, list) else []
+    if len(recent_turns) < 2:
         return None
     api_key = os.getenv('OPENAI_API_KEY')
     if not api_key:
         return detect_outcome_heuristic_last_two(turns)
 
-    excerpt = "\n".join(f"{t.get('speaker','Unknown')}: {t.get('text','')}" for t in last_two)
+    excerpt = "\n".join(f"{t.get('speaker','Unknown')}: {t.get('text','')}" for t in recent_turns)
     payload = {
         "model": "gpt-4o",
         "messages": [
-            {"role": "system", "content": "Extract only explicit final agreement from the last two messages in a negotiation. Respond with JSON only."},
+            {"role": "system", "content": "Extract only explicit final agreement from the latest negotiation turns. Respond with JSON only."},
             {"role": "user", "content": (
-                "Decide whether the final two messages explicitly confirm a settlement package. "
+                "Decide whether the latest turns explicitly confirm a final settlement package. "
                 "If not explicit, set agreed=false and outcome=null.\n"
                 "If explicit, return agreed=true and outcome with:\n"
                 "refund_label: Full|Half|None,\n"
@@ -942,6 +961,9 @@ def llm_detect_agreement_last_two(turns):
                 "seller_review: 1|0,\n"
                 "seller_apology: 0|1,\n"
                 "buyer_apology: 0|1.\n\n"
+                "Review removals include remove/retract/withdraw/take down/pull down/delete.\n"
+                "Do NOT set buyer_review or seller_review when those actions are negated (e.g., do not retract, won't remove).\n"
+                "Only use terms that are explicitly accepted in the latest confirmed package.\n\n"
                 f"Messages:\n{excerpt}\n\n"
                 "JSON format: {\"agreed\":true|false,\"outcome\":{...}|null}"
             )}
@@ -965,13 +987,22 @@ def llm_detect_agreement_last_two(turns):
         refund_label = str(out.get('refund_label', 'None')).strip().capitalize()
         if refund_label not in {'Full', 'Half', 'None'}:
             refund_label = 'None'
+
+        def _to_flag(v):
+            if isinstance(v, bool):
+                return 1 if v else 0
+            if isinstance(v, (int, float)):
+                return 1 if int(v) else 0
+            s = str(v).strip().lower()
+            return 1 if s in {'1', 'yes', 'true', 'y'} else 0
+
         return {
             'refund_label': refund_label,
             'refund': {'Full': 1.0, 'Half': 0.5, 'None': 0.0}[refund_label],
-            'buyer_review': 1 if int(out.get('buyer_review', 0)) else 0,
-            'seller_review': 1 if int(out.get('seller_review', 0)) else 0,
-            'seller_apology': 1 if int(out.get('seller_apology', 0)) else 0,
-            'buyer_apology': 1 if int(out.get('buyer_apology', 0)) else 0,
+            'buyer_review': _to_flag(out.get('buyer_review', 0)),
+            'seller_review': _to_flag(out.get('seller_review', 0)),
+            'seller_apology': _to_flag(out.get('seller_apology', 0)),
+            'buyer_apology': _to_flag(out.get('buyer_apology', 0)),
         }
     except Exception:
         return detect_outcome_heuristic_last_two(turns)
