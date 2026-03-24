@@ -393,10 +393,11 @@ def infer_cn_province_distribution(turns, role):
 
 CN_REGION_PROVINCES = {
     # Keep province scope aligned with chinese model classes in predictor.py.
-    'North': ['beijing', 'tianjin', 'hebei', 'shandong'],
-    'Central': ['henan', 'hubei', 'hunan', 'sichuan'],
+    # These groups are visualization buckets for the 4 predictor classes.
+    'North': ['beijing', 'tianjin', 'hebei', 'shandong', 'shanxi', 'inner mongolia', 'liaoning', 'jilin', 'heilongjiang', 'ningxia', 'gansu', 'qinghai', 'xinjiang'],
+    'Central': ['henan', 'hubei', 'hunan', 'sichuan', 'chongqing', 'shaanxi', 'anhui', 'jiangxi', 'guizhou', 'yunnan'],
     'Wu_Min': ['shanghai', 'jiangsu', 'zhejiang', 'fujian'],
-    'Xian_Yue': ['guangdong', 'guangxi', 'hainan', 'hong kong'],
+    'Xian_Yue': ['guangdong', 'guangxi', 'hainan', 'hong kong', 'macau', 'taiwan', 'tibet'],
 }
 
 CN_REGION_LABEL_POS = {
@@ -435,9 +436,6 @@ def constrain_cn_probs_to_model_scope(province_probs):
         scoped[k] = float((province_probs or {}).get(k, 0.0))
     total = sum(scoped.values())
     if total <= 0:
-        even = 1.0 / len(allowed)
-        for k in allowed:
-            scoped[k] = round(even, 6)
         return scoped
     return {k: round(v / total, 6) for k, v in scoped.items()}
 
@@ -1175,8 +1173,8 @@ def predict_cn_region_with_model(turns, role):
         return {
             'country': 'China',
             'confidence': 0.0,
-            'probabilities': {'North': 0.25, 'Central': 0.25, 'Wu_Min': 0.25, 'Xian_Yue': 0.25},
-            'province_probabilities': base_province_probs,
+            'probabilities': {'North': 0.0, 'Central': 0.0, 'Wu_Min': 0.0, 'Xian_Yue': 0.0},
+            'province_probabilities': {k: 0.0 for k in CN_PROVINCE_CENTROIDS.keys()},
         }
 
     if PREDICTOR_ZH is None:
