@@ -960,7 +960,7 @@ def llm_detect_agreement_last_two(turns):
     excerpt = "\n".join(f"{t.get('speaker','Unknown')}: {t.get('text','')}" for t in recent_turns)
     recent_text = " ".join(str(t.get('text', '')) for t in recent_turns).lower()
     payload = {
-        "model": "gpt-4.1",
+        "model": "gpt-4o",
         "messages": [
             {"role": "system", "content": "Extract only explicit final agreement from the latest negotiation turns. Respond with JSON only."},
             {"role": "user", "content": (
@@ -1084,9 +1084,9 @@ def llm_operational_summary(turns_so_far, country_snapshot, risk_snapshot, irp_p
         f"IRP patterns: {json.dumps(irp_patterns or {})}\n"
         f"Observed turns:\n{transcript_excerpt}"
     )
-
+    print(prompt)
     payload = {
-        "model": "gpt-4.1",
+        "model": "gpt-4o",
         "messages": [
             {"role": "system", "content": "You summarize negotiation states for mediators in plain, crisp language."},
             {"role": "user", "content": prompt}
@@ -1117,7 +1117,7 @@ def llm_irp_label(turns_so_far, current_turn):
         return current_turn.get('meta', {}).get('irp_label') or 'Interest'
     excerpt = "\n".join(f"{t.get('speaker','Unknown')}: {t.get('text','')}" for t in turns_so_far[-8:])
     payload = {
-        "model": "gpt-4.1",
+        "model": "gpt-4o",
         "messages": [
             {"role": "system", "content": "Classify negotiation utterances into Interest, Right, or Power. Respond in English JSON only."},
             {"role": "user", "content": (
@@ -1162,7 +1162,7 @@ def llm_evolution_summary(op_summaries):
         return 'Operational summaries indicate shifting emotional intensity with intermittent convergence opportunities; uncertainty remained around cultural priors while risk signals fluctuated by turn.'
 
     payload = {
-        "model": "gpt-4.1",
+        "model": "gpt-4o",
         "messages": [
             {"role": "system", "content": "You synthesize negotiation timeline analyses."},
             {"role": "user", "content": (
@@ -1308,7 +1308,7 @@ def llm_failure_risk(turns_so_far):
         for i, t in enumerate(turns_so_far[-35:])
     )
     payload = {
-        "model": "gpt-4.1",
+        "model": "gpt-4o",
         "messages": [
             {"role": "system", "content": "Assess negotiation failure risk. Return ENGLISH JSON only."},
             {"role": "user", "content": (
@@ -1404,7 +1404,7 @@ You do not need to intervene every turn, and should consider how recently you've
 Return ENGLISH only."""
 
     payload = {
-        "model": "gpt-4.1",
+        "model": "gpt-4o",
         "messages": [
             {"role": "system", "content": prompt},
             {"role": "user", "content": f"Conversation so far:\n{transcript}\n\nRecent intervention turns: {prior_intervention_turns}. Return JSON with fields rating, reason, statement."}
