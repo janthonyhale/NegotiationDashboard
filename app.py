@@ -794,9 +794,11 @@ def llm_emotion_scores(text):
     if not api_key:
         return score_emo(text)
 
-    system_prompt = """You are a good emotion classification tool. Your task is to classify the emotion of the last speaker based on the contextual dialogue.
-Your output should be a JSON object with an 'emotion' field, categorizing the dialogue with a score for each: joy, anger, fear, sadness, surprise, compassion, or neutral.
-These scores should sum to one. If an utterance is neutral, then neutral must be one with every other label set to zero."""
+    system_prompt = """You are an emotion classifier for negotiation dialogue.
+Classify the LAST speaker utterance using these labels only: joy, anger, fear, sadness, surprise, compassion, neutral.
+Return JSON with an 'emotion' object whose scores sum to 1.0.
+Important calibration: if the utterance has blame, threats, ultimatums, hostile accusations, or strong frustration, anger should be meaningfully high (often >= 0.45), not diluted into neutral.
+Use neutral as dominant only when emotional content is truly minimal."""
 
     payload = {
         "model": "gpt-4.1",
@@ -848,6 +850,99 @@ These scores should sum to one. If an utterance is neutral, then neutral must be
         return out
     except Exception:
         return score_emo(text)
+
+def detect_outcome_heuristic_last_two(turns):
+    """Heuristic outcome detection using only the final two turns."""
+    last_two = turns[-2:] if isinstance(turns, list) else []
+    if not last_two:
+        return None
+    last_text = ' '.join(str(t.get('text', '')) for t in last_two).lower()
+    outcome = {
+        'refund_label': 'None', 'refund': 0.0,
+        'buyer_review': 0, 'seller_review': 0,
+        'seller_apology': 0, 'buyer_apology': 0,
+    }
+    if 'full refund' in last_text:
+        outcome['refund_label'] = 'Full'
+        outcome['refund'] = 1.0
+    elif re.search(r'\b(half|50%|partial)\b', last_text):
+        outcome['refund_label'] = 'Half'
+        outcome['refund'] = 0.5
+    elif re.search(r'\b(no refund|0%)\b', last_text):
+        outcome['refund_label'] = 'None'
+        outcome['refund'] = 0.0
+    if re.search(r'(mutual|both reviews|each.*review|remove.*review)', last_text):
+        outcome['buyer_review'] = 1
+        outcome['seller_review'] = 1
+    else:
+        if re.search(r'(buyer.*review|your review)', last_text):
+            outcome['buyer_review'] = 1
+        if re.search(r'(seller.*review|my review)', last_text):
+            outcome['seller_review'] = 1
+    if re.search(r'(seller.*apolog|sincerely.*apolog|formally.*apolog)', last_text):
+        outcome['seller_apology'] = 1
+    if re.search(r'buyer.*apolog', last_text):
+        outcome['buyer_apology'] = 1
+
+    agreed = re.search(r'\b(agreed|deal|accept|accepted|settled|resolved|terms|finalize|confirmed)\b', last_text)
+    return outcome if agreed else None
+
+def llm_detect_agreement_last_two(turns):
+    """Detect whether the final two messages form an agreement and extract issue terms."""
+    last_two = turns[-2:] if isinstance(turns, list) else []
+    if len(last_two) < 2:
+        return None
+    api_key = os.getenv('OPENAI_API_KEY')
+    if not api_key:
+        return detect_outcome_heuristic_last_two(turns)
+
+    excerpt = "\n".join(f"{t.get('speaker','Unknown')}: {t.get('text','')}" for t in last_two)
+    payload = {
+        "model": "gpt-4.1",
+        "messages": [
+            {"role": "system", "content": "Extract only explicit final agreement from the last two messages in a negotiation. Respond with JSON only."},
+            {"role": "user", "content": (
+                "Decide whether the final two messages explicitly confirm a settlement package. "
+                "If not explicit, set agreed=false and outcome=null.\n"
+                "If explicit, return agreed=true and outcome with:\n"
+                "refund_label: Full|Half|None,\n"
+                "buyer_review: 0|1,\n"
+                "seller_review: 0|1,\n"
+                "seller_apology: 0|1,\n"
+                "buyer_apology: 0|1.\n\n"
+                f"Messages:\n{excerpt}\n\n"
+                "JSON format: {\"agreed\":true|false,\"outcome\":{...}|null}"
+            )}
+        ],
+        "temperature": 0,
+        "response_format": {"type": "json_object"}
+    }
+    req = urllib.request.Request(
+        'https://api.openai.com/v1/chat/completions',
+        data=json.dumps(payload).encode('utf-8'),
+        headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {api_key}'},
+        method='POST'
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+        obj = json.loads(data['choices'][0]['message']['content'] or '{}')
+        if not obj.get('agreed'):
+            return None
+        out = obj.get('outcome') if isinstance(obj.get('outcome'), dict) else {}
+        refund_label = str(out.get('refund_label', 'None')).strip().capitalize()
+        if refund_label not in {'Full', 'Half', 'None'}:
+            refund_label = 'None'
+        return {
+            'refund_label': refund_label,
+            'refund': {'Full': 1.0, 'Half': 0.5, 'None': 0.0}[refund_label],
+            'buyer_review': 1 if int(out.get('buyer_review', 0)) else 0,
+            'seller_review': 1 if int(out.get('seller_review', 0)) else 0,
+            'seller_apology': 1 if int(out.get('seller_apology', 0)) else 0,
+            'buyer_apology': 1 if int(out.get('buyer_apology', 0)) else 0,
+        }
+    except Exception:
+        return detect_outcome_heuristic_last_two(turns)
 
 
 def llm_operational_summary(turns_so_far, country_snapshot, risk_snapshot):
@@ -1692,12 +1787,15 @@ def api_post_summary():
     bw    = data.get('buyer_weights', DEFAULT_BUYER_WEIGHTS)
     sw    = data.get('seller_weights', DEFAULT_SELLER_WEIGHTS)
     op_summaries = data.get('op_summaries', [])
-    final_outcome = data.get('final_outcome')
+    provided_final_outcome = data.get('final_outcome')
 
     turns_enriched = enrich(turns) if not turns_have_cached_enrichment(turns) else turns
     risk = estimate_risk(turns_enriched)
     outcomes = generate_all_outcomes(bw, sw)
     pareto = compute_pareto(outcomes)
+
+    # Prefer LLM-based agreement detection using only the final two turns.
+    final_outcome = llm_detect_agreement_last_two(turns_enriched) or provided_final_outcome
 
     match = None
     if final_outcome:
