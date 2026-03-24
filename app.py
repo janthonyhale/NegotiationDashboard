@@ -974,6 +974,99 @@ def llm_detect_agreement_last_two(turns):
     except Exception:
         return detect_outcome_heuristic_last_two(turns)
 
+def detect_outcome_heuristic_last_two(turns):
+    """Heuristic outcome detection using only the final two turns."""
+    last_two = turns[-2:] if isinstance(turns, list) else []
+    if not last_two:
+        return None
+    last_text = ' '.join(str(t.get('text', '')) for t in last_two).lower()
+    outcome = {
+        'refund_label': 'None', 'refund': 0.0,
+        'buyer_review': 0, 'seller_review': 0,
+        'seller_apology': 0, 'buyer_apology': 0,
+    }
+    if 'full refund' in last_text:
+        outcome['refund_label'] = 'Full'
+        outcome['refund'] = 1.0
+    elif re.search(r'\b(half|50%|partial)\b', last_text):
+        outcome['refund_label'] = 'Half'
+        outcome['refund'] = 0.5
+    elif re.search(r'\b(no refund|0%)\b', last_text):
+        outcome['refund_label'] = 'None'
+        outcome['refund'] = 0.0
+    if re.search(r'(mutual|both reviews|each.*review|remove.*review)', last_text):
+        outcome['buyer_review'] = 1
+        outcome['seller_review'] = 1
+    else:
+        if re.search(r'(buyer.*review|your review)', last_text):
+            outcome['buyer_review'] = 1
+        if re.search(r'(seller.*review|my review)', last_text):
+            outcome['seller_review'] = 1
+    if re.search(r'(seller.*apolog|sincerely.*apolog|formally.*apolog)', last_text):
+        outcome['seller_apology'] = 1
+    if re.search(r'buyer.*apolog', last_text):
+        outcome['buyer_apology'] = 1
+
+    agreed = re.search(r'\b(agreed|deal|accept|accepted|settled|resolved|terms|finalize|confirmed)\b', last_text)
+    return outcome if agreed else None
+
+def llm_detect_agreement_last_two(turns):
+    """Detect whether the final two messages form an agreement and extract issue terms."""
+    last_two = turns[-2:] if isinstance(turns, list) else []
+    if len(last_two) < 2:
+        return None
+    api_key = os.getenv('OPENAI_API_KEY')
+    if not api_key:
+        return detect_outcome_heuristic_last_two(turns)
+
+    excerpt = "\n".join(f"{t.get('speaker','Unknown')}: {t.get('text','')}" for t in last_two)
+    payload = {
+        "model": "gpt-4.1",
+        "messages": [
+            {"role": "system", "content": "Extract only explicit final agreement from the last two messages in a negotiation. Respond with JSON only."},
+            {"role": "user", "content": (
+                "Decide whether the final two messages explicitly confirm a settlement package. "
+                "If not explicit, set agreed=false and outcome=null.\n"
+                "If explicit, return agreed=true and outcome with:\n"
+                "refund_label: Full|Half|None,\n"
+                "buyer_review: 0|1,\n"
+                "seller_review: 0|1,\n"
+                "seller_apology: 0|1,\n"
+                "buyer_apology: 0|1.\n\n"
+                f"Messages:\n{excerpt}\n\n"
+                "JSON format: {\"agreed\":true|false,\"outcome\":{...}|null}"
+            )}
+        ],
+        "temperature": 0,
+        "response_format": {"type": "json_object"}
+    }
+    req = urllib.request.Request(
+        'https://api.openai.com/v1/chat/completions',
+        data=json.dumps(payload).encode('utf-8'),
+        headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {api_key}'},
+        method='POST'
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+        obj = json.loads(data['choices'][0]['message']['content'] or '{}')
+        if not obj.get('agreed'):
+            return None
+        out = obj.get('outcome') if isinstance(obj.get('outcome'), dict) else {}
+        refund_label = str(out.get('refund_label', 'None')).strip().capitalize()
+        if refund_label not in {'Full', 'Half', 'None'}:
+            refund_label = 'None'
+        return {
+            'refund_label': refund_label,
+            'refund': {'Full': 1.0, 'Half': 0.5, 'None': 0.0}[refund_label],
+            'buyer_review': 1 if int(out.get('buyer_review', 0)) else 0,
+            'seller_review': 1 if int(out.get('seller_review', 0)) else 0,
+            'seller_apology': 1 if int(out.get('seller_apology', 0)) else 0,
+            'buyer_apology': 1 if int(out.get('buyer_apology', 0)) else 0,
+        }
+    except Exception:
+        return detect_outcome_heuristic_last_two(turns)
+
 
 def llm_operational_summary(turns_so_far, country_snapshot, risk_snapshot):
     """Generate a succinct IRP-aware operational summary for the current state."""
