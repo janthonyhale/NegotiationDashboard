@@ -769,8 +769,7 @@ function renderRisk(r) {
   const c = lc==='low'?'var(--teal)':lc==='medium'?'var(--amber)':'var(--red)';
   document.getElementById('risk-card').innerHTML=`
     <div class="risk-row"><div class="risk-pct" style="color:${c}">${pct}%</div><span class="risk-badge ${lc}">${r.label}</span></div>
-    <div class="risk-bar-wrap"><div class="risk-bar" style="width:${pct}%;background:${c}"></div></div>
-    <div class="sigs"><span>⚠ Signals: <span>${r.negative_signals}</span></span><span>⚡ Threats: <span>${r.threats}</span></span></div>`;
+    <div class="risk-bar-wrap"><div class="risk-bar" style="width:${pct}%;background:${c}"></div></div>`;
 }
 
 function renderAdvisor(a) {

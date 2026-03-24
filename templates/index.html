@@ -622,10 +622,6 @@ function renderSidebar(data) {
       </div>
     </div>
     <div class="risk-bar-wrap"><div class="risk-bar" style="width:${riskW}%;background:${riskC}"></div></div>
-    <div style="display:flex;gap:12px;margin-bottom:10px">
-      <div style="font-size:0.65rem;font-family:var(--mono);color:var(--muted)">⚠ Signals: ${risk.negative_signals}</div>
-      <div style="font-size:0.65rem;font-family:var(--mono);color:var(--muted)">⚡ Threats: ${risk.threats}</div>
-    </div>
 
     <div class="section-label">Advisor</div>
     <div class="advisor-card ${advisor.should_intervene ? 'intervene' : ''}">
