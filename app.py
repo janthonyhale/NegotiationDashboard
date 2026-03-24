@@ -391,6 +391,32 @@ def infer_cn_province_distribution(turns, role):
     return {k: round(v / total, 6) for k, v in counts.items()}
 
 
+def project_region_probs_to_provinces(region_probs, base_province_probs):
+    region_map = {
+        'North': ['beijing', 'tianjin', 'hebei', 'shandong', 'shanxi', 'inner mongolia', 'liaoning', 'jilin', 'heilongjiang', 'ningxia', 'gansu', 'qinghai', 'xinjiang'],
+        'Central': ['henan', 'hubei', 'hunan', 'sichuan', 'chongqing', 'shaanxi', 'anhui', 'jiangxi', 'guizhou', 'yunnan'],
+        'Wu_Min': ['shanghai', 'jiangsu', 'zhejiang', 'fujian'],
+        'Xian_Yue': ['guangdong', 'guangxi', 'hainan', 'hong kong', 'macau', 'taiwan', 'tibet'],
+    }
+    out = {k: 0.0 for k in CN_PROVINCE_CENTROIDS.keys()}
+    base = {k: float(v) for k, v in (base_province_probs or {}).items() if k in out}
+    for region, provinces in region_map.items():
+        rprob = float((region_probs or {}).get(region, 0.0))
+        if rprob <= 0:
+            continue
+        weights = {p: max(0.0, base.get(p, 0.0)) for p in provinces}
+        wsum = sum(weights.values())
+        if wsum <= 0:
+            even = rprob / max(len(provinces), 1)
+            for p in provinces:
+                out[p] += even
+        else:
+            for p, w in weights.items():
+                out[p] += rprob * (w / wsum)
+    total = sum(out.values()) or 1.0
+    return {k: round(v / total, 6) for k, v in out.items()}
+
+
 def make_cn_province_map(province_probs, role='buyer'):
     probs = {k: float(v) for k, v in (province_probs or {}).items() if k in CN_PROVINCE_CENTROIDS}
     if not probs:
@@ -442,6 +468,18 @@ def make_cn_province_map(province_probs, role='buyer'):
                 poly = mpatches.Polygon(list(zip(xs, ys)), closed=True, facecolor=face, edgecolor='#3d5f83', linewidth=0.45, alpha=0.92)
                 ax.add_patch(poly)
                 drew_geojson = True
+
+        top_labeled = sorted(probs.items(), key=lambda kv: kv[1], reverse=True)[:4]
+        for prov, p in top_labeled:
+            if p <= 0:
+                continue
+            lon, lat = CN_PROVINCE_CENTROIDS.get(prov, (None, None))
+            if lon is None:
+                continue
+            ax.text(
+                lon + 0.35, lat + 0.25, f"{p * 100:.1f}%",
+                color='#e6f0ff', fontsize=11.5, fontweight='bold', zorder=6
+            )
 
     if not drew_geojson:
         # Fallback if geojson is missing or malformed.
@@ -1093,22 +1131,22 @@ def predict_country_with_model(turns, role):
 
 def predict_cn_region_with_model(turns, role):
     role_turns = [t.get('text', '').strip() for t in turns if t.get('speaker') == role and t.get('text', '').strip()]
-    province_probs = infer_cn_province_distribution(turns, role)
+    base_province_probs = infer_cn_province_distribution(turns, role)
     if not role_turns:
         return {
             'country': 'China',
             'confidence': 0.0,
             'probabilities': {'North': 0.25, 'Central': 0.25, 'Wu_Min': 0.25, 'Xian_Yue': 0.25},
-            'province_probabilities': province_probs,
+            'province_probabilities': base_province_probs,
         }
 
     if PREDICTOR_ZH is None:
         # fallback to lightweight heuristic if chinese model is unavailable
         proxy = {
-            'North': province_probs.get('beijing', 0) + province_probs.get('tianjin', 0) + province_probs.get('hebei', 0) + province_probs.get('shandong', 0),
-            'Central': province_probs.get('henan', 0) + province_probs.get('hubei', 0) + province_probs.get('hunan', 0) + province_probs.get('sichuan', 0),
-            'Wu_Min': province_probs.get('shanghai', 0) + province_probs.get('jiangsu', 0) + province_probs.get('zhejiang', 0) + province_probs.get('fujian', 0),
-            'Xian_Yue': province_probs.get('guangdong', 0) + province_probs.get('guangxi', 0) + province_probs.get('hainan', 0) + province_probs.get('hong kong', 0),
+            'North': base_province_probs.get('beijing', 0) + base_province_probs.get('tianjin', 0) + base_province_probs.get('hebei', 0) + base_province_probs.get('shandong', 0),
+            'Central': base_province_probs.get('henan', 0) + base_province_probs.get('hubei', 0) + base_province_probs.get('hunan', 0) + base_province_probs.get('sichuan', 0),
+            'Wu_Min': base_province_probs.get('shanghai', 0) + base_province_probs.get('jiangsu', 0) + base_province_probs.get('zhejiang', 0) + base_province_probs.get('fujian', 0),
+            'Xian_Yue': base_province_probs.get('guangdong', 0) + base_province_probs.get('guangxi', 0) + base_province_probs.get('hainan', 0) + base_province_probs.get('hong kong', 0),
         }
         total = sum(proxy.values()) or 1.0
         normalized = {k: round(v / total, 6) for k, v in proxy.items()}
@@ -1118,7 +1156,7 @@ def predict_cn_region_with_model(turns, role):
             'confidence': round(conf, 2),
             'probabilities': normalized,
             'region': pred,
-            'province_probabilities': province_probs,
+            'province_probabilities': base_province_probs,
         }
 
     outputs = PREDICTOR_ZH.predict_batch(role_turns)
@@ -1131,6 +1169,7 @@ def predict_cn_region_with_model(turns, role):
     total = sum(averaged.values()) or 1.0
     normalized = {k: round(v / total, 6) for k, v in averaged.items()}
     pred, conf = max(normalized.items(), key=lambda item: item[1])
+    province_probs = project_region_probs_to_provinces(normalized, base_province_probs)
     return {
         'country': 'China',
         'confidence': round(conf, 2),
