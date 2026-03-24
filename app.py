@@ -309,22 +309,10 @@ def enrich(turns):
 
 def _default_pre_dispute_justifications():
     return {
-        'refund': {
-            'buyer': 'The buyer argues the item/service failed expectations and requests compensation to restore fairness.',
-            'seller': 'The seller argues full compensation may be disproportionate to responsibility or policy constraints.'
-        },
-        'buyer_review': {
-            'buyer': 'The buyer argues their review is a truthful account and should remain visible.',
-            'seller': 'The seller argues buyer-review removal may be warranted if statements are inaccurate or harmful.'
-        },
-        'seller_review': {
-            'buyer': "The buyer argues the seller's review is unfairly punitive and should be removed.",
-            'seller': 'The seller argues their review reflects legitimate transaction concerns and should remain.'
-        },
-        'receive_apology': {
-            'buyer': 'The buyer seeks acknowledgment of harm and a sincere apology as relational repair.',
-            'seller': 'The seller may resist apologizing if they believe fault is disputed, while still seeking closure.'
-        },
+        'refund': {'buyer': '', 'seller': ''},
+        'buyer_review': {'buyer': '', 'seller': ''},
+        'seller_review': {'buyer': '', 'seller': ''},
+        'receive_apology': {'buyer': '', 'seller': ''},
     }
 
 
@@ -390,9 +378,10 @@ def _normalize_weight_payload(raw, defaults):
         'receive_apology': 'seller_apology',
         'buyer_apology': 'buyer_apology',
     }
+    valid_keys = {'refund', 'buyer_review', 'seller_review', 'seller_apology', 'buyer_apology'}
     for k, v in raw.items():
         key = aliases.get(str(k).strip(), str(k).strip())
-        if key not in out:
+        if key not in out and key not in valid_keys:
             continue
         try:
             out[key] = max(0, min(100, int(float(v))))
@@ -402,8 +391,8 @@ def _normalize_weight_payload(raw, defaults):
 
 
 def extract_preference_weights(path, ext):
-    bw = dict(DEFAULT_BUYER_WEIGHTS)
-    sw = dict(DEFAULT_SELLER_WEIGHTS)
+    bw = {}
+    sw = {}
     try:
         if ext == 'json':
             with open(path, encoding='utf-8-sig', errors='replace') as f:
@@ -417,8 +406,10 @@ def extract_preference_weights(path, ext):
         if isinstance(data, dict):
             raw_b = data.get('buyer_weights', data.get('buyer_preferences'))
             raw_s = data.get('seller_weights', data.get('seller_preferences'))
-            bw = _normalize_weight_payload(raw_b, DEFAULT_BUYER_WEIGHTS)
-            sw = _normalize_weight_payload(raw_s, DEFAULT_SELLER_WEIGHTS)
+            if isinstance(raw_b, dict):
+                bw = _normalize_weight_payload(raw_b, {})
+            if isinstance(raw_s, dict):
+                sw = _normalize_weight_payload(raw_s, {})
     except Exception:
         pass
     return bw, sw
@@ -1119,7 +1110,9 @@ def api_upload():
 
         pre_justifications = extract_pre_dispute_justifications(path, ext)
         bw, sw = extract_preference_weights(path, ext)
-        outcomes = generate_all_outcomes(bw, sw)
+        calc_bw = {**DEFAULT_BUYER_WEIGHTS, **bw}
+        calc_sw = {**DEFAULT_SELLER_WEIGHTS, **sw}
+        outcomes = generate_all_outcomes(calc_bw, calc_sw)
         pareto   = compute_pareto(outcomes)
         pareto_img = make_pareto_plot(outcomes, pareto, title='Pre-Negotiation: KODIS Solution Space')
 
