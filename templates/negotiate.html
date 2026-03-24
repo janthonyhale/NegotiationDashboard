@@ -1047,7 +1047,7 @@ function normalizeCountryCode(raw){
 
 function renderCountry(countrySnap){
   const snap = countrySnap || S.lastCountry || S.country || null;
-  if (S.currentIdx < 0 || !snap){
+  if (!snap){
     document.getElementById('map-title').textContent = S.mapRole === 'buyer' ? 'Buyer map' : 'Seller map';
     document.getElementById('map-scale-note').textContent = 'Turn 0 · awaiting first exchange';
     renderRoleMap('#active-map', S.mapRole, {}, null, 0);

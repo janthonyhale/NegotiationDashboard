@@ -397,12 +397,9 @@ def make_cn_province_map(province_probs, role='buyer'):
         return None
     total = sum(probs.values()) or 1.0
     probs = {k: v / total for k, v in probs.items()}
-    top = sorted(probs.items(), key=lambda kv: kv[1], reverse=True)[:8]
 
     bg = '#07111f'
-    fg = '#d1e6ff'
     primary = '#4f91ff' if str(role).lower() == 'buyer' else '#f43f5e'
-    accent = '#22d3a5'
 
     fig, ax = plt.subplots(figsize=(9.2, 5.2), facecolor=bg)
     ax.set_facecolor(bg)
@@ -446,15 +443,6 @@ def make_cn_province_map(province_probs, role='buyer'):
                 ax.add_patch(poly)
                 drew_geojson = True
 
-        if drew_geojson:
-            for prov, p in top:
-                lon, lat = CN_PROVINCE_CENTROIDS[prov]
-                ax.scatter([lon], [lat], s=280 + p * 2200, c=accent, alpha=0.18, zorder=5, edgecolors='none')
-                ax.text(
-                    lon + 0.35, lat + 0.35, f"{prov.title()} {p*100:.1f}%",
-                    fontsize=12.8, color=fg, zorder=6, fontweight='bold'
-                )
-
     if not drew_geojson:
         # Fallback if geojson is missing or malformed.
         lons = []
@@ -469,32 +457,16 @@ def make_cn_province_map(province_probs, role='buyer'):
             colors.append(primary if p > 0.001 else '#27425e')
 
         ax.scatter(lons, lats, s=sizes, c=colors, alpha=0.88, edgecolors='#dbeafe', linewidths=0.35, zorder=3)
-        for prov, p in top:
-            lon, lat = CN_PROVINCE_CENTROIDS[prov]
-            ax.scatter([lon], [lat], s=300 + p * 2500, c=accent, alpha=0.18, zorder=4, edgecolors='none')
-            ax.text(lon + 0.5, lat + 0.4, f"{prov.title()} {p*100:.1f}%", fontsize=12.8, color=fg, zorder=5, fontweight='bold')
         min_lon, max_lon, min_lat, max_lat = 72, 136, 17, 54
 
     ax.set_xlim(min_lon - 2.0, max_lon + 2.0)
     ax.set_ylim(min_lat - 1.5, max_lat + 1.5)
-    ax.grid(color='#1f334a', linewidth=0.5, alpha=0.45)
-    ax.set_title(
-        f"China Province Confidence ({'Buyer' if str(role).lower() == 'buyer' else 'Seller'})",
-        color=fg, fontsize=15, pad=8, fontweight='bold'
-    )
-    ax.tick_params(colors='#8fb3d9', labelsize=11)
+    ax.grid(False)
+    ax.set_xticks([])
+    ax.set_yticks([])
     for spine in ax.spines.values():
-        spine.set_color('#2a425f')
-    ax.set_xlabel('Longitude', color='#8fb3d9', fontsize=12)
-    ax.set_ylabel('Latitude', color='#8fb3d9', fontsize=12)
-
-    # Large side panel with top confidence values.
-    summary_lines = [f"{name.title()}: {prob * 100:.1f}%" for name, prob in top[:6]]
-    ax.text(
-        1.01, 0.98, "Top Provinces\n" + "\n".join(summary_lines),
-        transform=ax.transAxes, va='top', ha='left', color='#e2e8f0', fontsize=13.5, fontweight='bold',
-        bbox=dict(boxstyle='round,pad=0.35', facecolor='#0f1e31', edgecolor='#35506f', alpha=0.9)
-    )
+        spine.set_visible(False)
+    ax.set_axis_off()
     fig.tight_layout()
     return fig_b64(fig)
 
