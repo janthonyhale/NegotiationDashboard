@@ -474,6 +474,35 @@ CN_REGION_LABEL_POS = {
 }
 
 
+def _hex_to_rgb(hex_color):
+    h = str(hex_color).lstrip('#')
+    if len(h) != 6:
+        return (128, 128, 128)
+    return tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
+
+
+def _rgb_to_hex(rgb):
+    r, g, b = [max(0, min(255, int(v))) for v in rgb]
+    return f'#{r:02x}{g:02x}{b:02x}'
+
+
+def _lerp_color(hex_lo, hex_hi, t):
+    t = max(0.0, min(1.0, float(t)))
+    lo = _hex_to_rgb(hex_lo)
+    hi = _hex_to_rgb(hex_hi)
+    return _rgb_to_hex(tuple(lo[i] + (hi[i] - lo[i]) * t for i in range(3)))
+
+
+def _region_center(region_name):
+    provinces = CN_REGION_PROVINCES.get(region_name, [])
+    pts = [CN_PROVINCE_CENTROIDS.get(p) for p in provinces if CN_PROVINCE_CENTROIDS.get(p)]
+    if not pts:
+        return CN_REGION_LABEL_POS.get(region_name, (110.0, 32.0))
+    lon = sum(p[0] for p in pts) / len(pts)
+    lat = sum(p[1] for p in pts) / len(pts)
+    return lon, lat
+
+
 def project_region_probs_to_provinces(region_probs, base_province_probs):
     region_map = CN_REGION_PROVINCES
     out = {k: 0.0 for k in CN_PROVINCE_CENTROIDS.keys()}
@@ -514,8 +543,6 @@ def make_cn_province_map(province_probs, role='buyer', region_probs=None):
     probs = {k: v / total for k, v in probs.items()}
 
     bg = '#07111f'
-    primary = '#4f91ff' if str(role).lower() == 'buyer' else '#f43f5e'
-
     fig, ax = plt.subplots(figsize=(9.2, 5.2), facecolor=bg)
     ax.set_facecolor(bg)
     features = _load_china_geojson_features()
@@ -523,9 +550,11 @@ def make_cn_province_map(province_probs, role='buyer', region_probs=None):
     min_lon, max_lon, min_lat, max_lat = 200, -200, 90, -90
 
     if str(role).lower() == 'buyer':
-        palette = ['#10253d', '#1f4f8c', '#3b82f6', '#93c5fd']
+        light_color = '#dbeafe'
+        dark_color = '#1e3a8a'
     else:
-        palette = ['#31131b', '#7f1d2d', '#f43f5e', '#fda4af']
+        light_color = '#fee2e2'
+        dark_color = '#7f1d1d'
 
     rp = dict(region_probs or {})
     if not rp:
@@ -544,13 +573,8 @@ def make_cn_province_map(province_probs, role='buyer', region_probs=None):
         p = max(0.0, min(1.0, p))
         if p <= 0:
             return '#6b7280'
-        if p >= 0.20:
-            return palette[3]
-        if p >= 0.08:
-            return palette[2]
-        if p >= 0.03:
-            return palette[1]
-        return palette[0]
+        # Continuous scale: higher probability => darker color.
+        return _lerp_color(light_color, dark_color, p)
 
     if features:
         for feat in features:
@@ -574,12 +598,13 @@ def make_cn_province_map(province_probs, role='buyer', region_probs=None):
                 ax.add_patch(poly)
                 drew_geojson = True
 
-        for region, (lon, lat) in CN_REGION_LABEL_POS.items():
+        for region in CN_REGION_PROVINCES.keys():
             p = float(rp.get(region, 0.0))
             if p <= 0:
                 continue
+            lon, lat = _region_center(region)
             ax.text(
-                lon + 0.15, lat + 0.10, f"{region} {p * 100:.1f}%",
+                lon, lat, f"{region} {p * 100:.1f}%",
                 color='#e6f0ff', fontsize=13.0, fontweight='bold', zorder=6
             )
 
@@ -595,7 +620,7 @@ def make_cn_province_map(province_probs, role='buyer', region_probs=None):
             lons.append(lon)
             lats.append(lat)
             sizes.append(140 + p * 2800)
-            colors.append(primary if p > 0.001 else '#27425e')
+            colors.append(color_for_prob(p))
 
         ax.scatter(lons, lats, s=sizes, c=colors, alpha=0.88, edgecolors='#dbeafe', linewidths=0.35, zorder=3)
         min_lon, max_lon, min_lat, max_lat = 72, 136, 17, 54
