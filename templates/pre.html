@@ -80,8 +80,8 @@ const ISSUES = [
 let D=null, BW={}, SW={}, JUST={};
 
 function prefValue(side, key){
-  if (key === 'receive_apology') return side==='buyer' ? (BW['seller_apology'] ?? 0) : (SW['buyer_apology'] ?? 0);
-  return side==='buyer' ? (BW[key] ?? 0) : (SW[key] ?? 0);
+  if (key === 'receive_apology') return side==='buyer' ? (BW['seller_apology'] ?? '') : (SW['buyer_apology'] ?? '');
+  return side==='buyer' ? (BW[key] ?? '') : (SW[key] ?? '');
 }
 
 function buildPrefTable(){
@@ -93,7 +93,7 @@ function buildJustTable(){
   const el=document.getElementById('just-table');
   el.innerHTML = `<tr><th>Issue</th><th>Buyer justification</th><th>Seller justification</th></tr>` + ISSUES.map(iss=>{
     const j = JUST[iss.key] || {};
-    return `<tr><td>${iss.label}</td><td>${j.buyer || '—'}</td><td>${j.seller || '—'}</td></tr>`;
+    return `<tr><td>${iss.label}</td><td>${j.buyer || ''}</td><td>${j.seller || ''}</td></tr>`;
   }).join('');
 }
 
