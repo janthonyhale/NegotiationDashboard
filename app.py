@@ -256,6 +256,120 @@ CN_PROVINCES = {
     'macau': ['macau', '澳门'], 'taiwan': ['taiwan', '台湾']
 }
 
+CN_PROVINCE_CENTROIDS = {
+    'beijing': (116.40, 39.90), 'tianjin': (117.20, 39.13), 'hebei': (114.53, 38.04),
+    'shanxi': (112.55, 37.87), 'inner mongolia': (111.67, 40.82), 'liaoning': (123.43, 41.80),
+    'jilin': (125.32, 43.90), 'heilongjiang': (126.53, 45.80), 'shanghai': (121.47, 31.23),
+    'jiangsu': (118.78, 32.07), 'zhejiang': (120.15, 30.28), 'anhui': (117.27, 31.86),
+    'fujian': (119.30, 26.08), 'jiangxi': (115.89, 28.68), 'shandong': (117.00, 36.65),
+    'henan': (113.63, 34.75), 'hubei': (114.31, 30.60), 'hunan': (112.98, 28.20),
+    'guangdong': (113.27, 23.13), 'guangxi': (108.32, 22.82), 'hainan': (110.35, 20.02),
+    'chongqing': (106.55, 29.56), 'sichuan': (104.07, 30.67), 'guizhou': (106.71, 26.58),
+    'yunnan': (102.71, 25.04), 'tibet': (91.11, 29.97), 'shaanxi': (108.95, 34.27),
+    'gansu': (103.84, 36.06), 'qinghai': (101.78, 36.62), 'ningxia': (106.23, 38.48),
+    'xinjiang': (87.62, 43.82), 'hong kong': (114.17, 22.32), 'macau': (113.54, 22.20),
+    'taiwan': (121.56, 25.04),
+}
+
+CHINA_GEOJSON_CANDIDATES = [
+    os.path.join(os.getcwd(), 'china_provinces.geojson'),
+    os.path.join(os.getcwd(), 'data', 'china_provinces.geojson'),
+    os.path.join(os.getcwd(), 'uploads', 'china_provinces.geojson'),
+]
+_CHINA_GEOJSON_CACHE = None
+
+CN_PROVINCE_ALIASES = {
+    'beijing': 'beijing', '北京市': 'beijing',
+    'tianjin': 'tianjin', '天津市': 'tianjin',
+    'hebei': 'hebei', '河北省': 'hebei',
+    'shanxi': 'shanxi', '山西省': 'shanxi',
+    'inner mongolia': 'inner mongolia', 'neimenggu': 'inner mongolia', '内蒙古自治区': 'inner mongolia', '内蒙古': 'inner mongolia',
+    'liaoning': 'liaoning', '辽宁省': 'liaoning',
+    'jilin': 'jilin', '吉林省': 'jilin',
+    'heilongjiang': 'heilongjiang', '黑龙江省': 'heilongjiang',
+    'shanghai': 'shanghai', '上海市': 'shanghai',
+    'jiangsu': 'jiangsu', '江苏省': 'jiangsu',
+    'zhejiang': 'zhejiang', '浙江省': 'zhejiang',
+    'anhui': 'anhui', '安徽省': 'anhui',
+    'fujian': 'fujian', '福建省': 'fujian',
+    'jiangxi': 'jiangxi', '江西省': 'jiangxi',
+    'shandong': 'shandong', '山东省': 'shandong',
+    'henan': 'henan', '河南省': 'henan',
+    'hubei': 'hubei', '湖北省': 'hubei',
+    'hunan': 'hunan', '湖南省': 'hunan',
+    'guangdong': 'guangdong', '广东省': 'guangdong',
+    'guangxi': 'guangxi', '广西壮族自治区': 'guangxi', '广西': 'guangxi',
+    'hainan': 'hainan', '海南省': 'hainan',
+    'chongqing': 'chongqing', '重庆市': 'chongqing',
+    'sichuan': 'sichuan', '四川省': 'sichuan',
+    'guizhou': 'guizhou', '贵州省': 'guizhou',
+    'yunnan': 'yunnan', '云南省': 'yunnan',
+    'tibet': 'tibet', '西藏自治区': 'tibet', 'xizang': 'tibet', '西藏': 'tibet',
+    'shaanxi': 'shaanxi', '陕西省': 'shaanxi',
+    'gansu': 'gansu', '甘肃省': 'gansu',
+    'qinghai': 'qinghai', '青海省': 'qinghai',
+    'ningxia': 'ningxia', '宁夏回族自治区': 'ningxia', '宁夏': 'ningxia',
+    'xinjiang': 'xinjiang', '新疆维吾尔自治区': 'xinjiang', '新疆': 'xinjiang',
+    'hong kong': 'hong kong', '香港特别行政区': 'hong kong', '香港': 'hong kong',
+    'macau': 'macau', '澳门特别行政区': 'macau', '澳门': 'macau',
+    'taiwan': 'taiwan', '台湾省': 'taiwan', '台湾': 'taiwan',
+}
+
+
+def _normalize_cn_province_name(raw):
+    key = str(raw or '').strip()
+    if not key:
+        return None
+    return CN_PROVINCE_ALIASES.get(key.lower(), CN_PROVINCE_ALIASES.get(key, None))
+
+
+def _extract_name_from_feature(feature):
+    props = feature.get('properties', {}) if isinstance(feature, dict) else {}
+    for key in ['name', 'NAME_1', 'NL_NAME_1', 'province', 'prov_name', 'NAME_CHN', 'name_zh', 'NAME']:
+        if key in props:
+            normalized = _normalize_cn_province_name(props.get(key))
+            if normalized:
+                return normalized
+    return None
+
+
+def _extract_polygon_rings(geometry):
+    if not isinstance(geometry, dict):
+        return []
+    gtype = geometry.get('type')
+    coords = geometry.get('coordinates', [])
+    rings = []
+    if gtype == 'Polygon':
+        if coords:
+            rings.append(coords[0])
+    elif gtype == 'MultiPolygon':
+        for poly in coords:
+            if poly and poly[0]:
+                rings.append(poly[0])
+    return rings
+
+
+def _load_china_geojson_features():
+    global _CHINA_GEOJSON_CACHE
+    if _CHINA_GEOJSON_CACHE is not None:
+        return _CHINA_GEOJSON_CACHE
+    env_path = os.getenv('CHINA_GEOJSON_PATH')
+    candidates = [env_path] if env_path else []
+    candidates.extend(CHINA_GEOJSON_CANDIDATES)
+    for path in candidates:
+        if not path:
+            continue
+        try:
+            with open(path, encoding='utf-8') as f:
+                gj = json.load(f)
+            feats = gj.get('features', []) if isinstance(gj, dict) else []
+            if isinstance(feats, list) and feats:
+                _CHINA_GEOJSON_CACHE = feats
+                return feats
+        except Exception:
+            continue
+    _CHINA_GEOJSON_CACHE = []
+    return _CHINA_GEOJSON_CACHE
 
 def infer_cn_province_distribution(turns, role):
     role_turns = [str(t.get('text', '')) for t in turns if str(t.get('speaker', '')).lower() == role.lower()]
@@ -275,6 +389,109 @@ def infer_cn_province_distribution(turns, role):
 
     total = sum(counts.values()) or 1.0
     return {k: round(v / total, 6) for k, v in counts.items()}
+
+
+def make_cn_province_map(province_probs, role='buyer'):
+    probs = {k: float(v) for k, v in (province_probs or {}).items() if k in CN_PROVINCE_CENTROIDS}
+    if not probs:
+        return None
+    total = sum(probs.values()) or 1.0
+    probs = {k: v / total for k, v in probs.items()}
+    top = sorted(probs.items(), key=lambda kv: kv[1], reverse=True)[:8]
+
+    bg = '#07111f'
+    fg = '#d1e6ff'
+    primary = '#4f91ff' if str(role).lower() == 'buyer' else '#f43f5e'
+    accent = '#22d3a5'
+
+    fig, ax = plt.subplots(figsize=(7.2, 5.4), facecolor=bg)
+    ax.set_facecolor(bg)
+    features = _load_china_geojson_features()
+    drew_geojson = False
+    min_lon, max_lon, min_lat, max_lat = 200, -200, 90, -90
+
+    def color_for_prob(p):
+        p = max(0.0, min(1.0, p))
+        if p >= 0.20:
+            return primary
+        if p >= 0.08:
+            return '#6ea8ff' if str(role).lower() == 'buyer' else '#f87171'
+        if p >= 0.03:
+            return '#37567a'
+        return '#14263c'
+
+    if features:
+        for feat in features:
+            pname = _extract_name_from_feature(feat)
+            rings = _extract_polygon_rings(feat.get('geometry', {}))
+            if not rings:
+                continue
+            p = probs.get(pname, 0.0) if pname else 0.0
+            face = color_for_prob(p)
+            for ring in rings:
+                if not ring:
+                    continue
+                xs = [pt[0] for pt in ring if isinstance(pt, (list, tuple)) and len(pt) >= 2]
+                ys = [pt[1] for pt in ring if isinstance(pt, (list, tuple)) and len(pt) >= 2]
+                if not xs or not ys:
+                    continue
+                min_lon, max_lon = min(min_lon, min(xs)), max(max_lon, max(xs))
+                min_lat, max_lat = min(min_lat, min(ys)), max(max_lat, max(ys))
+                poly = mpatches.Polygon(list(zip(xs, ys)), closed=True, facecolor=face, edgecolor='#3d5f83', linewidth=0.45, alpha=0.92)
+                ax.add_patch(poly)
+                drew_geojson = True
+
+        if drew_geojson:
+            for prov, p in top:
+                lon, lat = CN_PROVINCE_CENTROIDS[prov]
+                ax.scatter([lon], [lat], s=280 + p * 2200, c=accent, alpha=0.18, zorder=5, edgecolors='none')
+                ax.text(
+                    lon + 0.35, lat + 0.35, f"{prov.title()} {p*100:.1f}%",
+                    fontsize=10.8, color=fg, zorder=6, fontweight='bold'
+                )
+
+    if not drew_geojson:
+        # Fallback if geojson is missing or malformed.
+        lons = []
+        lats = []
+        sizes = []
+        colors = []
+        for prov, (lon, lat) in CN_PROVINCE_CENTROIDS.items():
+            p = probs.get(prov, 0.0)
+            lons.append(lon)
+            lats.append(lat)
+            sizes.append(140 + p * 2800)
+            colors.append(primary if p > 0.001 else '#27425e')
+
+        ax.scatter(lons, lats, s=sizes, c=colors, alpha=0.88, edgecolors='#dbeafe', linewidths=0.35, zorder=3)
+        for prov, p in top:
+            lon, lat = CN_PROVINCE_CENTROIDS[prov]
+            ax.scatter([lon], [lat], s=300 + p * 2500, c=accent, alpha=0.18, zorder=4, edgecolors='none')
+            ax.text(lon + 0.5, lat + 0.4, f"{prov.title()} {p*100:.1f}%", fontsize=10.8, color=fg, zorder=5, fontweight='bold')
+        min_lon, max_lon, min_lat, max_lat = 72, 136, 17, 54
+
+    ax.set_xlim(min_lon - 2.0, max_lon + 2.0)
+    ax.set_ylim(min_lat - 1.5, max_lat + 1.5)
+    ax.grid(color='#1f334a', linewidth=0.5, alpha=0.45)
+    ax.set_title(
+        f"China Province Confidence ({'Buyer' if str(role).lower() == 'buyer' else 'Seller'})",
+        color=fg, fontsize=13, pad=8, fontweight='bold'
+    )
+    ax.tick_params(colors='#8fb3d9', labelsize=9)
+    for spine in ax.spines.values():
+        spine.set_color('#2a425f')
+    ax.set_xlabel('Longitude', color='#8fb3d9', fontsize=10)
+    ax.set_ylabel('Latitude', color='#8fb3d9', fontsize=10)
+
+    # Large side panel with top confidence values.
+    summary_lines = [f"{name.title()}: {prob * 100:.1f}%" for name, prob in top[:6]]
+    ax.text(
+        1.01, 0.98, "Top Provinces\n" + "\n".join(summary_lines),
+        transform=ax.transAxes, va='top', ha='left', color='#e2e8f0', fontsize=11.5, fontweight='bold',
+        bbox=dict(boxstyle='round,pad=0.35', facecolor='#0f1e31', edgecolor='#35506f', alpha=0.9)
+    )
+    fig.tight_layout()
+    return fig_b64(fig)
 
 def score_emo(text):
     tl = text.lower()
@@ -309,22 +526,10 @@ def enrich(turns):
 
 def _default_pre_dispute_justifications():
     return {
-        'refund': {
-            'buyer': 'The buyer argues the item/service failed expectations and requests compensation to restore fairness.',
-            'seller': 'The seller argues full compensation may be disproportionate to responsibility or policy constraints.'
-        },
-        'buyer_review': {
-            'buyer': 'The buyer argues their review is a truthful account and should remain visible.',
-            'seller': 'The seller argues buyer-review removal may be warranted if statements are inaccurate or harmful.'
-        },
-        'seller_review': {
-            'buyer': "The buyer argues the seller's review is unfairly punitive and should be removed.",
-            'seller': 'The seller argues their review reflects legitimate transaction concerns and should remain.'
-        },
-        'receive_apology': {
-            'buyer': 'The buyer seeks acknowledgment of harm and a sincere apology as relational repair.',
-            'seller': 'The seller may resist apologizing if they believe fault is disputed, while still seeking closure.'
-        },
+        'refund': {'buyer': '', 'seller': ''},
+        'buyer_review': {'buyer': '', 'seller': ''},
+        'seller_review': {'buyer': '', 'seller': ''},
+        'receive_apology': {'buyer': '', 'seller': ''},
     }
 
 
@@ -390,9 +595,10 @@ def _normalize_weight_payload(raw, defaults):
         'receive_apology': 'seller_apology',
         'buyer_apology': 'buyer_apology',
     }
+    valid_keys = {'refund', 'buyer_review', 'seller_review', 'seller_apology', 'buyer_apology'}
     for k, v in raw.items():
         key = aliases.get(str(k).strip(), str(k).strip())
-        if key not in out:
+        if key not in out and key not in valid_keys:
             continue
         try:
             out[key] = max(0, min(100, int(float(v))))
@@ -402,8 +608,8 @@ def _normalize_weight_payload(raw, defaults):
 
 
 def extract_preference_weights(path, ext):
-    bw = dict(DEFAULT_BUYER_WEIGHTS)
-    sw = dict(DEFAULT_SELLER_WEIGHTS)
+    bw = {}
+    sw = {}
     try:
         if ext == 'json':
             with open(path, encoding='utf-8-sig', errors='replace') as f:
@@ -417,8 +623,10 @@ def extract_preference_weights(path, ext):
         if isinstance(data, dict):
             raw_b = data.get('buyer_weights', data.get('buyer_preferences'))
             raw_s = data.get('seller_weights', data.get('seller_preferences'))
-            bw = _normalize_weight_payload(raw_b, DEFAULT_BUYER_WEIGHTS)
-            sw = _normalize_weight_payload(raw_s, DEFAULT_SELLER_WEIGHTS)
+            if isinstance(raw_b, dict):
+                bw = _normalize_weight_payload(raw_b, {})
+            if isinstance(raw_s, dict):
+                sw = _normalize_weight_payload(raw_s, {})
     except Exception:
         pass
     return bw, sw
@@ -908,22 +1116,33 @@ def predict_country_with_model(turns, role):
 
 def predict_cn_region_with_model(turns, role):
     role_turns = [t.get('text', '').strip() for t in turns if t.get('speaker') == role and t.get('text', '').strip()]
+    province_probs = infer_cn_province_distribution(turns, role)
     if not role_turns:
-        return {'country': 'China', 'confidence': 0.0, 'probabilities': {'North': 0.25, 'Central': 0.25, 'Wu_Min': 0.25, 'Xian_Yue': 0.25}}
+        return {
+            'country': 'China',
+            'confidence': 0.0,
+            'probabilities': {'North': 0.25, 'Central': 0.25, 'Wu_Min': 0.25, 'Xian_Yue': 0.25},
+            'province_probabilities': province_probs,
+        }
 
     if PREDICTOR_ZH is None:
         # fallback to lightweight heuristic if chinese model is unavailable
-        probs = infer_cn_province_distribution(turns, role)
         proxy = {
-            'North': probs.get('beijing', 0) + probs.get('tianjin', 0) + probs.get('hebei', 0) + probs.get('shandong', 0),
-            'Central': probs.get('henan', 0) + probs.get('hubei', 0) + probs.get('hunan', 0) + probs.get('sichuan', 0),
-            'Wu_Min': probs.get('shanghai', 0) + probs.get('jiangsu', 0) + probs.get('zhejiang', 0) + probs.get('fujian', 0),
-            'Xian_Yue': probs.get('guangdong', 0) + probs.get('guangxi', 0) + probs.get('hainan', 0) + probs.get('hong kong', 0),
+            'North': province_probs.get('beijing', 0) + province_probs.get('tianjin', 0) + province_probs.get('hebei', 0) + province_probs.get('shandong', 0),
+            'Central': province_probs.get('henan', 0) + province_probs.get('hubei', 0) + province_probs.get('hunan', 0) + province_probs.get('sichuan', 0),
+            'Wu_Min': province_probs.get('shanghai', 0) + province_probs.get('jiangsu', 0) + province_probs.get('zhejiang', 0) + province_probs.get('fujian', 0),
+            'Xian_Yue': province_probs.get('guangdong', 0) + province_probs.get('guangxi', 0) + province_probs.get('hainan', 0) + province_probs.get('hong kong', 0),
         }
         total = sum(proxy.values()) or 1.0
         normalized = {k: round(v / total, 6) for k, v in proxy.items()}
         pred, conf = max(normalized.items(), key=lambda item: item[1])
-        return {'country': 'China', 'confidence': round(conf, 2), 'probabilities': normalized, 'region': pred}
+        return {
+            'country': 'China',
+            'confidence': round(conf, 2),
+            'probabilities': normalized,
+            'region': pred,
+            'province_probabilities': province_probs,
+        }
 
     outputs = PREDICTOR_ZH.predict_batch(role_turns)
     combined = {}
@@ -935,7 +1154,13 @@ def predict_cn_region_with_model(turns, role):
     total = sum(averaged.values()) or 1.0
     normalized = {k: round(v / total, 6) for k, v in averaged.items()}
     pred, conf = max(normalized.items(), key=lambda item: item[1])
-    return {'country': 'China', 'confidence': round(conf, 2), 'probabilities': normalized, 'region': pred}
+    return {
+        'country': 'China',
+        'confidence': round(conf, 2),
+        'probabilities': normalized,
+        'region': pred,
+        'province_probabilities': province_probs,
+    }
 
 def predict_country(turns, role):
     text  = ' '.join(t['text'] for t in turns if t['speaker']==role).lower()
@@ -1119,7 +1344,9 @@ def api_upload():
 
         pre_justifications = extract_pre_dispute_justifications(path, ext)
         bw, sw = extract_preference_weights(path, ext)
-        outcomes = generate_all_outcomes(bw, sw)
+        calc_bw = {**DEFAULT_BUYER_WEIGHTS, **bw}
+        calc_sw = {**DEFAULT_SELLER_WEIGHTS, **sw}
+        outcomes = generate_all_outcomes(calc_bw, calc_sw)
         pareto   = compute_pareto(outcomes)
         pareto_img = make_pareto_plot(outcomes, pareto, title='Pre-Negotiation: KODIS Solution Space')
 
@@ -1178,6 +1405,8 @@ def api_step():
     if language == 'CN':
         buyer_c = predict_cn_region_with_model(turns_so_far, 'Buyer')
         seller_c = predict_cn_region_with_model(turns_so_far, 'Seller')
+        buyer_c['province_map_b64'] = make_cn_province_map(buyer_c.get('province_probabilities', {}), role='buyer')
+        seller_c['province_map_b64'] = make_cn_province_map(seller_c.get('province_probabilities', {}), role='seller')
     else:
         buyer_c = predict_country_with_model(turns_so_far, 'Buyer')
         seller_c = predict_country_with_model(turns_so_far, 'Seller')
