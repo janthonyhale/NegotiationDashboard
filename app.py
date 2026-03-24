@@ -824,14 +824,16 @@ def llm_emotion_scores(text):
     if not api_key:
         return _neutral_emotions()
 
-    system_prompt = """You are an emotion classifier for negotiation dialogue.
-Classify the LAST speaker utterance using these labels only: joy, anger, fear, sadness, surprise, compassion, neutral.
-Return JSON with an 'emotion' object whose scores sum to 1.0.
-Important calibration: if the utterance has blame, threats, ultimatums, hostile accusations, or strong frustration, anger should be meaningfully high (often >= 0.45), not diluted into neutral.
-Use neutral as dominant only when emotional content is truly minimal."""
+    system_prompt = """You are a good emotion classification tool. Your task is to classify the emotion of the last speaker based on the contextual dialogue. 
+            Your output should be a JSON object with an 'emotion' field, categorizing the dialogue with a score for each: joy, anger, fear, sadness, surprise, compassion, or neutral. These scores should sum to one. If an utterance is neutral, then neutral must be one with everything other label set to zero.
+            Here are a few examples of proper annotations:
+            {"statement": "Hi! I'd like to return my jersey.", "emotion": {"joy": "0", "anger": "0", "fear": "0", "sadness": "0", "surprise": "0", "compassion": "0", "neutral": "1"}},
+            {"statement": "Please understand this was for my dear nephew he loves Kobe. I understand we had a misunderstanding, last thing I want is to hurt your business. Let's resolve this together", "emotion": {"joy": "0", "anger": "0", "fear": "0.4", "sadness": "0", "surprise": "0", "compassion": "0.6", "neutral": "0"}},
+            {"statement": "Thank you!", "emotion": {"joy": "1", "anger": "0", "fear": "0", "sadness": "0", "surprise": "0", "compassion": "0", "neutral": "0"}},
+            {"statement": "I will report you to authorities for doing this.", "emotion": {"joy": "0", "anger": "1", "fear": "0", "sadness": "0", "surprise": "0", "compassion": "0", "neutral": "0" """
 
     payload = {
-        "model": "gpt-4.1",
+        "model": "gpt-4o",
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": f"This is the context: {text}. What is the emotion of the current speaker?"}
@@ -2018,4 +2020,4 @@ def api_export_enriched():
 
 if __name__=='__main__':
     os.makedirs('uploads',exist_ok=True)
-    app.run(debug=True,port=5000)
+    app.run(debug=True,port=5001)
