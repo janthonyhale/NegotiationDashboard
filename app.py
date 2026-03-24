@@ -234,7 +234,7 @@ def llm_translate_cn_to_en(text):
         method='POST'
     )
     try:
-        with urllib.request.urlopen(req, timeout=12) as resp:
+        with urllib.request.urlopen(req, timeout=60) as resp:
             data = json.loads(resp.read().decode('utf-8'))
         return (data['choices'][0]['message']['content'] or '').strip()
     except Exception:
@@ -817,7 +817,7 @@ These scores should sum to one. If an utterance is neutral, then neutral must be
         method='POST'
     )
     try:
-        with urllib.request.urlopen(req, timeout=12) as resp:
+        with urllib.request.urlopen(req, timeout=60) as resp:
             data = json.loads(resp.read().decode('utf-8'))
         content = data['choices'][0]['message']['content']
         obj = json.loads(content)
@@ -896,7 +896,7 @@ def llm_operational_summary(turns_so_far, country_snapshot, risk_snapshot):
         method='POST'
     )
     try:
-        with urllib.request.urlopen(req, timeout=12) as resp:
+        with urllib.request.urlopen(req, timeout=60) as resp:
             data = json.loads(resp.read().decode('utf-8'))
         return (data['choices'][0]['message']['content'] or '').strip()
     except Exception:
@@ -928,7 +928,7 @@ def llm_irp_label(turns_so_far, current_turn):
         method='POST'
     )
     try:
-        with urllib.request.urlopen(req, timeout=12) as resp:
+        with urllib.request.urlopen(req, timeout=60) as resp:
             data = json.loads(resp.read().decode('utf-8'))
         obj = json.loads(data['choices'][0]['message']['content'] or '{}')
         v = str(obj.get('irp_label', '')).strip().lower()
@@ -965,7 +965,7 @@ def llm_irp_label(turns_so_far, current_turn):
         method='POST'
     )
     try:
-        with urllib.request.urlopen(req, timeout=12) as resp:
+        with urllib.request.urlopen(req, timeout=60) as resp:
             data = json.loads(resp.read().decode('utf-8'))
         obj = json.loads(data['choices'][0]['message']['content'] or '{}')
         v = str(obj.get('irp_label', '')).strip().lower()
@@ -1012,7 +1012,7 @@ def llm_evolution_summary(op_summaries):
         method='POST'
     )
     try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        with urllib.request.urlopen(req, timeout=60) as resp:
             data = json.loads(resp.read().decode('utf-8'))
         return (data['choices'][0]['message']['content'] or '').strip()
     except Exception:
@@ -1100,7 +1100,7 @@ def llm_executive_brief(turns, op_summaries, final_outcome, pareto):
         method='POST'
     )
     try:
-        with urllib.request.urlopen(req, timeout=18) as resp:
+        with urllib.request.urlopen(req, timeout=60) as resp:
             data = json.loads(resp.read().decode('utf-8'))
         content = (data['choices'][0]['message']['content'] or '').strip()
         return content or fallback
@@ -1149,7 +1149,7 @@ def llm_failure_risk(turns_so_far):
         method='POST'
     )
     try:
-        with urllib.request.urlopen(req, timeout=12) as resp:
+        with urllib.request.urlopen(req, timeout=60) as resp:
             data = json.loads(resp.read().decode('utf-8'))
         obj = json.loads(data['choices'][0]['message']['content'] or '{}')
         risk_100 = max(0, min(100, int(float(obj.get('risk_0_100', base['risk_0_100'])))))
@@ -1245,7 +1245,7 @@ Return ENGLISH only."""
         method='POST'
     )
     try:
-        with urllib.request.urlopen(req, timeout=12) as resp:
+        with urllib.request.urlopen(req, timeout=60) as resp:
             data = json.loads(resp.read().decode('utf-8'))
         content = data['choices'][0]['message']['content']
         obj = json.loads(content)
