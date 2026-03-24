@@ -56,11 +56,12 @@ nav{display:flex;align-items:center;padding:11px 22px;border-bottom:1px solid va
 .summary-grid{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:14px;align-items:stretch;height:calc(100vh - 185px);}
 .left-col,.mid-col,.right-col{display:flex;flex-direction:column;gap:12px;min-height:0;}
 .plot-grid{display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:0;}
-.plot-card{background:var(--card);border:1px solid var(--border);border-radius:11px;overflow:hidden;}
+.plot-card{background:var(--card);border:1px solid var(--border);border-radius:11px;overflow:hidden;position:relative;}
 .plot-head{padding:9px 14px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:0.56rem;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:center;}
 .plot-card img{width:100%;display:block;}
 .plot-ph{padding:50px;text-align:center;color:var(--muted);font-size:0.75rem;}
 .plot-host{height:100%;min-height:280px;background:#0a1520;}
+.plot-tip{position:absolute;pointer-events:none;background:#0b1220;border:1px solid #24364f;border-radius:6px;padding:6px 8px;font-size:11px;color:#dbeafe;max-width:320px;display:none;z-index:10;}
 
 /* Full-width card */
 .fw-card{background:var(--card);border:1px solid var(--border);border-radius:11px;overflow:hidden;margin-bottom:0;flex:1;min-height:0;}
@@ -158,6 +159,7 @@ nav{display:flex;align-items:center;padding:11px 22px;border-bottom:1px solid va
           <div class="plot-card">
             <div class="plot-head">Solution Space — Agreement Marked<span id="agree-badge" style="color:var(--teal)"></span></div>
             <div id="post-chart" class="plot-host"></div>
+            <div id="post-tip" class="plot-tip"></div>
             <div class="plot-ph" id="post-ph">Computing…</div>
           </div>
         </div>
@@ -287,12 +289,16 @@ function showContent(risk, finalOutcome) {
 
 function renderPostSolutionSpace(outcomes, pareto, finalOutcome){
   const host = document.getElementById('post-chart');
+  const tip = document.getElementById('post-tip');
   if (!host || !outcomes?.length) return;
   const w = host.clientWidth || 520;
   const h = host.clientHeight || 330;
   const m = {l:42,r:14,t:16,b:34};
   const x=v=>m.l+(v/100)*(w-m.l-m.r), y=v=>h-m.b-(v/100)*(h-m.t-m.b);
-  const dots = outcomes.map(o=>`<circle cx="${x(o.buyer_util)}" cy="${y(o.seller_util)}" r="2.6" fill="#2f4b6f" opacity="0.65"/>`).join('');
+  const dots = outcomes.map((o, i)=>{
+    const deal = `Refund ${o.refund_label}; Buyer review removed ${o.buyer_review?'Yes':'No'}; Seller review removed ${o.seller_review?'Yes':'No'}; Seller apology ${o.seller_apology?'Yes':'No'}; Buyer apology ${o.buyer_apology?'Yes':'No'}`;
+    return `<circle data-i="${i}" data-deal="${deal.replace(/"/g,'&quot;')}" data-bu="${o.buyer_util}" data-su="${o.seller_util}" cx="${x(o.buyer_util)}" cy="${y(o.seller_util)}" r="2.6" fill="#2f4b6f" opacity="0.65"/>`;
+  }).join('');
   const px = [...(pareto || [])].sort((a,b)=>a.buyer_util-b.buyer_util);
   const path = px.map((p,i)=>`${i?'L':'M'} ${x(p.buyer_util).toFixed(1)} ${y(p.seller_util).toFixed(1)}`).join(' ');
   let marker='';
@@ -313,6 +319,19 @@ function renderPostSolutionSpace(outcomes, pareto, finalOutcome){
     <text x="${w/2-46}" y="${h-8}" fill="#94a3b8" font-size="10">Buyer utility</text>
     <text x="8" y="14" fill="#94a3b8" font-size="10">Seller utility</text>
   </svg>`;
+
+  host.querySelectorAll('circle[data-i]').forEach(c=>{
+    c.addEventListener('pointerenter', ()=>{ c.setAttribute('r','5.8'); c.setAttribute('opacity','0.95'); });
+    c.addEventListener('pointermove', ev=>{
+      if (!tip || !host) return;
+      const rect = host.getBoundingClientRect();
+      tip.style.display='block';
+      tip.style.left=`${ev.clientX - rect.left + 12}px`;
+      tip.style.top=`${ev.clientY - rect.top + 12}px`;
+      tip.innerHTML=`<div><b>Deal</b>: ${c.dataset.deal}</div><div>Buyer utility: <b>${c.dataset.bu}</b> · Seller utility: <b>${c.dataset.su}</b></div>`;
+    });
+    c.addEventListener('pointerleave', ()=>{ c.setAttribute('r','2.6'); c.setAttribute('opacity','0.65'); if (tip) tip.style.display='none'; });
+  });
 }
 
 function renderEmotionChips(emos){

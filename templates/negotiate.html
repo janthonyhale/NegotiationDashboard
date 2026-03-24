@@ -331,17 +331,6 @@ const CN_REGION_CODE_MAP = {
 let S = { turns:[], currentIdx:-1, dim:'anger', mapRole:'buyer', currentMapDist:{}, country:null, lastCountry:null, bw:{}, sw:{}, activeMap:null, opSummaries:[], language:'EN', processing:false, runAll:false, stepCache:{} };
 const IRP_KEYS = ['interest','right','power'];
 
-function classifyIRP(text=''){
-  const t = String(text || '').toLowerCase();
-  const score = {
-    interest: /(need|prefer|would like|important|value|concern|help|solution|can we|work with)/.test(t) ? 2 : 0,
-    right: /(fair|policy|rule|contract|terms|warranty|should|entitled|legal|right|evidence|proof)/.test(t) ? 2 : 0,
-    power: /(final|must|demand|or else|lawyer|court|chargeback|report|refuse|walk away|non-negotiable|insist)/.test(t) ? 2 : 0,
-  };
-  if ((score.interest + score.right + score.power) === 0) score.interest = 1;
-  return IRP_KEYS.reduce((a,b)=>score[a] >= score[b] ? a : b);
-}
-
 function getTurnIRP(turn){
   const raw = turn?.meta?.irp_label || turn?.irp_label || turn?.irp;
   if (raw) {
@@ -350,7 +339,7 @@ function getTurnIRP(turn){
     if (v.startsWith('right')) return 'right';
     if (v.startsWith('power')) return 'power';
   }
-  return classifyIRP(turn?.text || '');
+  return null;
 }
 
 function scrollDialogueToBottom(){
@@ -423,7 +412,7 @@ function setOperationalSummary(text){
   const summaryEl = document.getElementById('operational-summary');
   if (!summaryEl) return;
   summaryEl.classList.remove('loading');
-  summaryEl.textContent = text || 'No operational summary available yet.';
+  summaryEl.textContent = text || 'Awaiting LLM operational summary…';
 }
 
 function setNavProcessing(isBusy){
@@ -519,7 +508,7 @@ function applyCachedStepState(idx){
   const c = S.stepCache[idx] || {};
   if (c.country) { S.lastCountry = c.country; renderCountry(c.country); }
   if (c.operational_summary) setOperationalSummary(c.operational_summary);
-  else setOperationalSummary('No operational summary available for this turn.');
+  else setOperationalSummary('Awaiting LLM operational summary…');
   if (c.risk) renderRisk(c.risk);
   if (c.advisor) renderAdvisor(c.advisor);
 }
@@ -620,7 +609,7 @@ function addBubble(t, idx, skipScroll=false) {
   wrap.className = `bubble-wrap ${role}`;
   wrap.id = `bubble-${idx}`;
   wrap.innerHTML = `
-    <div class="bubble-label ${role}">${t.speaker} · Turn ${idx}<span class="irp-tag ${t.irp}">${(t.irp || 'interest').toUpperCase()}</span></div>
+    <div class="bubble-label ${role}">${t.speaker} · Turn ${idx}${t.irp ? `<span class="irp-tag ${t.irp}">${t.irp.toUpperCase()}</span>` : ''}</div>
     <div class="bubble ${role} current">
       ${esc(t.text)}
       ${S.language === 'CN' ? `<div class="translation-line">EN: ${esc(t.translation || 'Translating...')}</div>` : ''}

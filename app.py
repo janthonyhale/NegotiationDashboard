@@ -863,10 +863,7 @@ def llm_operational_summary(turns_so_far, country_snapshot, risk_snapshot):
     )
 
     if not api_key:
-        return (
-            f"Risk is {risk_snapshot.get('label','Unknown')} ({risk_snapshot.get('score',0)}), with the dialogue still mixing rights and power claims over core interests. "
-            "Emotions remain active, so focus next on de-escalation and one concrete reciprocal package tied to shared interests."
-        )
+        return "LLM operational summary unavailable (missing OPENAI_API_KEY)."
 
     prompt = (
         "Write an operational summary in at most TWO sentences. "
@@ -903,10 +900,44 @@ def llm_operational_summary(turns_so_far, country_snapshot, risk_snapshot):
             data = json.loads(resp.read().decode('utf-8'))
         return (data['choices'][0]['message']['content'] or '').strip()
     except Exception:
-        return (
-            f"Risk is {risk_snapshot.get('label','Unknown')} ({risk_snapshot.get('score',0)}), with the dialogue still mixing rights and power claims over core interests. "
-            "Emotions remain active, so focus next on de-escalation and one concrete reciprocal package tied to shared interests."
-        )
+        return "LLM operational summary unavailable (API request failed)."
+
+
+def llm_irp_label(turns_so_far, current_turn):
+    api_key = os.getenv('OPENAI_API_KEY')
+    if not api_key:
+        return current_turn.get('meta', {}).get('irp_label') or 'Interest'
+    excerpt = "\n".join(f"{t.get('speaker','Unknown')}: {t.get('text','')}" for t in turns_so_far[-8:])
+    payload = {
+        "model": "gpt-4.1",
+        "messages": [
+            {"role": "system", "content": "Classify negotiation utterances into Interest, Right, or Power. Respond in English JSON only."},
+            {"role": "user", "content": (
+                "Label ONLY the final utterance in this context as one of: Interest, Right, Power. "
+                "Return JSON: {\"irp_label\":\"Interest|Right|Power\"}.\n\n"
+                f"{excerpt}"
+            )}
+        ],
+        "temperature": 0,
+        "response_format": {"type": "json_object"}
+    }
+    req = urllib.request.Request(
+        'https://api.openai.com/v1/chat/completions',
+        data=json.dumps(payload).encode('utf-8'),
+        headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {api_key}'},
+        method='POST'
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=12) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+        obj = json.loads(data['choices'][0]['message']['content'] or '{}')
+        v = str(obj.get('irp_label', '')).strip().lower()
+        if v.startswith('interest'): return 'Interest'
+        if v.startswith('right'): return 'Right'
+        if v.startswith('power'): return 'Power'
+    except Exception:
+        pass
+    return current_turn.get('meta', {}).get('irp_label') or 'Interest'
 
 
 def llm_irp_label(turns_so_far, current_turn):
@@ -1177,7 +1208,9 @@ def llm_intervention_assessment(turns_so_far, prior_intervention_turns=None):
         }
 
     if not api_key:
-        return fallback_assessment()
+        fb = fallback_assessment()
+        fb['statement'] = "[LLM unavailable] " + fb.get('statement', '')
+        return fb
 
     prompt = """Imagine you are the mediator in a buyer/seller purchase dispute. Let parties resolve it themselves unless intervention is necessary. Reasons:
 1. Escalation of Conflict: if the conversation becomes heated with parties resorting to personal attacks or hostile language
@@ -1229,7 +1262,9 @@ Return ENGLISH only."""
             'should_intervene': rating >= 4,
         }
     except Exception:
-        return fallback_assessment()
+        fb = fallback_assessment()
+        fb['statement'] = "[LLM error] " + fb.get('statement', '')
+        return fb
 
 
 def get_advisor(turns_so_far, current_turn):
@@ -1564,8 +1599,22 @@ def api_upload():
                 txt = t.get('text', '')
                 if txt and not t.get('translation'):
                     t['translation'] = llm_translate_cn_to_en(txt)
+                trans = t.get('translation') or ''
+                if trans:
+                    t['emotions'] = llm_emotion_scores(trans)
+                    tl = trans.lower()
+                    t['negative_signals'] = sum(1 for s in NEG_SIGNALS if s in tl)
+                    t['threat_signals'] = sum(1 for s in ['sue', 'lawyer', 'court', 'legal action'] if s in tl)
 
         pre_justifications = extract_pre_dispute_justifications(path, ext)
+        if language == 'CN' and isinstance(pre_justifications, dict):
+            for issue, vals in pre_justifications.items():
+                if not isinstance(vals, dict):
+                    continue
+                for side in ['buyer', 'seller']:
+                    txt = vals.get(side)
+                    if isinstance(txt, str) and txt.strip():
+                        vals[side] = llm_translate_cn_to_en(txt.strip())
         bw, sw = extract_preference_weights(path, ext)
         calc_bw = {**DEFAULT_BUYER_WEIGHTS, **bw}
         calc_sw = {**DEFAULT_SELLER_WEIGHTS, **sw}
@@ -1618,10 +1667,13 @@ def api_step():
     if not turns or idx >= len(turns): return jsonify({'error':'Invalid'}),400
 
     cur = turns[idx]
-    if not cur.get('emotions'):
-        cur['emotions'] = llm_emotion_scores(cur.get('text',''))
     if language == 'CN' and cur.get('text') and not cur.get('translation'):
         cur['translation'] = llm_translate_cn_to_en(cur.get('text',''))
+    if language == 'CN':
+        emo_text = cur.get('translation') or cur.get('text', '')
+        cur['emotions'] = llm_emotion_scores(emo_text)
+    elif not cur.get('emotions'):
+        cur['emotions'] = llm_emotion_scores(cur.get('text',''))
     turns_so_far = turns[:idx+1]
 
     irp_label = llm_irp_label(turns_so_far, cur)
