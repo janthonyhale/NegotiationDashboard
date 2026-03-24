@@ -391,14 +391,24 @@ def infer_cn_province_distribution(turns, role):
     return {k: round(v / total, 6) for k, v in counts.items()}
 
 
+CN_REGION_PROVINCES = {
+    # Keep province scope aligned with chinese model classes in predictor.py.
+    'North': ['beijing', 'tianjin', 'hebei', 'shandong'],
+    'Central': ['henan', 'hubei', 'hunan', 'sichuan'],
+    'Wu_Min': ['shanghai', 'jiangsu', 'zhejiang', 'fujian'],
+    'Xian_Yue': ['guangdong', 'guangxi', 'hainan', 'hong kong'],
+}
+
+CN_REGION_LABEL_POS = {
+    'North': (116.0, 39.2),
+    'Central': (112.8, 31.5),
+    'Wu_Min': (120.2, 30.2),
+    'Xian_Yue': (113.2, 23.0),
+}
+
+
 def project_region_probs_to_provinces(region_probs, base_province_probs):
-    region_map = {
-        # Keep province scope aligned with chinese model classes in predictor.py.
-        'North': ['beijing', 'tianjin', 'hebei', 'shandong'],
-        'Central': ['henan', 'hubei', 'hunan', 'sichuan'],
-        'Wu_Min': ['shanghai', 'jiangsu', 'zhejiang', 'fujian'],
-        'Xian_Yue': ['guangdong', 'guangxi', 'hainan', 'hong kong'],
-    }
+    region_map = CN_REGION_PROVINCES
     out = {k: 0.0 for k in CN_PROVINCE_CENTROIDS.keys()}
     base = {k: float(v) for k, v in (base_province_probs or {}).items() if k in out}
     for region, provinces in region_map.items():
@@ -420,12 +430,7 @@ def project_region_probs_to_provinces(region_probs, base_province_probs):
 
 def constrain_cn_probs_to_model_scope(province_probs):
     scoped = {k: 0.0 for k in CN_PROVINCE_CENTROIDS.keys()}
-    allowed = {
-        'beijing', 'tianjin', 'hebei', 'shandong',
-        'henan', 'hubei', 'hunan', 'sichuan',
-        'shanghai', 'jiangsu', 'zhejiang', 'fujian',
-        'guangdong', 'guangxi', 'hainan', 'hong kong',
-    }
+    allowed = {p for plist in CN_REGION_PROVINCES.values() for p in plist}
     for k in allowed:
         scoped[k] = float((province_probs or {}).get(k, 0.0))
     total = sum(scoped.values())
@@ -437,7 +442,7 @@ def constrain_cn_probs_to_model_scope(province_probs):
     return {k: round(v / total, 6) for k, v in scoped.items()}
 
 
-def make_cn_province_map(province_probs, role='buyer'):
+def make_cn_province_map(province_probs, role='buyer', region_probs=None):
     probs = {k: float(v) for k, v in (province_probs or {}).items() if k in CN_PROVINCE_CENTROIDS}
     if not probs:
         return None
@@ -458,6 +463,19 @@ def make_cn_province_map(province_probs, role='buyer'):
     else:
         palette = ['#31131b', '#7f1d2d', '#f43f5e', '#fda4af']
 
+    rp = dict(region_probs or {})
+    if not rp:
+        rp = {}
+        for region, plist in CN_REGION_PROVINCES.items():
+            rp[region] = float(sum(probs.get(p, 0.0) for p in plist))
+        total_r = sum(rp.values()) or 1.0
+        rp = {k: (v / total_r) for k, v in rp.items()}
+
+    province_to_region = {}
+    for region, plist in CN_REGION_PROVINCES.items():
+        for p in plist:
+            province_to_region[p] = region
+
     def color_for_prob(p):
         p = max(0.0, min(1.0, p))
         if p <= 0:
@@ -476,7 +494,8 @@ def make_cn_province_map(province_probs, role='buyer'):
             rings = _extract_polygon_rings(feat.get('geometry', {}))
             if not rings:
                 continue
-            p = probs.get(pname, 0.0) if pname else 0.0
+            region_name = province_to_region.get(pname)
+            p = float(rp.get(region_name, 0.0)) if region_name else 0.0
             face = color_for_prob(p)
             for ring in rings:
                 if not ring:
@@ -491,16 +510,13 @@ def make_cn_province_map(province_probs, role='buyer'):
                 ax.add_patch(poly)
                 drew_geojson = True
 
-        labeled = sorted(probs.items(), key=lambda kv: kv[1], reverse=True)
-        for prov, p in labeled:
+        for region, (lon, lat) in CN_REGION_LABEL_POS.items():
+            p = float(rp.get(region, 0.0))
             if p <= 0:
                 continue
-            lon, lat = CN_PROVINCE_CENTROIDS.get(prov, (None, None))
-            if lon is None:
-                continue
             ax.text(
-                lon + 0.30, lat + 0.20, f"{prov.title()} {p * 100:.1f}%",
-                color='#e6f0ff', fontsize=12.5, fontweight='bold', zorder=6
+                lon + 0.15, lat + 0.10, f"{region} {p * 100:.1f}%",
+                color='#e6f0ff', fontsize=13.0, fontweight='bold', zorder=6
             )
 
     if not drew_geojson:
@@ -510,7 +526,8 @@ def make_cn_province_map(province_probs, role='buyer'):
         sizes = []
         colors = []
         for prov, (lon, lat) in CN_PROVINCE_CENTROIDS.items():
-            p = probs.get(prov, 0.0)
+            region_name = province_to_region.get(prov)
+            p = float(rp.get(region_name, 0.0)) if region_name else 0.0
             lons.append(lon)
             lats.append(lat)
             sizes.append(140 + p * 2800)
@@ -1446,8 +1463,12 @@ def api_step():
     if language == 'CN':
         buyer_c = predict_cn_region_with_model(turns_so_far, 'Buyer')
         seller_c = predict_cn_region_with_model(turns_so_far, 'Seller')
-        buyer_c['province_map_b64'] = make_cn_province_map(buyer_c.get('province_probabilities', {}), role='buyer')
-        seller_c['province_map_b64'] = make_cn_province_map(seller_c.get('province_probabilities', {}), role='seller')
+        buyer_c['province_map_b64'] = make_cn_province_map(
+            buyer_c.get('province_probabilities', {}), role='buyer', region_probs=buyer_c.get('probabilities', {})
+        )
+        seller_c['province_map_b64'] = make_cn_province_map(
+            seller_c.get('province_probabilities', {}), role='seller', region_probs=seller_c.get('probabilities', {})
+        )
     else:
         buyer_c = predict_country_with_model(turns_so_far, 'Buyer')
         seller_c = predict_country_with_model(turns_so_far, 'Seller')
