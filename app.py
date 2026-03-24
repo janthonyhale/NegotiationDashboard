@@ -393,11 +393,11 @@ def infer_cn_province_distribution(turns, role):
 
 CN_REGION_PROVINCES = {
     # Keep province scope aligned with chinese model classes in predictor.py.
-    # These groups are visualization buckets for the 4 predictor classes.
-    'North': ['beijing', 'tianjin', 'hebei', 'shandong', 'shanxi', 'inner mongolia', 'liaoning', 'jilin', 'heilongjiang', 'ningxia', 'gansu', 'qinghai', 'xinjiang'],
-    'Central': ['henan', 'hubei', 'hunan', 'sichuan', 'chongqing', 'shaanxi', 'anhui', 'jiangxi', 'guizhou', 'yunnan'],
-    'Wu_Min': ['shanghai', 'jiangsu', 'zhejiang', 'fujian'],
-    'Xian_Yue': ['guangdong', 'guangxi', 'hainan', 'hong kong', 'macau', 'taiwan', 'tibet'],
+    # These groups follow the requested class↔province mapping (overlaps allowed).
+    'North': ['beijing', 'tianjin', 'hebei', 'shanxi', 'inner mongolia', 'liaoning', 'jilin', 'heilongjiang', 'shandong', 'henan', 'shaanxi', 'gansu', 'ningxia', 'xinjiang'],
+    'Central': ['henan', 'hubei', 'anhui', 'jiangsu', 'sichuan', 'chongqing', 'yunnan', 'guizhou', 'shaanxi', 'gansu'],
+    'Wu_Min': ['shanghai', 'jiangsu', 'zhejiang', 'fujian', 'taiwan', 'guangdong', 'hainan'],
+    'Xian_Yue': ['hunan', 'guangdong', 'guangxi', 'hong kong', 'macau'],
 }
 
 CN_REGION_LABEL_POS = {
@@ -492,8 +492,7 @@ def make_cn_province_map(province_probs, role='buyer', region_probs=None):
             rings = _extract_polygon_rings(feat.get('geometry', {}))
             if not rings:
                 continue
-            region_name = province_to_region.get(pname)
-            p = float(rp.get(region_name, 0.0)) if region_name else 0.0
+            p = float(probs.get(pname, 0.0)) if pname else 0.0
             face = color_for_prob(p)
             for ring in rings:
                 if not ring:
@@ -524,8 +523,7 @@ def make_cn_province_map(province_probs, role='buyer', region_probs=None):
         sizes = []
         colors = []
         for prov, (lon, lat) in CN_PROVINCE_CENTROIDS.items():
-            region_name = province_to_region.get(prov)
-            p = float(rp.get(region_name, 0.0)) if region_name else 0.0
+            p = float(probs.get(prov, 0.0))
             lons.append(lon)
             lats.append(lat)
             sizes.append(140 + p * 2800)
@@ -1179,12 +1177,7 @@ def predict_cn_region_with_model(turns, role):
 
     if PREDICTOR_ZH is None:
         # fallback to lightweight heuristic if chinese model is unavailable
-        proxy = {
-            'North': base_province_probs.get('beijing', 0) + base_province_probs.get('tianjin', 0) + base_province_probs.get('hebei', 0) + base_province_probs.get('shandong', 0),
-            'Central': base_province_probs.get('henan', 0) + base_province_probs.get('hubei', 0) + base_province_probs.get('hunan', 0) + base_province_probs.get('sichuan', 0),
-            'Wu_Min': base_province_probs.get('shanghai', 0) + base_province_probs.get('jiangsu', 0) + base_province_probs.get('zhejiang', 0) + base_province_probs.get('fujian', 0),
-            'Xian_Yue': base_province_probs.get('guangdong', 0) + base_province_probs.get('guangxi', 0) + base_province_probs.get('hainan', 0) + base_province_probs.get('hong kong', 0),
-        }
+        proxy = {region: sum(base_province_probs.get(p, 0.0) for p in plist) for region, plist in CN_REGION_PROVINCES.items()}
         total = sum(proxy.values()) or 1.0
         normalized = {k: round(v / total, 6) for k, v in proxy.items()}
         pred, conf = max(normalized.items(), key=lambda item: item[1])
