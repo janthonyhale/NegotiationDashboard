@@ -440,6 +440,8 @@ def make_cn_province_map(province_probs, role='buyer'):
 
     def color_for_prob(p):
         p = max(0.0, min(1.0, p))
+        if p <= 0:
+            return '#6b7280'
         if p >= 0.20:
             return palette[3]
         if p >= 0.08:
@@ -469,16 +471,16 @@ def make_cn_province_map(province_probs, role='buyer'):
                 ax.add_patch(poly)
                 drew_geojson = True
 
-        top_labeled = sorted(probs.items(), key=lambda kv: kv[1], reverse=True)[:4]
-        for prov, p in top_labeled:
+        labeled = sorted(probs.items(), key=lambda kv: kv[1], reverse=True)
+        for prov, p in labeled:
             if p <= 0:
                 continue
             lon, lat = CN_PROVINCE_CENTROIDS.get(prov, (None, None))
             if lon is None:
                 continue
             ax.text(
-                lon + 0.35, lat + 0.25, f"{p * 100:.1f}%",
-                color='#e6f0ff', fontsize=11.5, fontweight='bold', zorder=6
+                lon + 0.30, lat + 0.20, f"{prov.title()} {p * 100:.1f}%",
+                color='#e6f0ff', fontsize=12.5, fontweight='bold', zorder=6
             )
 
     if not drew_geojson:
