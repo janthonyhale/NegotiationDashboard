@@ -1585,7 +1585,16 @@ def api_upload():
         pareto   = compute_pareto(outcomes)
         pareto_img = make_pareto_plot(outcomes, pareto, title='Pre-Negotiation: KODIS Solution Space')
 
-        if language == 'CN':
+        imported_country = bundle_meta.get('country') if isinstance(bundle_meta, dict) else None
+        has_imported_country = (
+            isinstance(imported_country, dict)
+            and isinstance(imported_country.get('buyer'), dict)
+            and isinstance(imported_country.get('seller'), dict)
+        )
+        if has_imported_country:
+            buyer_c = imported_country.get('buyer', {})
+            seller_c = imported_country.get('seller', {})
+        elif language == 'CN':
             buyer_c = predict_cn_region_with_model(turns, 'Buyer')
             seller_c = predict_cn_region_with_model(turns, 'Seller')
             empty_probs = {k: 0.0 for k in CN_PROVINCE_CENTROIDS.keys()}
@@ -1594,6 +1603,11 @@ def api_upload():
         else:
             buyer_c  = predict_country_with_model(turns,'Buyer')
             seller_c = predict_country_with_model(turns,'Seller')
+
+        if language == 'CN':
+            empty_probs = {k: 0.0 for k in CN_PROVINCE_CENTROIDS.keys()}
+            buyer_c['province_map_b64_empty'] = make_cn_province_map(empty_probs, role='buyer')
+            seller_c['province_map_b64_empty'] = make_cn_province_map(empty_probs, role='seller')
 
         return jsonify({
             'turns':turns,'filename':filename,

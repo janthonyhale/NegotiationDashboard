@@ -890,6 +890,8 @@ function renderRoleMap(selector, role, dist, topCode, topProb, cnMapB64){
     S.activeMap.destroy();
     S.activeMap = null;
   }
+  const host = document.querySelector(selector);
+  if (host) host.innerHTML = '';
 
   const rawValues = {};
   const fillValues = {};
@@ -1040,21 +1042,25 @@ function normalizeCountryCode(raw){
 
 function renderCountry(countrySnap){
   const snap = countrySnap || S.lastCountry || S.country || null;
-  if (!snap){
-    document.getElementById('map-title').textContent = S.mapRole === 'buyer' ? 'Buyer map' : 'Seller map';
-    document.getElementById('map-scale-note').textContent = 'Turn 0 · awaiting first exchange';
-    renderRoleMap('#active-map', S.mapRole, {}, null, 0);
+  if (S.currentIdx < 0) {
+    const role = S.mapRole;
+    document.getElementById('map-title').textContent = role === 'buyer' ? 'Buyer map' : 'Seller map';
+    document.getElementById('map-scale-note').textContent = 'Turn 0 · map initialized (no turn processed yet)';
+    if (S.language === 'CN' && snap) {
+      const initial = role === 'buyer' ? (snap.buyer || {}) : (snap.seller || {});
+      const emptyMapB64 = initial.province_map_b64_empty || null;
+      renderRoleMap('#active-map', role, {}, null, 0, emptyMapB64);
+    } else {
+      renderRoleMap('#active-map', role, {}, null, 0);
+    }
     updateEmoChart();
     return;
   }
 
-  if (S.currentIdx < 0 && S.language === 'CN') {
-    const role = S.mapRole;
-    const initial = role === 'buyer' ? (snap.buyer || {}) : (snap.seller || {});
-    const emptyMapB64 = initial.province_map_b64_empty || null;
-    document.getElementById('map-title').textContent = role === 'buyer' ? 'Buyer map' : 'Seller map';
-    document.getElementById('map-scale-note').textContent = 'Turn 0 · empty province map (no turn processed yet)';
-    renderRoleMap('#active-map', role, {}, null, 0, emptyMapB64);
+  if (!snap){
+    document.getElementById('map-title').textContent = S.mapRole === 'buyer' ? 'Buyer map' : 'Seller map';
+    document.getElementById('map-scale-note').textContent = 'Turn 0 · awaiting first exchange';
+    renderRoleMap('#active-map', S.mapRole, {}, null, 0);
     updateEmoChart();
     return;
   }
