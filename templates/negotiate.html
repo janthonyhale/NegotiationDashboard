@@ -387,7 +387,7 @@ function init() {
     }
   });
   renderTxList();
-  renderCountry();
+  renderCountry(S.country);
   document.getElementById('btn-next').disabled = false;
   document.getElementById('btn-runall').disabled = false;
   document.getElementById('turn-pill').textContent = `Turn 0 / ${S.turns.length}`;
@@ -886,7 +886,7 @@ function renderRoleMap(selector, role, dist, topCode, topProb, cnMapB64){
     const host = document.querySelector(selector);
     if (!host) return;
     if (cnMapB64) {
-      host.innerHTML = `<img alt="China province confidence map" style="width:100%;height:100%;object-fit:contain;display:block;background:#07111f;border-radius:6px;" src="data:image/png;base64,${cnMapB64}">`;
+      host.innerHTML = `<img alt="China province confidence map" style="width:100%;height:auto;max-height:100%;object-fit:contain;display:block;background:#07111f;border-radius:6px;" src="data:image/png;base64,${cnMapB64}">`;
     } else {
       renderChinaRegionMap(selector, dist, topCode, role);
     }
@@ -1046,7 +1046,8 @@ function normalizeCountryCode(raw){
 }
 
 function renderCountry(countrySnap){
-  if (S.currentIdx < 0 || !countrySnap){
+  const snap = countrySnap || S.lastCountry || S.country || null;
+  if (S.currentIdx < 0 || !snap){
     document.getElementById('map-title').textContent = S.mapRole === 'buyer' ? 'Buyer map' : 'Seller map';
     document.getElementById('map-scale-note').textContent = 'Turn 0 · awaiting first exchange';
     renderRoleMap('#active-map', S.mapRole, {}, null, 0);
@@ -1054,8 +1055,19 @@ function renderCountry(countrySnap){
     return;
   }
 
-  const buyer = countrySnap.buyer || {};
-  const seller = countrySnap.seller || {};
+  if (S.currentIdx < 0 && S.language === 'CN') {
+    const role = S.mapRole;
+    const initial = role === 'buyer' ? (snap.buyer || {}) : (snap.seller || {});
+    const emptyMapB64 = initial.province_map_b64_empty || null;
+    document.getElementById('map-title').textContent = role === 'buyer' ? 'Buyer map' : 'Seller map';
+    document.getElementById('map-scale-note').textContent = 'Turn 0 · empty province map (no turn processed yet)';
+    renderRoleMap('#active-map', role, {}, null, 0, emptyMapB64);
+    updateEmoChart();
+    return;
+  }
+
+  const buyer = snap.buyer || {};
+  const seller = snap.seller || {};
   const role = S.mapRole;
   const active = role === 'buyer' ? buyer : seller;
   const probs = active.probabilities || {};

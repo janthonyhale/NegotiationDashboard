@@ -404,21 +404,26 @@ def make_cn_province_map(province_probs, role='buyer'):
     primary = '#4f91ff' if str(role).lower() == 'buyer' else '#f43f5e'
     accent = '#22d3a5'
 
-    fig, ax = plt.subplots(figsize=(7.2, 5.4), facecolor=bg)
+    fig, ax = plt.subplots(figsize=(9.2, 5.2), facecolor=bg)
     ax.set_facecolor(bg)
     features = _load_china_geojson_features()
     drew_geojson = False
     min_lon, max_lon, min_lat, max_lat = 200, -200, 90, -90
 
+    if str(role).lower() == 'buyer':
+        palette = ['#10253d', '#1f4f8c', '#3b82f6', '#93c5fd']
+    else:
+        palette = ['#31131b', '#7f1d2d', '#f43f5e', '#fda4af']
+
     def color_for_prob(p):
         p = max(0.0, min(1.0, p))
         if p >= 0.20:
-            return primary
+            return palette[3]
         if p >= 0.08:
-            return '#6ea8ff' if str(role).lower() == 'buyer' else '#f87171'
+            return palette[2]
         if p >= 0.03:
-            return '#37567a'
-        return '#14263c'
+            return palette[1]
+        return palette[0]
 
     if features:
         for feat in features:
@@ -447,7 +452,7 @@ def make_cn_province_map(province_probs, role='buyer'):
                 ax.scatter([lon], [lat], s=280 + p * 2200, c=accent, alpha=0.18, zorder=5, edgecolors='none')
                 ax.text(
                     lon + 0.35, lat + 0.35, f"{prov.title()} {p*100:.1f}%",
-                    fontsize=10.8, color=fg, zorder=6, fontweight='bold'
+                    fontsize=12.8, color=fg, zorder=6, fontweight='bold'
                 )
 
     if not drew_geojson:
@@ -467,7 +472,7 @@ def make_cn_province_map(province_probs, role='buyer'):
         for prov, p in top:
             lon, lat = CN_PROVINCE_CENTROIDS[prov]
             ax.scatter([lon], [lat], s=300 + p * 2500, c=accent, alpha=0.18, zorder=4, edgecolors='none')
-            ax.text(lon + 0.5, lat + 0.4, f"{prov.title()} {p*100:.1f}%", fontsize=10.8, color=fg, zorder=5, fontweight='bold')
+            ax.text(lon + 0.5, lat + 0.4, f"{prov.title()} {p*100:.1f}%", fontsize=12.8, color=fg, zorder=5, fontweight='bold')
         min_lon, max_lon, min_lat, max_lat = 72, 136, 17, 54
 
     ax.set_xlim(min_lon - 2.0, max_lon + 2.0)
@@ -475,19 +480,19 @@ def make_cn_province_map(province_probs, role='buyer'):
     ax.grid(color='#1f334a', linewidth=0.5, alpha=0.45)
     ax.set_title(
         f"China Province Confidence ({'Buyer' if str(role).lower() == 'buyer' else 'Seller'})",
-        color=fg, fontsize=13, pad=8, fontweight='bold'
+        color=fg, fontsize=15, pad=8, fontweight='bold'
     )
-    ax.tick_params(colors='#8fb3d9', labelsize=9)
+    ax.tick_params(colors='#8fb3d9', labelsize=11)
     for spine in ax.spines.values():
         spine.set_color('#2a425f')
-    ax.set_xlabel('Longitude', color='#8fb3d9', fontsize=10)
-    ax.set_ylabel('Latitude', color='#8fb3d9', fontsize=10)
+    ax.set_xlabel('Longitude', color='#8fb3d9', fontsize=12)
+    ax.set_ylabel('Latitude', color='#8fb3d9', fontsize=12)
 
     # Large side panel with top confidence values.
     summary_lines = [f"{name.title()}: {prob * 100:.1f}%" for name, prob in top[:6]]
     ax.text(
         1.01, 0.98, "Top Provinces\n" + "\n".join(summary_lines),
-        transform=ax.transAxes, va='top', ha='left', color='#e2e8f0', fontsize=11.5, fontweight='bold',
+        transform=ax.transAxes, va='top', ha='left', color='#e2e8f0', fontsize=13.5, fontweight='bold',
         bbox=dict(boxstyle='round,pad=0.35', facecolor='#0f1e31', edgecolor='#35506f', alpha=0.9)
     )
     fig.tight_layout()
@@ -1353,6 +1358,9 @@ def api_upload():
         if language == 'CN':
             buyer_c = predict_cn_region_with_model(turns, 'Buyer')
             seller_c = predict_cn_region_with_model(turns, 'Seller')
+            empty_probs = {k: 0.0 for k in CN_PROVINCE_CENTROIDS.keys()}
+            buyer_c['province_map_b64_empty'] = make_cn_province_map(empty_probs, role='buyer')
+            seller_c['province_map_b64_empty'] = make_cn_province_map(empty_probs, role='seller')
         else:
             buyer_c  = predict_country_with_model(turns,'Buyer')
             seller_c = predict_country_with_model(turns,'Seller')
