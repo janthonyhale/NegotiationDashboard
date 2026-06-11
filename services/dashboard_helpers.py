@@ -1,49 +1,12 @@
-import os, json, csv, io, re, base64
+import os, json, io, re, base64
 import urllib.request
-import urllib.error
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-import numpy as np
-from reportlab.lib.pagesizes import letter
-from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as RLImage, Table, TableStyle, HRFlowable
-from reportlab.lib.units import inch
-
 from predictor import RegionPredictor
-from services.kodis import (
-    KODIS_ISSUES,
-    DEFAULT_BUYER_WEIGHTS,
-    DEFAULT_SELLER_WEIGHTS,
-    kodis_utility,
-    generate_all_outcomes,
-    compute_pareto,
-    _normalize_weight_payload,
-    extract_preference_weights,
-    _default_pre_dispute_justifications,
-    _normalize_justification_payload,
-    extract_pre_dispute_justifications,
-)
-from services.parsing import (
-    ALLOWED,
-    allowed,
-    parse_file,
-    extract_dialogue_language,
-)
 from services.llm_client import openai_chat_json, openai_chat_text
 
-# ── Emotion Keywords ──────────────────────────────────────────────────────────
-EMO_KEYS = {
-    'anger':      ['angry','furious','frustrated','unacceptable','ridiculous','demand','insist','refuse','absurd','outrageous','never','scam','lied','terrible','worst'],
-    'fear':       ['worried','concerned','anxious','risk','uncertain','doubt','afraid','nervous','unsure','hesitant','danger','scared','apprehensive'],
-    'sadness':    ['sad','disappointed','upset','heartbroken','regret','sorry to hear','depressed','unhappy','let down','hurt'],
-    'joy':        ['great','excellent','happy','pleased','wonderful','perfect','agree','deal','good','fantastic','love','glad','thrilled','excited','satisfied','appreciate','thank'],
-    'surprise':   ['wow','unexpected','surprising','shocked','amazed','incredible','unbelievable','suddenly','wait','actually','really','seriously'],
-    'compassion': ['understand','sorry','apologize','empathize','appreciate your','i see','i hear','difficult','hard for you','must be','feel for'],
-    'neutral':    ['the','is','are','and','but','however','therefore','perhaps','maybe','could','would','should'],
-}
 NEG_SIGNALS = ['walkaway','walk away','final','no deal','reject','refuse','unacceptable','sue','lawyer','court','legal action','worst','scam']
 
 def llm_translate_cn_to_en(text):
@@ -461,44 +424,8 @@ def make_cn_province_map(province_probs, role='buyer', region_probs=None):
     fig.tight_layout()
     return fig_b64(fig)
 
-def score_emo(text):
-    tl = text.lower()
-    s = {}
-    for emo, words in EMO_KEYS.items():
-        if emo == 'neutral':
-            count = sum(1 for w in words if f' {w} ' in f' {tl} ')
-            s[emo] = max(0.0, min(0.3 + count * 0.02, 1.0))
-        else:
-            count = sum(1 for w in words if w in tl)
-            s[emo] = min(count * 0.28, 1.0)
-    total = sum(s.values()) or 1
-    # Normalize so they sum to ~1 but cap each
-    for k in s: s[k] = round(s[k] / total * min(total, 1.5), 3)
-    # Add valence
-    neg = s['anger'] + s['fear'] + s.get('sadness', 0)
-    pos = s['joy'] + s['compassion']
-    s['valence'] = round(max(-1, min(1, pos - neg)), 3)
-    return s
-
-def enrich(turns):
-    for t in turns:
-        tl = t['text'].lower()
-        # t['emotions'] = score_emo(t['text'])
-        t['negative_signals'] = sum(1 for s in NEG_SIGNALS if s in tl)
-        t['threat_signals']   = sum(1 for s in ['sue','lawyer','court','legal action'] if s in tl)
-    return turns
-
-def _neutral_emotions():
-    return {
-        'joy': 0.0,
-        'anger': 0.0,
-        'fear': 0.0,
-        'sadness': 0.0,
-        'surprise': 0.0,
-        'compassion': 0.0,
-        'neutral': 1.0,
-        'valence': 0.0,
-    }
+def _unavailable_emotions():
+    return {}
 
 def enrich_with_llm(turns, language='EN'):
     """LLM-first enrichment (no heuristic emotion scoring)."""
@@ -533,12 +460,10 @@ def turns_have_cached_enrichment(turns):
     return False
 
 def llm_emotion_scores(text):
-    """Use GPT-4o emotion classification when OPENAI_API_KEY is available.
-    Falls back to keyword heuristic on error/missing key.
-    """
+    """Use GPT-4o emotion classification; return no scores when the LLM is unavailable."""
     api_key = os.getenv('OPENAI_API_KEY')
     if not api_key:
-        return _neutral_emotions()
+        return _unavailable_emotions()
 
     system_prompt = """You are a good emotion classification tool. Your task is to classify the emotion of the last speaker based on the contextual dialogue.
             Your output should be a JSON object with an 'emotion' field, categorizing the dialogue with a score for each: joy, anger, fear, sadness, surprise, compassion, or neutral. These scores should sum to one. If an utterance is neutral, then neutral must be one with everything other label set to zero.
@@ -587,7 +512,7 @@ def llm_emotion_scores(text):
 
         total = sum(out.values())
         if total <= 0:
-            return _neutral_emotions()
+            return _unavailable_emotions()
         out = {k: round(v / total, 3) for k, v in out.items()}
         if out['neutral'] >= 0.999:
             out = {k: 0.0 for k in out}
@@ -598,62 +523,7 @@ def llm_emotion_scores(text):
         out['valence'] = round(max(-1, min(1, pos - neg)), 3)
         return out
     except Exception:
-        return _neutral_emotions()
-
-def detect_outcome_heuristic_last_two(turns):
-    """Heuristic outcome detection using only the final two turns."""
-    last_two = turns[-2:] if isinstance(turns, list) else []
-    if not last_two:
-        return None
-    last_text = ' '.join(str(t.get('text', '')) for t in last_two).lower()
-    review_action = r'(?:remove|removed|retract|retracted|withdraw|withdrew|withdrawn|take\s*down|took\s*down|pull\s*down|pulled\s*down|delete|deleted)'
-
-    def _is_negated(snippet):
-        return bool(re.search(r"\b(?:don't|do not|did not|not|won't|will not|can't|cannot|keep|keeping|remain|stays?)\b", snippet))
-
-    def _matches_without_negation(pattern):
-        for m in re.finditer(pattern, last_text):
-            window = last_text[max(0, m.start() - 24):min(len(last_text), m.end() + 24)]
-            if not _is_negated(window):
-                return True
-        return False
-
-    outcome = {
-        'refund_label': 'None', 'refund': 0.0,
-        'buyer_review': 0, 'seller_review': 0,
-        'seller_apology': 0, 'buyer_apology': 0,
-    }
-    if 'full refund' in last_text:
-        outcome['refund_label'] = 'Full'
-        outcome['refund'] = 1.0
-    elif re.search(r'\b(half|50%|partial)\b', last_text):
-        outcome['refund_label'] = 'Half'
-        outcome['refund'] = 0.5
-    elif re.search(r'\b(no refund|0%)\b', last_text):
-        outcome['refund_label'] = 'None'
-        outcome['refund'] = 0.0
-    mutual_pattern = (
-        r'\b(?:mutual|both|each|respective)\b.*\breviews?\b.*' + review_action +
-        r'|' + review_action + r'.*\b(?:mutual|both|each|respective|our)\b.*\breviews?\b' +
-        r'|\bboth reviews?\s+(?:down|gone)\b'
-    )
-    if _matches_without_negation(mutual_pattern):
-        outcome['buyer_review'] = 1
-        outcome['seller_review'] = 1
-    else:
-        buyer_pattern = r'(?:buyer.*review|your review|customer review).*(?:' + review_action + r')|' + review_action + r'.*(?:buyer.*review|your review|customer review)'
-        seller_pattern = r'(?:seller.*review|my review|our review).*(?:' + review_action + r')|' + review_action + r'.*(?:seller.*review|my review|our review)'
-        if _matches_without_negation(buyer_pattern):
-            outcome['buyer_review'] = 1
-        if _matches_without_negation(seller_pattern):
-            outcome['seller_review'] = 1
-    if re.search(r'(seller.*apolog|sincerely.*apolog|formally.*apolog)', last_text):
-        outcome['seller_apology'] = 1
-    if re.search(r'buyer.*apolog', last_text):
-        outcome['buyer_apology'] = 1
-
-    agreed = re.search(r'\b(agreed|deal|accept|accepted|settled|resolved|terms|finalize|confirmed)\b', last_text)
-    return outcome if agreed else None
+        return _unavailable_emotions()
 
 def llm_detect_agreement_last_two(turns):
     """Detect whether the latest turns form an agreement and extract issue terms via LLM."""
@@ -662,10 +532,9 @@ def llm_detect_agreement_last_two(turns):
         return None
     api_key = os.getenv('OPENAI_API_KEY')
     if not api_key:
-        return detect_outcome_heuristic_last_two(turns)
+        return None
 
     excerpt = "\n".join(f"{t.get('speaker','Unknown')}: {t.get('text','')}" for t in recent_turns)
-    recent_text = " ".join(str(t.get('text', '')) for t in recent_turns).lower()
     payload = {
         "model": "gpt-4o",
         "messages": [
@@ -722,31 +591,24 @@ def llm_detect_agreement_last_two(turns):
             'seller_apology': _to_flag(out.get('seller_apology', 0)),
             'buyer_apology': _to_flag(out.get('buyer_apology', 0)),
         }
-        heuristic = detect_outcome_heuristic_last_two(turns)
-        if (
-            heuristic
-            and heuristic.get('buyer_review') == 1 and heuristic.get('seller_review') == 1
-            and result['buyer_review'] == 0 and result['seller_review'] == 0
-            and re.search(r'(mutual|both|each|respective|our).*review|review.*(mutual|both|each|respective|our)', recent_text)
-        ):
-            result['buyer_review'] = 1
-            result['seller_review'] = 1
         return result
     except Exception:
-        return detect_outcome_heuristic_last_two(turns)
+        return None
 
 
 def _irp_patterns(turns_so_far):
-    labels = ['Interest', 'Right', 'Power']
+    labels = ['Interest', 'Right', 'Power', 'Unavailable']
     total = {k: 0 for k in labels}
     by_speaker = {'buyer': {k: 0 for k in labels}, 'seller': {k: 0 for k in labels}}
     timeline = []
     for t in turns_so_far or []:
         speaker = str(t.get('speaker', '')).strip().lower()
-        raw = (t.get('meta', {}) or {}).get('irp_label') or t.get('irp') or 'Interest'
+        raw = (t.get('meta', {}) or {}).get('irp_label') or t.get('irp') or 'Unavailable'
         v = str(raw).strip().lower()
-        label = 'Interest'
-        if v.startswith('right'):
+        label = 'Unavailable'
+        if v.startswith('interest'):
+            label = 'Interest'
+        elif v.startswith('right'):
             label = 'Right'
         elif v.startswith('power'):
             label = 'Power'
@@ -821,7 +683,7 @@ def llm_operational_summary(turns_so_far, country_snapshot, risk_snapshot, irp_p
 def llm_irp_label(turns_so_far, current_turn):
     api_key = os.getenv('OPENAI_API_KEY')
     if not api_key:
-        return current_turn.get('meta', {}).get('irp_label') or 'Interest'
+        return 'Unavailable'
     excerpt = "\n".join(f"{t.get('speaker','Unknown')}: {t.get('text','')}" for t in turns_so_far[-8:])
     payload = {
         "model": "gpt-4o",
@@ -843,8 +705,8 @@ def llm_irp_label(turns_so_far, current_turn):
         if v.startswith('right'): return 'Right'
         if v.startswith('power'): return 'Power'
     except Exception:
-        pass
-    return current_turn.get('meta', {}).get('irp_label') or 'Interest'
+        return 'Unavailable'
+    return 'Unavailable'
 
 
 def llm_evolution_summary(op_summaries):
@@ -858,7 +720,7 @@ def llm_evolution_summary(op_summaries):
         return 'No operational summaries were recorded during this session.'
 
     if not api_key:
-        return 'Operational summaries indicate shifting emotional intensity with intermittent convergence opportunities; uncertainty remained around cultural priors while risk signals fluctuated by turn.'
+        return 'LLM evolution summary unavailable (missing OPENAI_API_KEY).'
 
     payload = {
         "model": "gpt-4o",
@@ -886,7 +748,7 @@ def llm_evolution_summary(op_summaries):
             data = json.loads(resp.read().decode('utf-8'))
         return (data['choices'][0]['message']['content'] or '').strip()
     except Exception:
-        return 'Operational summaries indicate shifting emotional intensity with intermittent convergence opportunities; uncertainty remained around cultural priors while risk signals fluctuated by turn.'
+        return 'LLM evolution summary unavailable (API request failed).'
 
 def llm_executive_brief(turns, op_summaries, final_outcome, pareto):
     """Draft a two-paragraph executive brief using GPT-5.2 when available."""
@@ -925,18 +787,9 @@ def llm_executive_brief(turns, op_summaries, final_outcome, pareto):
         )
         is_pareto_efficient = sig in pareto_set
 
-    fallback = (
-        "The dispute centered on compensation, review removal, and apology expectations, then evolved from positional demands toward partial trade-offs as each side tested leverage and legitimacy. "
-        + ("It ended with a detectible agreement package that balanced face-saving and practical closure. " if final_outcome else "It ended without a clearly detectable final agreement in the closing turns. ")
-        + "Across the timeline summaries, emotional intensity and pressure language varied, but convergence attempts appeared when parties shifted from accusations to concrete terms."
-        + "\n\n"
-        + "The process could likely have gone better with earlier reframing around shared interests, explicit option-building, and mediator checkpoints that separated rights/power claims from underlying needs. "
-        + ("The final package appears Pareto efficient under the configured utility model. " if is_pareto_efficient else "The final package does not appear Pareto efficient under the configured utility model, suggesting unclaimed joint gains remained. ")
-        + "Buyer and seller could each have improved outcomes by making contingent offers sooner, clarifying non-negotiables, and sequencing apologies/review actions with measurable commitments."
-    )
 
     if not api_key:
-        return fallback
+        return 'LLM executive brief unavailable (missing OPENAI_API_KEY).'
 
     prompt = (
         "Write exactly two paragraphs for an executive brief.\n"
@@ -973,35 +826,27 @@ def llm_executive_brief(turns, op_summaries, final_outcome, pareto):
         with urllib.request.urlopen(req, timeout=60) as resp:
             data = json.loads(resp.read().decode('utf-8'))
         content = (data['choices'][0]['message']['content'] or '').strip()
-        return content or fallback
+        return content or 'LLM executive brief unavailable (empty API response).'
     except Exception:
-        return fallback
+        return 'LLM executive brief unavailable (API request failed).'
 
 
-def estimate_risk(turns_so_far):
-    if not turns_so_far:
-        return {'score':0,'label':'Low','negative_signals':0,'threats':0}
-    total_neg = sum(
-        int(t.get('negative_signals', sum(1 for s in NEG_SIGNALS if s in str(t.get('text', '')).lower())))
-        for t in turns_so_far
-    )
-    total_threat = sum(
-        int(t.get('threat_signals', sum(1 for s in ['sue','lawyer','court','legal action'] if s in str(t.get('text', '')).lower())))
-        for t in turns_so_far
-    )
-    avg_anger = float(np.mean([float((t.get('emotions') or {}).get('anger', 0.0)) for t in turns_so_far]))
-    score = min(1.0, total_neg*0.12 + total_threat*0.2 + avg_anger*0.6)
-    label = 'Low' if score<0.33 else ('Medium' if score<0.66 else 'High')
-    return {'score':round(float(score),3),'label':label,
-            'negative_signals':int(total_neg),'threats':int(total_threat)}
-
+def _unavailable_risk(reason):
+    return {
+        'score': 0.0,
+        'risk_0_100': 0,
+        'label': 'Unavailable',
+        'negative_signals': 0,
+        'threats': 0,
+        'rationale_short': reason,
+    }
 
 def llm_failure_risk(turns_so_far):
-    base = estimate_risk(turns_so_far)
-    base['risk_0_100'] = int(round(base['score'] * 100))
     api_key = os.getenv('OPENAI_API_KEY')
-    if not api_key or not turns_so_far:
-        return base
+    if not api_key:
+        return _unavailable_risk('LLM risk assessment unavailable (missing OPENAI_API_KEY).')
+    if not turns_so_far:
+        return {'score':0,'risk_0_100':0,'label':'Low','negative_signals':0,'threats':0}
     transcript = '\n'.join(
         f"Turn {i+1} - {t.get('speaker','Unknown')}: {t.get('text','')}"
         for i, t in enumerate(turns_so_far[-35:])
@@ -1028,17 +873,20 @@ def llm_failure_risk(turns_so_far):
         with urllib.request.urlopen(req, timeout=12) as resp:
             data = json.loads(resp.read().decode('utf-8'))
         obj = json.loads(data['choices'][0]['message']['content'] or '{}')
-        risk_100 = max(0, min(100, int(float(obj.get('risk_0_100', base['risk_0_100'])))))
+        risk_100 = max(0, min(100, int(float(obj.get('risk_0_100', 0)))))
         label = str(obj.get('label', '')).strip().capitalize()
         if label not in {'Low', 'Medium', 'High'}:
-            label = 'Low' if risk_100 < 33 else ('Medium' if risk_100 < 66 else 'High')
-        base['risk_0_100'] = risk_100
-        base['score'] = round(risk_100 / 100.0, 3)
-        base['label'] = label
-        base['rationale_short'] = str(obj.get('rationale_short', '')).strip()
+            label = 'Unavailable'
+        return {
+            'score': round(risk_100 / 100.0, 3),
+            'risk_0_100': risk_100,
+            'label': label,
+            'negative_signals': 0,
+            'threats': 0,
+            'rationale_short': str(obj.get('rationale_short', '')).strip(),
+        }
     except Exception:
-        pass
-    return base
+        return _unavailable_risk('LLM risk assessment unavailable (API request failed).')
 
 def llm_intervention_assessment(turns_so_far, prior_intervention_turns=None):
     api_key = os.getenv('OPENAI_API_KEY')
@@ -1065,28 +913,17 @@ def llm_intervention_assessment(turns_so_far, prior_intervention_turns=None):
         for i, t in enumerate(turns_so_far)
     )
 
-    def fallback_assessment():
-        risk = estimate_risk(turns_so_far)
-        rating = 1
-        reason = 'None'
-        if risk['threats'] > 0:
-            rating, reason = 5, 'Escalation of Conflict'
-        elif risk['negative_signals'] >= 5:
-            rating, reason = 4, 'Impasse'
-        elif risk['score'] >= 0.45:
-            rating, reason = 3, 'Miscommunication'
-        statement = 'I recommend each side restate one concrete, feasible next step before continuing.' if rating >= 4 else 'Please continue negotiating directly; I will stay available if needed.'
+    def unavailable_assessment(reason):
         return {
-            'rating': rating,
-            'reason': reason,
-            'statement': statement,
-            'should_intervene': rating >= 4,
+            'rating': 1,
+            'reason': 'Unavailable',
+            'statement': reason,
+            'should_intervene': False,
         }
 
+
     if not api_key:
-        fb = fallback_assessment()
-        fb['statement'] = "[LLM unavailable] " + fb.get('statement', '')
-        return fb
+        return unavailable_assessment('LLM intervention assessment unavailable (missing OPENAI_API_KEY).')
 
     prompt = """Imagine you are the mediator in a buyer/seller purchase dispute. Let parties resolve it themselves unless intervention is necessary. Reasons:
 1. Escalation of Conflict: if the conversation becomes heated with parties resorting to personal attacks or hostile language
@@ -1138,9 +975,7 @@ Return ENGLISH only."""
             'should_intervene': rating >= 4,
         }
     except Exception:
-        fb = fallback_assessment()
-        fb['statement'] = "[LLM error] " + fb.get('statement', '')
-        return fb
+        return unavailable_assessment('LLM intervention assessment unavailable (API request failed).')
 
 
 def get_advisor(turns_so_far, current_turn):
@@ -1154,7 +989,7 @@ def get_advisor(turns_so_far, current_turn):
         'should_intervene': bool(assessment.get('should_intervene')),
         'action': 'Intervene' if assessment.get('should_intervene') else 'Observe',
         'rating': int(assessment.get('rating', 1)),
-        'reason': assessment.get('reason', 'None'),
+        'reason': assessment.get('reason', 'Unavailable'),
         'statement': assessment.get('statement', ''),
     }
 
@@ -1224,13 +1059,13 @@ def _to_geo_payload(label, confidence, probabilities=None):
 def predict_country_with_model(turns, role):
     role_turns = [t.get('text', '').strip() for t in turns if t.get('speaker') == role and t.get('text', '').strip()]
     if not role_turns:
-        return _to_geo_payload('United States', 0.0, {})
+        return _to_geo_payload('Unavailable', 0.0, {})
     try:
         if PREDICTOR is None:
-            return predict_country(turns, role)
+            return _to_geo_payload('Unavailable', 0.0, {})
         outputs = PREDICTOR.predict_batch(role_turns)
         if not outputs:
-            return _to_geo_payload('United States', 0.0, {})
+            return _to_geo_payload('Unavailable', 0.0, {})
 
         combined_probs = {}
         for out in outputs:
@@ -1245,10 +1080,10 @@ def predict_country_with_model(turns, role):
         if averaged_probs:
             pred, conf = max(averaged_probs.items(), key=lambda item: item[1])
         else:
-            pred, conf = 'United States', 0.0
+            pred, conf = 'Unavailable', 0.0
         return _to_geo_payload(pred, conf, averaged_probs)
     except Exception:
-        return predict_country(turns, role)
+        return _to_geo_payload('Unavailable', 0.0, {})
 
 
 
@@ -1260,64 +1095,47 @@ def predict_cn_region_with_model(turns, role):
             'country': 'China',
             'confidence': 0.0,
             'probabilities': {'North': 0.0, 'Central': 0.0, 'Wu_Min': 0.0, 'Xian_Yue': 0.0},
+            'region': 'Unavailable',
             'province_probabilities': {k: 0.0 for k in CN_PROVINCE_CENTROIDS.keys()},
         }
 
     if PREDICTOR_ZH is None:
-        # fallback to lightweight heuristic if chinese model is unavailable
-        proxy = {region: sum(base_province_probs.get(p, 0.0) for p in plist) for region, plist in CN_REGION_PROVINCES.items()}
-        total = sum(proxy.values()) or 1.0
-        normalized = {k: round(v / total, 6) for k, v in proxy.items()}
-        pred, conf = max(normalized.items(), key=lambda item: item[1])
         return {
             'country': 'China',
-            'confidence': round(conf, 2),
-            'probabilities': normalized,
-            'region': pred,
-            'province_probabilities': base_province_probs,
+            'confidence': 0.0,
+            'probabilities': {'North': 0.0, 'Central': 0.0, 'Wu_Min': 0.0, 'Xian_Yue': 0.0},
+            'region': 'Unavailable',
+            'province_probabilities': {k: 0.0 for k in CN_PROVINCE_CENTROIDS.keys()},
         }
 
-    outputs = PREDICTOR_ZH.predict_batch(role_turns)
-    combined = {}
-    for out in outputs:
-        for label, prob in (out.get('probabilities') or {}).items():
-            combined[label] = combined.get(label, 0.0) + float(prob)
-    count = len(outputs) or 1
-    averaged = {k: v / count for k, v in combined.items()}
-    total = sum(averaged.values()) or 1.0
-    normalized = {k: round(v / total, 6) for k, v in averaged.items()}
-    pred, conf = max(normalized.items(), key=lambda item: item[1])
-    province_probs = project_region_probs_to_provinces(normalized, base_province_probs)
+    try:
+        outputs = PREDICTOR_ZH.predict_batch(role_turns)
+        combined = {}
+        for out in outputs:
+            for label, prob in (out.get('probabilities') or {}).items():
+                combined[label] = combined.get(label, 0.0) + float(prob)
+        count = len(outputs) or 1
+        averaged = {k: v / count for k, v in combined.items()}
+        total = sum(averaged.values()) or 1.0
+        normalized = {k: round(v / total, 6) for k, v in averaged.items()}
+        if not normalized:
+            raise ValueError('empty region prediction')
+        pred, conf = max(normalized.items(), key=lambda item: item[1])
+        province_probs = project_region_probs_to_provinces(normalized, base_province_probs)
+    except Exception:
+        return {
+            'country': 'China',
+            'confidence': 0.0,
+            'probabilities': {'North': 0.0, 'Central': 0.0, 'Wu_Min': 0.0, 'Xian_Yue': 0.0},
+            'region': 'Unavailable',
+            'province_probabilities': {k: 0.0 for k in CN_PROVINCE_CENTROIDS.keys()},
+        }
     return {
         'country': 'China',
         'confidence': round(conf, 2),
         'probabilities': normalized,
         'region': pred,
         'province_probabilities': province_probs,
-    }
-
-def predict_country(turns, role):
-    text  = ' '.join(t['text'] for t in turns if t['speaker']==role).lower()
-    formal = len(re.findall(r'\b(therefore|hence|furthermore|shall|hereby|pursuant|esteemed|aforesaid)\b', text))
-    direct = len(re.findall(r"\b(bottom line|let's|gonna|want|deal|okay|yeah|sure|honestly|look)\b", text))
-    polite = len(re.findall(r'\b(kindly|please|appreciate|grateful|honoured|humbly|sincerely)\b', text))
-    if formal > direct and polite > 1:
-        ranking = [('United Kingdom',0.40),('Germany',0.30),('Japan',0.18),('France',0.12)]
-    elif direct > formal:
-        ranking = [('United States',0.52),('Australia',0.20),('Canada',0.18),('Brazil',0.10)]
-    elif polite > 2:
-        ranking = [('Japan',0.42),('India',0.28),('China',0.20),('United Kingdom',0.10)]
-    else:
-        ranking = [('United States',0.38),('United Kingdom',0.27),('Germany',0.20),('China',0.15)]
-    country, conf = ranking[0]
-    info = COUNTRY_SVG.get(country, {'lat':0,'lng':0,'flag':'🌍'})
-    return {
-        'country': country,
-        'confidence': round(conf, 2),
-        'lat': info['lat'],
-        'lng': info['lng'],
-        'flag': info['flag'],
-        'probabilities': _normalize_probabilities({label: score for label, score in ranking}),
     }
 
 # ── Plotting ──────────────────────────────────────────────────────────────────

@@ -9,8 +9,8 @@ from reportlab.lib.units import inch
 from reportlab.platypus import HRFlowable, Image as RLImage, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from services.dashboard_helpers import (
-    estimate_risk,
     llm_evolution_summary,
+    llm_failure_risk,
     make_all_emotions_plot,
     make_pareto_plot,
 )
@@ -50,7 +50,7 @@ def build_pdf_report(data):
     all_emo_b64 = make_all_emotions_plot(turns_enriched)
     if not emo_b64: emo_b64 = all_emo_b64
 
-    risk = estimate_risk(turns_enriched)
+    risk = llm_failure_risk(turns_enriched)
 
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=letter,

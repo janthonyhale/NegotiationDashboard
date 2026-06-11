@@ -2,7 +2,6 @@ from services.dashboard_helpers import (
     CN_PROVINCE_CENTROIDS,
     NEG_SIGNALS,
     _irp_patterns,
-    estimate_risk,
     extract_uploaded_bundle_metadata,
     get_advisor,
     llm_detect_agreement_last_two,
@@ -47,6 +46,8 @@ def process_upload(path, ext, filename):
             trans = t.get('translation') or ''
             if trans:
                 t['emotions'] = llm_emotion_scores(trans)
+                if not t['emotions']:
+                    t['emotion_error'] = 'LLM emotion classification unavailable.'
                 tl = trans.lower()
                 t['negative_signals'] = sum(1 for s in NEG_SIGNALS if s in tl)
                 t['threat_signals'] = sum(1 for s in ['sue', 'lawyer', 'court', 'legal action'] if s in tl)
@@ -128,8 +129,12 @@ def step_response(data):
     if language == 'CN':
         emo_text = cur.get('translation') or cur.get('text', '')
         cur['emotions'] = llm_emotion_scores(emo_text)
+        if not cur['emotions']:
+            cur['emotion_error'] = 'LLM emotion classification unavailable.'
     elif not cur.get('emotions'):
         cur['emotions'] = llm_emotion_scores(cur.get('text',''))
+        if not cur['emotions']:
+            cur['emotion_error'] = 'LLM emotion classification unavailable.'
     tl = str(emo_text or '').lower()
     cur['negative_signals'] = sum(1 for s in NEG_SIGNALS if s in tl)
     cur['threat_signals'] = sum(1 for s in ['sue', 'lawyer', 'court', 'legal action'] if s in tl)
@@ -179,7 +184,7 @@ def post_summary_response(data):
     provided_final_outcome = data.get('final_outcome')
 
     turns_enriched = turns
-    risk = estimate_risk(turns_enriched)
+    risk = llm_failure_risk(turns_enriched)
     outcomes = generate_all_outcomes(bw, sw)
     pareto = compute_pareto(outcomes)
 
