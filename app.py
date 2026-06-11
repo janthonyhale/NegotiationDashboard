@@ -34,6 +34,7 @@ from services.parsing import (
     parse_file,
     extract_dialogue_language,
 )
+from services.llm_client import openai_chat_json, openai_chat_text
 
 app = Flask(__name__)
 app.secret_key = 'nego_dash_kodis_2024'
@@ -65,16 +66,8 @@ def llm_translate_cn_to_en(text):
         ],
         "temperature": 0
     }
-    req = urllib.request.Request(
-        'https://api.openai.com/v1/chat/completions',
-        data=json.dumps(payload).encode('utf-8'),
-        headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {api_key}'},
-        method='POST'
-    )
     try:
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            data = json.loads(resp.read().decode('utf-8'))
-        return (data['choices'][0]['message']['content'] or '').strip()
+        return openai_chat_text(payload, timeout=60, api_key=api_key)
     except Exception:
         return '[Translation unavailable]'
 
@@ -849,16 +842,8 @@ def llm_irp_label(turns_so_far, current_turn):
         "temperature": 0,
         "response_format": {"type": "json_object"}
     }
-    req = urllib.request.Request(
-        'https://api.openai.com/v1/chat/completions',
-        data=json.dumps(payload).encode('utf-8'),
-        headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {api_key}'},
-        method='POST'
-    )
     try:
-        with urllib.request.urlopen(req, timeout=12) as resp:
-            data = json.loads(resp.read().decode('utf-8'))
-        obj = json.loads(data['choices'][0]['message']['content'] or '{}')
+        obj = openai_chat_json(payload, timeout=12, api_key=api_key)
         v = str(obj.get('irp_label', '')).strip().lower()
         if v.startswith('interest'): return 'Interest'
         if v.startswith('right'): return 'Right'
