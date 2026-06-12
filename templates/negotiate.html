@@ -146,6 +146,11 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
 .reason{font-size:0.66rem;font-family:var(--mono);color:var(--amber);padding:1px 0;}
 .reason::before{content:'Reason: ';color:#e2e8f0;}
 .suggestion{font-size:0.7rem;color:var(--text2);line-height:1.55;padding:6px 9px;background:var(--surface);border-radius:5px;border-left:2px solid var(--accent);font-style:italic;margin-top:6px;}
+.annotation-controls{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;padding-top:8px;border-top:1px dashed rgba(148,163,184,0.22);align-items:center;}
+.ann-select,.ann-btn{font-family:var(--mono);font-size:0.58rem;border-radius:4px;border:1px solid var(--border);background:#09111d;color:var(--text2);padding:3px 6px;}
+.ann-btn{cursor:pointer;color:var(--teal);}
+.ann-btn:hover{border-color:var(--teal);}
+.ann-note{font-family:var(--mono);font-size:0.55rem;color:var(--muted);}
 
 /* Summary brief */
 .summary-card{background:linear-gradient(165deg,rgba(79,145,255,0.16),rgba(34,211,165,0.07));border:1px solid rgba(79,145,255,0.28);border-radius:10px;padding:12px 14px;box-shadow:0 12px 24px rgba(0,0,0,0.3);height:178px;display:flex;flex-direction:column;}
@@ -328,7 +333,7 @@ const CN_REGION_CODE_MAP = {
   'north':'north','central':'central','wu_min':'wu_min','xian_yue':'xian_yue',
   'north_china':'north','central_china':'central','wu-min':'wu_min','xian-yue':'xian_yue'
 };
-let S = { turns:[], currentIdx:-1, dim:'anger', mapRole:'buyer', currentMapDist:{}, country:null, lastCountry:null, bw:{}, sw:{}, activeMap:null, opSummaries:[], language:'EN', processing:false, runAll:false, stepCache:{} };
+let S = { turns:[], currentIdx:-1, dim:'anger', mapRole:'buyer', currentMapDist:{}, country:null, lastCountry:null, bw:{}, sw:{}, filename:'', activeMap:null, opSummaries:[], language:'EN', processing:false, runAll:false, stepCache:{} };
 const IRP_KEYS = ['interest','right','power'];
 
 function getTurnIRP(turn){
@@ -362,6 +367,7 @@ function init() {
   if (!raw) { location.href='/'; return; }
   const D = JSON.parse(raw);
   S.turns   = D.turns;
+  S.filename = D.filename || '';
   S.country = D.country;
   S.bw      = D.buyer_weights || {};
   S.sw      = D.seller_weights || {};
@@ -446,6 +452,57 @@ function persistSessionState(){
   base.op_summaries = S.opSummaries;
   base.step_cache = S.stepCache;
   sessionStorage.setItem('nd', JSON.stringify(base));
+}
+
+function dominantEmotion(emotions){
+  const entries = Object.entries(emotions || {}).filter(([k])=>k !== 'valence');
+  if (!entries.length) return 'neutral';
+  return entries.sort((a,b)=>Number(b[1]||0)-Number(a[1]||0))[0][0] || 'neutral';
+}
+
+function oneHotEmotion(label){
+  const keys = ['joy','anger','fear','sadness','surprise','compassion','neutral'];
+  const out = {};
+  keys.forEach(k => out[k] = k === label ? 1.0 : 0.0);
+  out.valence = label === 'joy' || label === 'compassion' ? 1.0 : (['anger','fear','sadness'].includes(label) ? -1.0 : 0.0);
+  return out;
+}
+
+async function saveAnnotationCorrection(idx, annotationType, oldValue, newValue){
+  await fetch('/api/annotation_correction', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      filename:S.filename, idx, turns:S.turns, annotation_type:annotationType,
+      old_value:oldValue, new_value: newValue
+    })
+  });
+}
+
+async function correctIRP(idx, value){
+  const oldValue = S.turns[idx]?.irp || null;
+  S.turns[idx].irp = value;
+  S.turns[idx].meta = {...(S.turns[idx].meta || {}), irp_label: value.charAt(0).toUpperCase()+value.slice(1), irp_human_corrected: true};
+  await saveAnnotationCorrection(idx, 'irp', oldValue, S.turns[idx].meta.irp_label);
+  invalidateStepCacheFrom(idx);
+  persistSessionState();
+  renderDialogueUpTo(S.currentIdx);
+  updateEmoChart();
+}
+
+async function correctEmotion(idx, label){
+  const oldValue = S.turns[idx]?.emotions || {};
+  S.turns[idx].emotions = oneHotEmotion(label);
+  S.turns[idx].meta = {...(S.turns[idx].meta || {}), emotion_human_corrected: true};
+  await saveAnnotationCorrection(idx, 'emotion', oldValue, S.turns[idx].emotions);
+  invalidateStepCacheFrom(idx);
+  persistSessionState();
+  renderDialogueUpTo(S.currentIdx);
+  updateEmoChart();
+}
+
+function invalidateStepCacheFrom(idx){
+  Object.keys(S.stepCache || {}).forEach(k => { if (Number(k) >= Number(idx)) delete S.stepCache[k]; });
+  S.opSummaries = S.opSummaries.filter(item => Number(item.idx) < Number(idx));
 }
 
 async function ensureStepData(idx) {
@@ -609,6 +666,8 @@ function addBubble(t, idx, skipScroll=false) {
   if (ph) ph.remove();
   const role = t.speaker.toLowerCase();
   const chips = renderEmotionChips(t.emotions || {});
+  const emoNow = dominantEmotion(t.emotions || {});
+  const irpNow = t.irp || 'interest';
   const wrap = document.createElement('div');
   wrap.className = `bubble-wrap ${role}`;
   wrap.id = `bubble-${idx}`;
@@ -618,6 +677,15 @@ function addBubble(t, idx, skipScroll=false) {
       ${esc(t.text)}
       ${S.language === 'CN' ? `<div class="translation-line">EN: ${esc(t.translation || 'Translating...')}</div>` : ''}
       <div class="bubble-emos">${chips}</div>
+      <div class="annotation-controls">
+        <span class="ann-note">Correct:</span>
+        <select class="ann-select" onchange="correctIRP(${idx}, this.value)">
+          ${IRP_KEYS.map(k=>`<option value="${k}" ${k===irpNow?'selected':''}>IRP: ${k}</option>`).join('')}
+        </select>
+        <select class="ann-select" onchange="correctEmotion(${idx}, this.value)">
+          ${['joy','anger','fear','sadness','surprise','compassion','neutral'].map(k=>`<option value="${k}" ${k===emoNow?'selected':''}>Emotion: ${k}</option>`).join('')}
+        </select>
+      </div>
     </div>`;
   // Remove 'current' from previous bubble
   document.querySelectorAll('.bubble.current').forEach(b=>b.classList.remove('current'));
@@ -1127,7 +1195,7 @@ function switchEmo(dim, btn) {
   updateEmoChart();
 }
 
-function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function esc(s){return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 init();
 </script>
 </body>

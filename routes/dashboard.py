@@ -5,10 +5,12 @@ from werkzeug.utils import secure_filename
 
 from services.dashboard import (
     allowed,
+    annotation_correction_response,
     build_pdf_report,
     enriched_export_buffer,
     post_summary_response,
     process_upload,
+    qa_response,
     step_response,
     update_weights_response,
 )
@@ -61,6 +63,17 @@ def api_step():
 @dashboard_bp.route('/api/post_summary', methods=['POST'])
 def api_post_summary():
     return jsonify(post_summary_response(request.json))
+
+@dashboard_bp.route('/api/annotation_correction', methods=['POST'])
+def api_annotation_correction():
+    try:
+        return jsonify(annotation_correction_response(request.json))
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+
+@dashboard_bp.route('/api/qa', methods=['POST'])
+def api_qa():
+    return jsonify(qa_response(request.json))
 
 @dashboard_bp.route('/api/export_pdf', methods=['POST'])
 def api_export_pdf():

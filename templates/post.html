@@ -89,6 +89,15 @@ nav{display:flex;align-items:center;padding:11px 22px;border-bottom:1px solid va
 .translation-line{margin-top:8px;padding-top:6px;border-top:1px dashed rgba(148,163,184,0.3);font-size:0.74rem;color:#bfd0e6;}
 .bubble-emos{display:flex;flex-wrap:wrap;gap:4px;margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06);}
 .emo-chip{font-size:0.58rem;font-family:var(--mono);padding:2px 7px;border-radius:4px;background:var(--surface);border:1px solid var(--border);color:var(--muted);}
+.qa-card{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:12px;display:flex;flex-direction:column;min-height:220px;flex:1;}
+.qa-title{font-family:var(--mono);font-size:0.62rem;letter-spacing:1.4px;text-transform:uppercase;color:#b6cdf3;margin-bottom:8px;}
+.qa-log{flex:1;min-height:90px;max-height:calc(100vh - 560px);overflow-y:auto;border:1px solid rgba(148,163,184,0.16);border-radius:8px;background:rgba(7,9,15,0.45);padding:9px;margin-bottom:8px;}
+.qa-msg{font-size:0.76rem;line-height:1.5;margin-bottom:9px;color:var(--text2);}
+.qa-msg.user{color:#dbeafe;}
+.qa-msg.agent{color:#d6e2f5;}
+.qa-input-row{display:flex;gap:7px;}
+.qa-input{flex:1;min-width:0;border:1px solid var(--border);border-radius:7px;background:#09111d;color:var(--text);font-family:var(--sans);font-size:0.78rem;padding:8px 9px;}
+.qa-send{border:1px solid var(--teal);border-radius:7px;background:var(--teal);color:#07090f;font-weight:700;padding:8px 11px;cursor:pointer;}
 .brief-text{max-height:calc(100vh - 360px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent;padding-right:4px;}
 .brief-text::-webkit-scrollbar{width:3px;}
 .brief-text::-webkit-scrollbar-thumb{background:var(--border);}
@@ -161,6 +170,14 @@ nav{display:flex;align-items:center;padding:11px 22px;border-bottom:1px solid va
             <div id="post-chart" class="plot-host"></div>
             <div id="post-tip" class="plot-tip"></div>
             <div class="plot-ph" id="post-ph">Computing…</div>
+          </div>
+        </div>
+        <div class="qa-card">
+          <div class="qa-title">Negotiation QA Coach</div>
+          <div class="qa-log" id="qa-log"><div class="qa-msg agent">Ask what went wrong, which mediator move might have helped, or how annotations changed the diagnosis.</div></div>
+          <div class="qa-input-row">
+            <input class="qa-input" id="qa-input" placeholder="Ask about this negotiation…" onkeydown="if(event.key==='Enter') askQA()">
+            <button class="qa-send" id="qa-send" onclick="askQA()">Ask</button>
           </div>
         </div>
       </div>
@@ -319,6 +336,37 @@ function renderPostSolutionSpace(outcomes, pareto, finalOutcome){
   });
 }
 
+async function askQA(){
+  const input = document.getElementById('qa-input');
+  const btn = document.getElementById('qa-send');
+  const log = document.getElementById('qa-log');
+  const question = (input?.value || '').trim();
+  if (!question || !log) return;
+  log.innerHTML += `<div class="qa-msg user"><b>You:</b> ${esc(question)}</div>`;
+  input.value = '';
+  btn.disabled = true;
+  log.innerHTML += `<div class="qa-msg agent" id="qa-pending"><b>Coach:</b> Thinking…</div>`;
+  log.scrollTop = log.scrollHeight;
+  try {
+    const res = await fetch('/api/qa', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        turns:S.turns, question, language:S.language, op_summaries:S.opSummaries,
+        final_outcome:S.finalOutcome, step_cache:S.stepCache
+      })
+    });
+    const data = await res.json();
+    const pending = document.getElementById('qa-pending');
+    if (pending) pending.outerHTML = `<div class="qa-msg agent"><b>Coach:</b> ${esc(data.answer || 'No answer returned.').replace(/\n/g,'<br>')}</div>`;
+  } catch(e) {
+    const pending = document.getElementById('qa-pending');
+    if (pending) pending.outerHTML = `<div class="qa-msg agent"><b>Coach:</b> QA request failed: ${esc(e.message)}</div>`;
+  } finally {
+    btn.disabled = false;
+    log.scrollTop = log.scrollHeight;
+  }
+}
+
 function renderEmotionChips(emos){
   if (!emos || !Object.keys(emos).length) return '';
   return Object.entries(emos).filter(([k])=>k!=='valence').map(([k,v])=>{
@@ -333,7 +381,7 @@ function renderDialogueFeed(){
   dialogueEl.innerHTML = '';
   S.turns.forEach((t, idx) => {
     const role = (t.speaker || 'Buyer').toLowerCase();
-    const irp = (t.meta && t.meta.irp_label ? String(t.meta.irp_label).toLowerCase() : classifyIRP(t.text));
+    const irp = (t.meta && t.meta.irp_label ? String(t.meta.irp_label).toLowerCase() : (t.irp ? String(t.irp).toLowerCase() : classifyIRP(t.text)));
     const chips = renderEmotionChips(t.emotions || {});
     const wrap = document.createElement('div');
     wrap.className = `bubble-wrap ${role}`;
@@ -414,7 +462,7 @@ function toast(msg,err){
   t.textContent=msg; t.className=err?'err':'show';
   setTimeout(()=>t.className='',3500);
 }
-function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function esc(s){return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 init();
 </script>
 </body>
