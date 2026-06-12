@@ -33,6 +33,12 @@ h1 em{font-style:italic;color:var(--teal);}
 #fi{display:none;}
 .sample-btn{display:inline-flex;align-items:center;gap:6px;margin-top:14px;font-size:0.72rem;font-family:var(--mono);color:var(--muted);cursor:pointer;background:none;border:none;transition:color 0.15s;text-decoration:underline;text-underline-offset:3px;}
 .sample-btn:hover{color:var(--accent);}
+.convert-card{margin-top:18px;width:100%;max-width:520px;border:1px solid rgba(79,145,255,0.25);background:rgba(12,16,24,0.72);border-radius:12px;padding:14px 16px;text-align:center;}
+.convert-card p{font-size:0.78rem;color:var(--text2);line-height:1.55;margin-bottom:10px;}
+.convert-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+.convert-btn{font-family:var(--mono);font-size:0.68rem;border:1px solid var(--accent);background:rgba(79,145,255,0.1);color:#bfdbfe;border-radius:6px;padding:7px 10px;cursor:pointer;}
+.convert-btn:hover{background:rgba(79,145,255,0.2);}
+#convert-fi{display:none;}
 .tags{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:36px;}
 .tag{padding:4px 12px;border-radius:20px;font-size:0.65rem;font-family:var(--mono);border:1px solid var(--border);color:var(--muted);background:var(--surface);}
 .overlay{display:none;position:fixed;inset:0;background:rgba(7,9,15,0.85);z-index:100;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
@@ -70,6 +76,13 @@ h1 em{font-style:italic;color:var(--teal);}
   <input type="file" id="fi" accept=".json,.jsonl,.txt,.csv" onchange="upload(event.target.files[0])">
   <button class="sample-btn" onclick="downloadSample()">↓ Download sample KODIS dispute transcript (EN)</button>
   <button class="sample-btn" onclick="downloadSampleCN()">↓ Download sample KODIS dispute transcript (CN)</button>
+  <div class="convert-card">
+    <p>Have a transcript in a messy or unfamiliar format? Upload it here and the LLM will convert it into app-ready JSONL that you can download and re-upload.</p>
+    <div class="convert-actions">
+      <button class="convert-btn" onclick="document.getElementById('convert-fi').click()">Convert any dispute format</button>
+    </div>
+    <input type="file" id="convert-fi" onchange="convertUpload(event.target.files[0]); event.target.value=''">
+  </div>
   <div class="tags"><span class="tag">KODIS Utility</span><span class="tag">Pareto Frontier</span><span class="tag">6-Emotion Model</span><span class="tag">Failure Risk</span><span class="tag">AI Advisor</span><span class="tag">Country Map</span><span class="tag">PDF Export</span></div>
 </div>
 <div class="overlay" id="ov"><div class="spin"></div><div class="spin-text">Parsing & enriching transcript…</div></div>
@@ -101,9 +114,27 @@ async function upload(file){
   finally{document.getElementById('ov').classList.remove('show');}
 }
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),4000);}
+async function convertUpload(file){
+  if(!file) return;
+  document.getElementById('ov').classList.add('show');
+  document.querySelector('#ov .spin-text').textContent='Converting transcript to app-ready JSONL…';
+  const fd=new FormData();fd.append('file',file);
+  try{
+    const res=await fetch('/api/convert_upload',{method:'POST',body:fd});
+    const data=await res.json();
+    if(data.error){toast(data.error);return;}
+    const blob=new Blob([data.jsonl],{type:'application/x-ndjson;charset=utf-8'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=data.filename || 'converted_dispute.jsonl';
+    document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(a.href);
+    toast(`Converted ${data.turn_count || 0} turns. Download it, then upload the JSONL above.`);
+  }catch(e){toast('Conversion failed: '+e.message);}
+  finally{document.getElementById('ov').classList.remove('show');document.querySelector('#ov .spin-text').textContent='Analyzing transcript…';}
+}
 function downloadSample(){
   const lines=[
-    '{"buyer_weights":{"refund":55,"buyer_review":15,"seller_review":20,"seller_apology":10,"buyer_apology":0},"seller_weights":{"refund":35,"buyer_review":30,"seller_review":10,"seller_apology":0,"buyer_apology":25},"pre_dispute_justifications":{"refund":{"buyer":"I paid in full for a functioning laptop, so I need meaningful compensation for receiving defective hardware.","seller":"I can offer compensation, but a full refund feels disproportionate because the device worked when shipped and policy limits what I can authorize."},"buyer_review":{"buyer":"My review is my honest account, so I want to keep it visible for other buyers.","seller":"I want the buyer review removed because I believe parts of it are inaccurate and harming our reputation."},"seller_review":{"buyer":"Your review of me was unfair and personal, so I need it removed.","seller":"I posted my review to document transaction concerns, so I prefer to keep it unless we settle."},"receive_apology":{"buyer":"I want a direct apology because your comments made this dispute feel personal, not just transactional.","seller":"I can apologize for tone, but I do not want wording that admits full fault for the product issue."}}}',
+    '{"issues":[{"key":"refund","label":"Refund","options":[{"label":"Full","role1_value":1,"role2_value":0,"value":1},{"label":"Half","role1_value":0.5,"role2_value":0.5,"value":0.5},{"label":"None","role1_value":0,"role2_value":1,"value":0}]},{"key":"buyer_review","label":"Buyer Review Removed","options":[{"label":"Yes","role1_value":0,"role2_value":1,"value":1},{"label":"No","role1_value":1,"role2_value":0,"value":0}]},{"key":"seller_review","label":"Seller Review Removed","options":[{"label":"Yes","role1_value":1,"role2_value":0,"value":1},{"label":"No","role1_value":0,"role2_value":1,"value":0}]},{"key":"seller_apology","label":"Seller Apologizes","options":[{"label":"Yes","role1_value":1,"role2_value":0,"value":1},{"label":"No","role1_value":0,"role2_value":1,"value":0}]},{"key":"buyer_apology","label":"Buyer Apologizes","options":[{"label":"Yes","role1_value":0,"role2_value":1,"value":1},{"label":"No","role1_value":1,"role2_value":0,"value":0}]}],"role_names":{"role1":"Buyer","role2":"Seller"},"task_background":"Buyer-seller online purchase dispute over refund, reviews, and apologies.","buyer_weights":{"refund":55,"buyer_review":15,"seller_review":20,"seller_apology":10,"buyer_apology":0},"seller_weights":{"refund":35,"buyer_review":30,"seller_review":10,"seller_apology":0,"buyer_apology":25},"pre_dispute_justifications":{"refund":{"buyer":"I paid in full for a functioning laptop, so I need meaningful compensation for receiving defective hardware.","seller":"I can offer compensation, but a full refund feels disproportionate because the device worked when shipped and policy limits what I can authorize."},"buyer_review":{"buyer":"My review is my honest account, so I want to keep it visible for other buyers.","seller":"I want the buyer review removed because I believe parts of it are inaccurate and harming our reputation."},"seller_review":{"buyer":"Your review of me was unfair and personal, so I need it removed.","seller":"I posted my review to document transaction concerns, so I prefer to keep it unless we settle."},"receive_apology":{"buyer":"I want a direct apology because your comments made this dispute feel personal, not just transactional.","seller":"I can apologize for tone, but I do not want wording that admits full fault for the product issue."}}}',
     '{"speaker":"Buyer","text":"I need to discuss the defective laptop I received. It stopped working after just two weeks. I want a full refund and I want your horrible review of me taken down — you called me a difficult customer when I was simply asking for basic consumer rights."}',
     '{"speaker":"Seller","text":"I understand you\'re frustrated, but the laptop worked fine when shipped. Our diagnostics showed user damage. A full refund isn\'t something I can offer for mishandled equipment. However, I\'m willing to consider a partial refund. And I\'d ask you to take down your one-star review that accused us of selling fake products — that\'s damaging to our business."}',
     '{"speaker":"Buyer","text":"User damage? That\'s absolutely outrageous. This laptop arrived with a failing battery — it was a manufacturing defect. I won\'t accept anything less than a full refund. As for the review, it reflects my genuine experience. Your review of me was completely uncalled for and I want it gone."}',
@@ -119,7 +150,7 @@ function downloadSample(){
 
 function downloadSampleCN(){
   const lines=[
-    '{"language":"CN","buyer_weights":{"refund":60,"buyer_review":15,"seller_review":15,"seller_apology":10,"buyer_apology":0},"seller_weights":{"refund":30,"buyer_review":30,"seller_review":10,"seller_apology":0,"buyer_apology":30},"pre_dispute_justifications":{"refund":{"buyer":"我收到的是有缺陷的电脑，所以我坚持要有实质性的退款补偿。","seller":"我愿意补偿，但全额退款超出我的权限，也和平台规则不一致。"},"buyer_review":{"buyer":"我的评价是基于真实经历，我希望保留。","seller":"我认为这条评价有不准确之处，影响店铺信誉，希望删除。"},"seller_review":{"buyer":"你对我的评价带有情绪且不公平，我希望撤下。","seller":"我的评价是交易记录的一部分，除非达成方案，否则我倾向保留。"},"receive_apology":{"buyer":"我希望得到明确道歉，这对我很重要。","seller":"我可以为沟通语气道歉，但不代表承认全部责任。"}}}',
+    '{"language":"CN","issues":[{"key":"refund","label":"Refund","options":[{"label":"Full","role1_value":1,"role2_value":0,"value":1},{"label":"Half","role1_value":0.5,"role2_value":0.5,"value":0.5},{"label":"None","role1_value":0,"role2_value":1,"value":0}]},{"key":"buyer_review","label":"Buyer Review Removed","options":[{"label":"Yes","role1_value":0,"role2_value":1,"value":1},{"label":"No","role1_value":1,"role2_value":0,"value":0}]},{"key":"seller_review","label":"Seller Review Removed","options":[{"label":"Yes","role1_value":1,"role2_value":0,"value":1},{"label":"No","role1_value":0,"role2_value":1,"value":0}]},{"key":"seller_apology","label":"Seller Apologizes","options":[{"label":"Yes","role1_value":1,"role2_value":0,"value":1},{"label":"No","role1_value":0,"role2_value":1,"value":0}]},{"key":"buyer_apology","label":"Buyer Apologizes","options":[{"label":"Yes","role1_value":0,"role2_value":1,"value":1},{"label":"No","role1_value":1,"role2_value":0,"value":0}]}],"role_names":{"role1":"买家","role2":"卖家"},"task_background":"线上买卖纠纷，涉及退款、评价删除和道歉。","buyer_weights":{"refund":60,"buyer_review":15,"seller_review":15,"seller_apology":10,"buyer_apology":0},"seller_weights":{"refund":30,"buyer_review":30,"seller_review":10,"seller_apology":0,"buyer_apology":30},"pre_dispute_justifications":{"refund":{"buyer":"我收到的是有缺陷的电脑，所以我坚持要有实质性的退款补偿。","seller":"我愿意补偿，但全额退款超出我的权限，也和平台规则不一致。"},"buyer_review":{"buyer":"我的评价是基于真实经历，我希望保留。","seller":"我认为这条评价有不准确之处，影响店铺信誉，希望删除。"},"seller_review":{"buyer":"你对我的评价带有情绪且不公平，我希望撤下。","seller":"我的评价是交易记录的一部分，除非达成方案，否则我倾向保留。"},"receive_apology":{"buyer":"我希望得到明确道歉，这对我很重要。","seller":"我可以为沟通语气道歉，但不代表承认全部责任。"}}}',
     '{"speaker":"Buyer","text":"你好，我收到的笔记本电脑两周就坏了，我希望全额退款，并且请你删除对我的差评。"}',
     '{"speaker":"Seller","text":"我理解你的不满，但我们的检测显示可能有人为损坏。全额退款很难，不过我可以考虑部分退款。"}',
     '{"speaker":"Buyer","text":"我不能接受这个说法。产品到手时电池就有问题，至少要50%退款，而且我希望你撤掉评论。"}',

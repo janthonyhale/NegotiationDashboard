@@ -25,6 +25,15 @@ nav{display:flex;align-items:center;padding:11px 24px;border-bottom:1px solid va
 .pref-table th,.just-table th{font-family:var(--mono);font-size:.58rem;color:var(--muted);text-transform:uppercase}
 .pref-table td:nth-child(2){color:#bfdbfe;font-family:var(--mono)}
 .pref-table td:nth-child(3){color:#fecaca;font-family:var(--mono)}
+.pref-slider{width:100%;accent-color:var(--teal)}
+.pref-num{font-family:var(--mono);font-size:.65rem;color:var(--text2)}
+.pref-actions{display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap}
+.pref-note{font-size:.68rem;color:var(--muted);line-height:1.4}
+.mini-btn{font-family:var(--mono);font-size:.62rem;border:1px solid var(--border);background:var(--surface);color:var(--text2);border-radius:5px;padding:5px 8px;cursor:pointer}
+.mini-btn:hover{border-color:var(--teal);color:var(--teal)}
+.just-edit{width:100%;min-height:72px;resize:vertical;border:1px solid var(--border);border-radius:7px;background:#09111d;color:var(--text);font-family:var(--sans);font-size:.72rem;line-height:1.45;padding:7px}
+.just-edit:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 2px rgba(34,211,165,.12)}
+.just-missing{color:var(--muted);font-style:italic;font-size:.7rem;margin-bottom:4px}
 
 .page-title{font-family:var(--serif);font-size:1.55rem;margin:2px 0 4px}
 .page-sub{font-size:.8rem;color:var(--text2);margin-bottom:8px}
@@ -32,6 +41,17 @@ nav{display:flex;align-items:center;padding:11px 24px;border-bottom:1px solid va
 #pareto-chart{display:none;width:100%;height:460px;background:#0a1520;border:1px solid var(--border);border-radius:8px}
 #pareto-ph{padding:40px;text-align:center;color:var(--muted);font-size:.78rem}
 .chart-tip{position:absolute;pointer-events:none;background:#0b1220;border:1px solid #24364f;border-radius:6px;padding:6px 8px;font-size:11px;color:#dbeafe;max-width:320px;display:none;z-index:10}
+@media (max-width: 1150px){
+  html,body{height:auto;min-height:100%;overflow:auto}
+  nav{flex-wrap:wrap}.steps{order:3;width:100%;overflow-x:auto}.btn-nav{margin-left:0}
+  .body{grid-template-columns:1fr;overflow:visible;height:auto}
+  .col{min-height:360px}.col-body{max-height:none}
+  #pareto-chart{height:360px}
+}
+@media (max-width: 640px){
+  .pref-table,.just-table{font-size:.68rem}.pref-table th,.pref-table td,.just-table th,.just-table td{padding:6px 4px}
+  .page-title{font-size:1.25rem}
+}
 </style>
 </head>
 <body>
@@ -42,11 +62,11 @@ nav{display:flex;align-items:center;padding:11px 24px;border-bottom:1px solid va
 </nav>
 <div class="body">
   <section class="col">
-    <div class="col-head">Preferences (Locked)</div>
+    <div class="col-head">Preferences (Editable)</div>
     <div class="col-body">
-      <p style="font-size:.72rem;color:var(--text2);margin-bottom:10px">Submitted KODIS preferences are shown once for reference.</p>
+      <p style="font-size:.72rem;color:var(--text2);margin-bottom:10px">Submitted preferences are editable before analysis.</p>
       <table class="pref-table" id="pref-table"></table>
-      <p style="font-size:.65rem;color:var(--muted);margin-top:8px;font-family:var(--mono)">These values are fixed from the uploaded session.</p>
+      <p style="font-size:.65rem;color:var(--muted);margin-top:8px;font-family:var(--mono)">Adjust sliders to add or change preferences; each disputant is normalized to 100.</p>
     </div>
   </section>
 
@@ -71,68 +91,110 @@ nav{display:flex;align-items:center;padding:11px 24px;border-bottom:1px solid va
   </section>
 </div>
 <script>
-const ISSUES = [
+const DEFAULT_ISSUES = [
   {key:'refund', label:'Refund'},
-  {key:'buyer_review', label:'Buyer Review Kept / Removed'},
-  {key:'seller_review', label:'Seller Review Kept / Removed'},
-  {key:'receive_apology', label:'Receive apology'},
+  {key:'buyer_review', label:'Buyer Review Removed'},
+  {key:'seller_review', label:'Seller Review Removed'},
+  {key:'seller_apology', label:'Seller Apologizes'},
+  {key:'buyer_apology', label:'Buyer Apologizes'},
 ];
-let D=null, BW={}, SW={}, JUST={};
+let D=null, BW={}, SW={}, JUST={}, ISSUES=[];
 
-function prefValue(side, key){
-  if (key === 'receive_apology') return side==='buyer' ? (BW['seller_apology'] ?? '') : (SW['buyer_apology'] ?? '');
-  return side==='buyer' ? (BW[key] ?? '') : (SW[key] ?? '');
+function issueKey(issue){return issue.key;}
+function issueLabel(issue){return issue.label || issue.key;}
+function hasPreferenceValues(){
+  const keys = ISSUES.map(issueKey);
+  const bTotal = keys.reduce((sum,k)=>sum+Number(BW[k]||0),0);
+  const sTotal = keys.reduce((sum,k)=>sum+Number(SW[k]||0),0);
+  return bTotal > 0 && sTotal > 0;
 }
-
+function normalizedSide(weights){
+  const keys = ISSUES.map(issueKey);
+  const total = keys.reduce((sum,k)=>sum+Number(weights[k]||0),0);
+  const out = {};
+  keys.forEach(k=>out[k]=total>0 ? Math.round((Number(weights[k]||0)/total)*1000)/10 : 0);
+  return out;
+}
+function setSideValue(side, key, raw){
+  const obj = side === 'buyer' ? BW : SW;
+  obj[key] = Math.max(0, Math.min(100, Number(raw||0)));
+  buildPrefTable();
+  refreshSolutionSpace();
+}
 function buildPrefTable(){
   const el=document.getElementById('pref-table');
-  el.innerHTML = `<tr><th>Issue</th><th>Buyer</th><th>Seller</th></tr>` + ISSUES.map(iss=>`<tr><td>${iss.label}</td><td>${prefValue('buyer',iss.key)}</td><td>${prefValue('seller',iss.key)}</td></tr>`).join('');
+  const bNorm = normalizedSide(BW), sNorm = normalizedSide(SW);
+  el.innerHTML = `<tr><th>Issue</th><th>Disputant 1 pref.</th><th>Disputant 2 pref.</th></tr>` + ISSUES.map(iss=>{
+    const k=issueKey(iss);
+    return `<tr><td>${esc(issueLabel(iss))}</td>
+      <td><input class="pref-slider" type="range" min="0" max="100" step="1" value="${Number(BW[k]||0)}" oninput="setSideValue('buyer','${escAttr(k)}',this.value)"><div class="pref-num">${bNorm[k] || 0}% normalized</div></td>
+      <td><input class="pref-slider" type="range" min="0" max="100" step="1" value="${Number(SW[k]||0)}" oninput="setSideValue('seller','${escAttr(k)}',this.value)"><div class="pref-num">${sNorm[k] || 0}% normalized</div></td></tr>`;
+  }).join('') + `<tr><td colspan="3"><div class="pref-actions"><button class="mini-btn" onclick="evenPreferences()">Set even preferences</button><span class="pref-note">Preferences are normalized to 100 for each disputant. If preferences are unknown, leave sliders at zero and Pareto figures stay hidden.</span></div></td></tr>`;
 }
-
+function evenPreferences(){
+  const v = ISSUES.length ? Math.round(100/ISSUES.length) : 0;
+  ISSUES.forEach(iss=>{ BW[issueKey(iss)] = v; SW[issueKey(iss)] = v; });
+  buildPrefTable(); refreshSolutionSpace();
+}
+function justValue(issueKey, side){
+  const j = JUST[issueKey] || {};
+  return side === 'buyer' ? (j.buyer || j.role1 || '') : (j.seller || j.role2 || '');
+}
+function setJustification(issueKey, side, value){
+  if(!JUST[issueKey]) JUST[issueKey] = {};
+  JUST[issueKey][side === 'buyer' ? 'buyer' : 'seller'] = value;
+  D.pre_justifications = JUST;
+  sessionStorage.setItem('nd', JSON.stringify(D));
+}
+function justEditor(issueKey, side){
+  const val = justValue(issueKey, side);
+  const missing = val ? '' : '<div class="just-missing">Not provided</div>';
+  return `${missing}<textarea class="just-edit" placeholder="Add justification…" oninput="setJustification('${escAttr(issueKey)}','${side}',this.value)">${esc(val)}</textarea>`;
+}
 function buildJustTable(){
   const el=document.getElementById('just-table');
-  el.innerHTML = `<tr><th>Issue</th><th>Buyer justification</th><th>Seller justification</th></tr>` + ISSUES.map(iss=>{
-    const j = JUST[iss.key] || {};
-    return `<tr><td>${iss.label}</td><td>${j.buyer || ''}</td><td>${j.seller || ''}</td></tr>`;
+  el.innerHTML = `<tr><th>Issue</th><th>Disputant 1 justification</th><th>Disputant 2 justification</th></tr>` + ISSUES.map(iss=>{
+    const k = issueKey(iss);
+    return `<tr><td>${esc(issueLabel(iss))}</td><td>${justEditor(k,'buyer')}</td><td>${justEditor(k,'seller')}</td></tr>`;
   }).join('');
 }
-
+function dealLabel(o){
+  if (o.deal_label) return o.deal_label;
+  return `Refund ${o.refund_label || '—'}; Buyer review removed ${o.buyer_review?'Yes':'No'}; Seller review removed ${o.seller_review?'Yes':'No'}; Seller apology ${o.seller_apology?'Yes':'No'}; Buyer apology ${o.buyer_apology?'Yes':'No'}`;
+}
 function renderSolutionSpace(outcomes, pareto){
   const host=document.getElementById('pareto-chart');
   const ph=document.getElementById('pareto-ph');
   const tip=document.getElementById('chart-tip');
-  if(!host||!outcomes?.length)return;
+  if(!host) return;
+  if(!outcomes?.length){
+    host.style.display='none';
+    ph.style.display='block';
+    ph.innerHTML='Preference weights are unknown. Add preferences with the sliders to generate the Pareto figure.';
+    return;
+  }
   const w=host.clientWidth||860,h=host.clientHeight||460,m={l:54,r:20,t:22,b:40};
   const x=v=>m.l+(v/100)*(w-m.l-m.r), y=v=>h-m.b-(v/100)*(h-m.t-m.b);
 
   const dots=outcomes.map((o,i)=>{
-    const deal=`Refund ${o.refund_label}; Buyer review removed ${o.buyer_review?'Yes':'No'}; Seller review removed ${o.seller_review?'Yes':'No'}; Seller apology ${o.seller_apology?'Yes':'No'}; Buyer apology ${o.buyer_apology?'Yes':'No'}`;
-    const title = `${deal} | Buyer utility ${o.buyer_util}, Seller utility ${o.seller_util}`;
-    return `<circle class="deal-dot" data-i="${i}" data-deal="${deal.replace(/"/g,'&quot;')}" data-bu="${o.buyer_util}" data-su="${o.seller_util}" cx="${x(o.buyer_util)}" cy="${y(o.seller_util)}" r="3.8" fill="#28466a" opacity="0.72" stroke="transparent" stroke-width="10"><title>${title}</title></circle>`;
+    const deal=dealLabel(o);
+    const title = `${deal} | Disputant 1 utility ${o.buyer_util}, Disputant 2 utility ${o.seller_util}`;
+    return `<circle class="deal-dot" data-i="${i}" data-deal="${escAttr(deal)}" data-bu="${o.buyer_util}" data-su="${o.seller_util}" cx="${x(o.buyer_util)}" cy="${y(o.seller_util)}" r="3.8" fill="#28466a" opacity="0.72" stroke="transparent" stroke-width="10"><title>${esc(title)}</title></circle>`;
   }).join('');
 
-  const px=[...pareto].sort((a,b)=>a.buyer_util-b.buyer_util);
+  const px=[...(pareto||[])].sort((a,b)=>a.buyer_util-b.buyer_util);
   const path=px.map((p,i)=>`${i?'L':'M'} ${x(p.buyer_util).toFixed(1)} ${y(p.seller_util).toFixed(1)}`).join(' ');
   const paretoPts=px.map(p=>`<circle cx="${x(p.buyer_util)}" cy="${y(p.seller_util)}" r="4" fill="#22d3a5"/>`).join('');
   const reservationPath=`M ${x(0)} ${y(100)} L ${x(100)} ${y(0)}`;
-  const fs=px.filter(p=>(p.buyer_util+p.seller_util)>=100);
-  let shade='';
-  if(fs.length>=2){
-    const first=fs[0], last=fs[fs.length-1];
-    const poly=[...fs.map(p=>`${x(p.buyer_util)},${y(p.seller_util)}`),`${x(last.buyer_util)},${y(Math.max(0,100-last.buyer_util))}`,`${x(first.buyer_util)},${y(Math.max(0,100-first.buyer_util))}`].join(' ');
-    shade=`<polygon points="${poly}" fill="rgba(34,211,165,0.16)" style="pointer-events:none"/>`;
-  }
-
   host.innerHTML=`<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%">
     <line x1="${m.l}" y1="${h-m.b}" x2="${w-m.r}" y2="${h-m.b}" stroke="#4b607a"/>
     <line x1="${m.l}" y1="${m.t}" x2="${m.l}" y2="${h-m.b}" stroke="#4b607a"/>
-    ${shade}${dots}<path d="${reservationPath}" fill="none" stroke="#f59e0b" stroke-dasharray="5 4"/>
+    ${dots}<path d="${reservationPath}" fill="none" stroke="#f59e0b" stroke-dasharray="5 4"/>
     ${path?`<path d="${path}" fill="none" stroke="#22d3a5" stroke-width="2.4"/>`:''}${paretoPts}
-    <text x="${(m.l + w - m.r)/2 - 62}" y="${h-10}" fill="#94a3b8" font-size="11" font-family="var(--mono)">Buyer utility →</text>
-    <text x="16" y="${m.t + 8}" fill="#94a3b8" font-size="11" font-family="var(--mono)">Seller</text>
+    <text x="${(m.l + w - m.r)/2 - 82}" y="${h-10}" fill="#94a3b8" font-size="11" font-family="var(--mono)">Disputant 1 utility →</text>
+    <text x="16" y="${m.t + 8}" fill="#94a3b8" font-size="11" font-family="var(--mono)">Disputant 2</text>
     <text x="16" y="${m.t + 22}" fill="#94a3b8" font-size="11" font-family="var(--mono)">utility ↑</text>
     <text x="${w-220}" y="18" fill="#22d3a5" font-size="12" font-family="var(--mono)">Pareto Frontier</text>
-    <text x="${w-255}" y="34" fill="#f59e0b" font-size="11" font-family="var(--mono)">Buyer100 ↔ Seller100 baseline</text>
   </svg>`;
   ph.style.display='none'; host.style.display='block';
 
@@ -145,24 +207,45 @@ function renderSolutionSpace(outcomes, pareto){
       tip.style.display='block';
       tip.style.left=`${ev.clientX - rect.left + 12}px`;
       tip.style.top=`${ev.clientY - rect.top + 12}px`;
-      tip.innerHTML=`<div><b>Deal</b>: ${c.dataset.deal}</div><div>Buyer utility: <b>${c.dataset.bu}</b> · Seller utility: <b>${c.dataset.su}</b></div>`;
+      tip.innerHTML=`<div><b>Deal</b>: ${esc(c.dataset.deal)}</div><div>Disputant 1 utility: <b>${c.dataset.bu}</b> · Disputant 2 utility: <b>${c.dataset.su}</b></div>`;
     });
     c.addEventListener('pointerleave', ()=> { c.setAttribute('r','3.8'); c.setAttribute('opacity','0.72'); if (tip) tip.style.display='none'; });
   });
 }
-
+let refreshTimer=null;
+function refreshSolutionSpace(){
+  clearTimeout(refreshTimer);
+  refreshTimer=setTimeout(async()=>{
+    if(!hasPreferenceValues()){
+      D.preferences_complete=false; D.outcomes=[]; D.pareto=[]; D.pareto_img=''; D.buyer_weights=BW; D.seller_weights=SW;
+      sessionStorage.setItem('nd', JSON.stringify(D));
+      renderSolutionSpace([], []);
+      return;
+    }
+    const res=await fetch('/api/update_weights',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({buyer_weights:BW,seller_weights:SW,issues:ISSUES})});
+    const data=await res.json();
+    BW=data.buyer_weights||BW; SW=data.seller_weights||SW;
+    D.buyer_weights=BW; D.seller_weights=SW; D.outcomes=data.outcomes||[]; D.pareto=data.pareto||[]; D.pareto_img=data.pareto_img||''; D.preferences_complete=!!data.preferences_complete;
+    sessionStorage.setItem('nd', JSON.stringify(D));
+    buildPrefTable();
+    renderSolutionSpace(D.outcomes, D.pareto);
+  },160);
+}
 (function init(){
   const raw=sessionStorage.getItem('nd');
   if(!raw){ location.href='/'; return; }
   D=JSON.parse(raw);
-  BW={...D.buyer_weights};
-  SW={...D.seller_weights};
+  ISSUES=Array.isArray(D.issues)&&D.issues.length ? D.issues : DEFAULT_ISSUES;
+  BW={...(D.buyer_weights||{})};
+  SW={...(D.seller_weights||{})};
   JUST=D.pre_justifications||{};
   document.getElementById('fname-sub').textContent=`File: ${D.filename}  |  ${D.turns.length} turns`;
   buildPrefTable();
   buildJustTable();
   renderSolutionSpace(D.outcomes, D.pareto);
 })();
+function esc(s){return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function escAttr(s){return esc(s).replace(/"/g,'&quot;');}
 </script>
 </body>
 </html>
