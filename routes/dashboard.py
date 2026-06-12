@@ -5,10 +5,14 @@ from werkzeug.utils import secure_filename
 
 from services.dashboard import (
     allowed,
+    annotation_correction_response,
     build_pdf_report,
+    convert_arbitrary_transcript_response,
     enriched_export_buffer,
+    icl_prompt_response,
     post_summary_response,
     process_upload,
+    qa_response,
     step_response,
     update_weights_response,
 )
@@ -29,6 +33,18 @@ def negotiate(): return render_template('negotiate.html')
 
 @dashboard_bp.route('/post')
 def post(): return render_template('post.html')
+
+@dashboard_bp.route('/api/convert_upload', methods=['POST'])
+def api_convert_upload():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file'}), 400
+    try:
+        return jsonify(convert_arbitrary_transcript_response(request.files['file']))
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
 @dashboard_bp.route('/api/upload', methods=['POST'])
 def api_upload():
@@ -61,6 +77,21 @@ def api_step():
 @dashboard_bp.route('/api/post_summary', methods=['POST'])
 def api_post_summary():
     return jsonify(post_summary_response(request.json))
+
+@dashboard_bp.route('/api/annotation_correction', methods=['POST'])
+def api_annotation_correction():
+    try:
+        return jsonify(annotation_correction_response(request.json))
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+
+@dashboard_bp.route('/api/qa', methods=['POST'])
+def api_qa():
+    return jsonify(qa_response(request.json))
+
+@dashboard_bp.route('/api/icl_prompt', methods=['POST'])
+def api_icl_prompt():
+    return jsonify(icl_prompt_response(request.get_json(silent=True) or {}))
 
 @dashboard_bp.route('/api/export_pdf', methods=['POST'])
 def api_export_pdf():

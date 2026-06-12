@@ -46,21 +46,15 @@ nav{display:flex;align-items:center;padding:11px 22px;border-bottom:1px solid va
 .issue-chip{font-family:var(--mono);font-size:0.65rem;padding:3px 10px;border-radius:5px;background:rgba(34,211,165,0.08);border:1px solid rgba(34,211,165,0.2);color:var(--teal);}
 .no-outcome{background:rgba(244,63,94,0.05);border:1px solid rgba(244,63,94,0.2);border-radius:10px;padding:14px 18px;font-size:0.82rem;color:var(--text2);margin-bottom:20px;}
 
-.brief-card{background:linear-gradient(145deg,rgba(79,145,255,0.14),rgba(34,211,165,0.08));border:1px solid rgba(79,145,255,0.28);border-radius:12px;padding:14px 16px;margin-bottom:0;display:flex;flex-direction:column;min-height:0;}
-.brief-title{font-family:var(--mono);font-size:0.62rem;letter-spacing:1.5px;text-transform:uppercase;color:#b6cdf3;margin-bottom:8px;}
-.brief-text{font-size:0.84rem;line-height:1.6;color:#d6e2f5;}
-.brief-points{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;}
-.brief-chip{font-family:var(--mono);font-size:0.64rem;padding:3px 8px;border-radius:5px;border:1px solid rgba(148,163,184,0.35);background:rgba(11,19,32,0.55);color:#b8c6da;}
-
 /* Plot grid */
 .summary-grid{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:14px;align-items:stretch;height:calc(100vh - 185px);}
 .left-col,.mid-col,.right-col{display:flex;flex-direction:column;gap:12px;min-height:0;}
-.plot-grid{display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:0;}
-.plot-card{background:var(--card);border:1px solid var(--border);border-radius:11px;overflow:hidden;position:relative;}
+.plot-grid{display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:0;flex:1;min-height:0;}
+.plot-card{background:var(--card);border:1px solid var(--border);border-radius:11px;overflow:hidden;position:relative;display:flex;flex-direction:column;min-height:0;}
 .plot-head{padding:9px 14px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:0.56rem;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:center;}
 .plot-card img{width:100%;display:block;}
 .plot-ph{padding:50px;text-align:center;color:var(--muted);font-size:0.75rem;}
-.plot-host{height:100%;min-height:280px;background:#0a1520;}
+.plot-host{flex:1;height:100%;min-height:280px;background:#0a1520;}
 .plot-tip{position:absolute;pointer-events:none;background:#0b1220;border:1px solid #24364f;border-radius:6px;padding:6px 8px;font-size:11px;color:#dbeafe;max-width:320px;display:none;z-index:10;}
 
 /* Full-width card */
@@ -89,16 +83,38 @@ nav{display:flex;align-items:center;padding:11px 22px;border-bottom:1px solid va
 .translation-line{margin-top:8px;padding-top:6px;border-top:1px dashed rgba(148,163,184,0.3);font-size:0.74rem;color:#bfd0e6;}
 .bubble-emos{display:flex;flex-wrap:wrap;gap:4px;margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06);}
 .emo-chip{font-size:0.58rem;font-family:var(--mono);padding:2px 7px;border-radius:4px;background:var(--surface);border:1px solid var(--border);color:var(--muted);}
-.brief-text{max-height:calc(100vh - 360px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent;padding-right:4px;}
-.brief-text::-webkit-scrollbar{width:3px;}
-.brief-text::-webkit-scrollbar-thumb{background:var(--border);}
+.qa-card{background:linear-gradient(155deg,rgba(15,23,42,0.98),rgba(8,13,22,0.98));border:1px solid rgba(79,145,255,0.24);border-radius:14px;padding:12px;display:flex;flex-direction:column;min-height:0;flex:1;box-shadow:0 14px 30px rgba(0,0,0,0.22);}
+.qa-title{font-family:var(--mono);font-size:0.66rem;letter-spacing:1.4px;text-transform:uppercase;color:#b6cdf3;margin-bottom:4px;}
+.qa-sub{font-size:0.72rem;color:var(--text2);line-height:1.45;margin-bottom:10px;}
+.qa-tools{display:flex;justify-content:flex-end;margin:-2px 0 8px}.qa-tool{font-family:var(--mono);font-size:0.62rem;border:1px solid rgba(148,163,184,0.28);background:rgba(148,163,184,0.08);color:var(--text2);border-radius:7px;padding:5px 8px;cursor:pointer}.qa-tool:hover{border-color:var(--teal);color:var(--teal)}
+.qa-icl{white-space:pre-wrap;font-family:var(--mono);font-size:0.68rem;line-height:1.45;max-height:260px;overflow:auto}
+.qa-log{flex:1;min-height:180px;overflow-y:auto;border:1px solid rgba(148,163,184,0.16);border-radius:10px;background:rgba(7,9,15,0.45);padding:11px;margin-bottom:10px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.qa-msg{font-size:0.78rem;line-height:1.52;margin-bottom:10px;padding:9px 11px;border-radius:11px;max-width:92%;box-shadow:0 6px 14px rgba(0,0,0,0.16);}
+.qa-msg.user{margin-left:auto;background:rgba(79,145,255,0.14);border:1px solid rgba(79,145,255,0.32);color:#dbeafe;border-bottom-right-radius:3px;}
+.qa-msg.agent{margin-right:auto;background:rgba(34,211,165,0.09);border:1px solid rgba(34,211,165,0.25);color:#d6e2f5;border-bottom-left-radius:3px;}
+.qa-msg.system{max-width:100%;background:rgba(148,163,184,0.08);border:1px dashed rgba(148,163,184,0.25);color:var(--text2);box-shadow:none;}
+.qa-input-row{display:flex;gap:8px;align-items:flex-end;}
+.qa-input{flex:1;min-width:0;border:1px solid var(--border);border-radius:10px;background:#09111d;color:var(--text);font-family:var(--sans);font-size:0.82rem;padding:10px 11px;}
+.qa-input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 2px rgba(34,211,165,0.12);}
+.qa-send{border:1px solid var(--teal);border-radius:10px;background:var(--teal);color:#07090f;font-weight:800;padding:10px 13px;cursor:pointer;}
 
-@media (max-width: 1100px){
-  .summary-grid{grid-template-columns:1fr;}
-  .page{overflow-y:auto;}
-  .summary-grid{height:auto;}
-  .dialogue-stage{min-height:320px;}
-  .brief-text{max-height:none;overflow:visible;padding-right:0;}
+@media (max-width: 1180px){
+  body{overflow:auto;}
+  .page{overflow-y:auto;padding:16px;}
+  nav{flex-wrap:wrap;}
+  .nav-r{width:100%;justify-content:flex-start;margin-left:0;flex-wrap:wrap;}
+  .summary-grid{grid-template-columns:1fr; height:auto;}
+  .left-col,.mid-col,.right-col{min-height:360px;}
+  .dialogue-stage{min-height:320px;max-height:58vh;}
+  .plot-host{min-height:320px;}
+  .qa-card{min-height:420px;}
+}
+@media (max-width: 620px){
+  .steps{display:none;}
+  .page-title{font-size:1.55rem;}
+  .outcome-card{grid-template-columns:1fr;padding:14px;}
+  .qa-input-row{flex-direction:column;}
+  .qa-send,.qa-input{width:100%;}
 }
 
 /* KODIS outcome table */
@@ -149,18 +165,26 @@ nav{display:flex;align-items:center;padding:11px 22px;border-bottom:1px solid va
       </div>
 
       <div class="mid-col">
-        <!-- KODIS outcome -->
         <div id="outcome-section"></div>
-        <div class="brief-card" id="exec-brief"><div class="brief-title">Executive Brief</div><div class="brief-text">Preparing dispute summary…</div></div>
-      </div>
-
-      <div class="right-col">
         <div class="plot-grid">
           <div class="plot-card">
             <div class="plot-head">Solution Space — Agreement Marked<span id="agree-badge" style="color:var(--teal)"></span></div>
             <div id="post-chart" class="plot-host"></div>
             <div id="post-tip" class="plot-tip"></div>
             <div class="plot-ph" id="post-ph">Computing…</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="right-col">
+        <div class="qa-card">
+          <div class="qa-title">Negotiation QA Coach</div>
+          <div class="qa-sub">Ask short follow-up questions about the outcome, mediator moves, annotations, or what could have gone better.</div>
+          <div class="qa-tools"><button class="qa-tool" onclick="showICLPrompt()">Show ICL context</button></div>
+          <div class="qa-log" id="qa-log"><div class="qa-msg system">I can use the dialogue, corrected annotations, outcome, and timeline. Try: “What was the missed opportunity?”</div></div>
+          <div class="qa-input-row">
+            <input class="qa-input" id="qa-input" placeholder="Ask about this negotiation…" onkeydown="if(event.key==='Enter') askQA()">
+            <button class="qa-send" id="qa-send" onclick="askQA()">Ask</button>
           </div>
         </div>
       </div>
@@ -171,7 +195,7 @@ nav{display:flex;align-items:center;padding:11px 22px;border-bottom:1px solid va
 <div id="toast"></div>
 
 <script>
-let S = { turns:[], bw:{}, sw:{}, filename:'', preImg:'', postImg:'', finalOutcome:null, opSummaries:[], outcomes:[], pareto:[], language:'EN', country:null, preJustifications:{}, stepCache:{}, executiveBrief:'' };
+let S = { turns:[], bw:{}, sw:{}, filename:'', preImg:'', postImg:'', finalOutcome:null, opSummaries:[], outcomes:[], pareto:[], issues:[], preferencesComplete:false, language:'EN', country:null, preJustifications:{}, stepCache:{}, roleNames:{role1:'Disputant 1',role2:'Disputant 2'}, taskBackground:'NO BACKGROUND INFO' };
 const IRP_KEYS = ['interest','right','power'];
 
 function classifyIRP(text=''){
@@ -199,6 +223,10 @@ async function init() {
   S.country = D.country || null;
   S.preJustifications = D.pre_justifications || {};
   S.stepCache = D.step_cache || {};
+  S.issues = D.issues || [];
+  S.preferencesComplete = !!D.preferences_complete;
+  S.roleNames = D.role_names || {role1:'Disputant 1', role2:'Disputant 2'};
+  S.taskBackground = D.task_background || 'NO BACKGROUND INFO';
 
   renderDialogueFeed();
 
@@ -210,16 +238,20 @@ async function init() {
         buyer_weights: S.bw,
         seller_weights: S.sw,
         language: S.language,
-        op_summaries: S.opSummaries
+        op_summaries: S.opSummaries,
+        issues: S.issues, preferences_complete: S.preferencesComplete,
+        role_names: S.roleNames,
+        task_background: S.taskBackground
       })
     });
     if (!res.ok) throw new Error('Failed to compute summary');
     const data = await res.json();
     S.postImg = data.post_img;
-    S.executiveBrief = data.executive_brief || '';
     S.finalOutcome = data.final_outcome || null;
     S.outcomes = Array.isArray(data.outcomes) ? data.outcomes : [];
     S.pareto = Array.isArray(data.pareto) ? data.pareto : [];
+    S.preferencesComplete = !!data.preferences_complete;
+    S.issues = data.issues || S.issues;
 
     showContent(data.risk, S.finalOutcome);
     document.getElementById('btn-pdf').disabled = false;
@@ -229,58 +261,66 @@ async function init() {
   }
 }
 
+function roleClass(turn){
+  const key = turn?.role_key || turn?.meta?.role_key;
+  if (key === 'role1') return 'buyer';
+  if (key === 'role2') return 'seller';
+  const raw = String(turn?.speaker || '').toLowerCase();
+  if (raw === 'buyer') return 'buyer';
+  if (raw === 'seller') return 'seller';
+  if (raw === 'mediator') return 'mediator';
+  return 'mediator';
+}
+
+function speakerLabel(turn){
+  return turn?.display_speaker || turn?.meta?.display_speaker || turn?.speaker || 'Unknown';
+}
+
 function showContent(risk, finalOutcome) {
   document.getElementById('loading-box').style.display='none';
   document.getElementById('content').style.display='block';
 
-  const agreementState = finalOutcome ? 'Agreement detected in closing turns.' : 'No definitive agreement signature detected in closing turns.';
-  const briefHtml = `<div class="brief-title">Executive Brief</div>
-    <div class="brief-text">${esc(S.executiveBrief).replace(/\n/g,'<br><br>')}</div>
-    <div class="brief-points">
-      <span class="brief-chip">Turns: ${S.turns.length}</span>
-      <span class="brief-chip">Risk: ${risk.label}</span>
-      <span class="brief-chip">Neg. signals: ${risk.negative_signals}</span>
-      <span class="brief-chip">${agreementState}</span>
-    </div>`;
-  document.getElementById('exec-brief').innerHTML = briefHtml;
-
   const oEl = document.getElementById('outcome-section');
   if (finalOutcome) {
-    const issues = [
-      ['Refund', finalOutcome.refund_label],
-      ['Buyer Review Removed', finalOutcome.buyer_review ? 'Yes' : 'No'],
-      ['Seller Review Removed', finalOutcome.seller_review ? 'Yes' : 'No'],
-      ['Seller Apologizes', finalOutcome.seller_apology ? 'Yes' : 'No'],
-      ['Buyer Apologizes', finalOutcome.buyer_apology ? 'Yes' : 'No'],
-    ];
-    const chips = issues.map(([k,v])=>`<span class="issue-chip">${k}: ${v}</span>`).join('');
+    const label = dealLabel(finalOutcome);
+    const chips = label.split('; ').map(part=>`<span class="issue-chip">${esc(part)}</span>`).join('');
     oEl.innerHTML=`<div class="outcome-card"><div class="outcome-icon">🤝</div><div><div class="outcome-label">Detected Agreement</div><div class="outcome-issues">${chips}</div></div></div>`;
     document.getElementById('agree-badge').textContent = ' — Agreement marked';
   } else {
     oEl.innerHTML=`<div class="no-outcome">No clear final agreement detected in the transcript. The Pareto frontier is shown without an agreement marker.</div>`;
   }
 
-  document.getElementById('post-ph').style.display  = 'none';
+  if (S.preferencesComplete) document.getElementById('post-ph').style.display = 'none';
   renderPostSolutionSpace(S.outcomes, S.pareto, finalOutcome);
 }
 
+function dealLabel(o){
+  if (o.deal_label) return o.deal_label;
+  return `Refund ${o.refund_label || '—'}; Buyer review removed ${o.buyer_review?'Yes':'No'}; Seller review removed ${o.seller_review?'Yes':'No'}; Seller apology ${o.seller_apology?'Yes':'No'}; Buyer apology ${o.buyer_apology?'Yes':'No'}`;
+}
 function renderPostSolutionSpace(outcomes, pareto, finalOutcome){
   const host = document.getElementById('post-chart');
   const tip = document.getElementById('post-tip');
-  if (!host || !outcomes?.length) return;
+  const ph = document.getElementById('post-ph');
+  if (!host) return;
+  if (!outcomes?.length) {
+    host.innerHTML = '';
+    if (ph) { ph.style.display='block'; ph.textContent='Preference weights are unknown. Add preferences on the pre-analysis page to generate the solution-space figure.'; }
+    return;
+  }
   const w = host.clientWidth || 520;
   const h = host.clientHeight || 330;
   const m = {l:42,r:14,t:16,b:34};
   const x=v=>m.l+(v/100)*(w-m.l-m.r), y=v=>h-m.b-(v/100)*(h-m.t-m.b);
   const dots = outcomes.map((o, i)=>{
-    const deal = `Refund ${o.refund_label}; Buyer review removed ${o.buyer_review?'Yes':'No'}; Seller review removed ${o.seller_review?'Yes':'No'}; Seller apology ${o.seller_apology?'Yes':'No'}; Buyer apology ${o.buyer_apology?'Yes':'No'}`;
+    const deal = dealLabel(o);
     return `<circle data-i="${i}" data-deal="${deal.replace(/"/g,'&quot;')}" data-bu="${o.buyer_util}" data-su="${o.seller_util}" cx="${x(o.buyer_util)}" cy="${y(o.seller_util)}" r="2.6" fill="#2f4b6f" opacity="0.65"/>`;
   }).join('');
   const px = [...(pareto || [])].sort((a,b)=>a.buyer_util-b.buyer_util);
   const path = px.map((p,i)=>`${i?'L':'M'} ${x(p.buyer_util).toFixed(1)} ${y(p.seller_util).toFixed(1)}`).join(' ');
   let marker='';
   if (finalOutcome) {
-    const deal = `Refund ${finalOutcome.refund_label}; Buyer review removed ${finalOutcome.buyer_review?'Yes':'No'}; Seller review removed ${finalOutcome.seller_review?'Yes':'No'}; Seller apology ${finalOutcome.seller_apology?'Yes':'No'}; Buyer apology ${finalOutcome.buyer_apology?'Yes':'No'}`;
+    const deal = dealLabel(finalOutcome);
     marker = `<g data-point="agreement" data-deal="${deal.replace(/"/g,'&quot;')}" data-bu="${finalOutcome.buyer_util}" data-su="${finalOutcome.seller_util}">
       <circle cx="${x(finalOutcome.buyer_util)}" cy="${y(finalOutcome.seller_util)}" r="6" fill="none" stroke="#22d3a5" stroke-width="2.2"/>
       <circle cx="${x(finalOutcome.buyer_util)}" cy="${y(finalOutcome.seller_util)}" r="2.8" fill="#22d3a5"/>
@@ -319,6 +359,58 @@ function renderPostSolutionSpace(outcomes, pareto, finalOutcome){
   });
 }
 
+async function showICLPrompt(){
+  const log = document.getElementById('qa-log');
+  if (!log) return;
+  log.insertAdjacentHTML('beforeend', `<div class="qa-msg system" id="icl-pending">Loading ICL context…</div>`);
+  log.scrollTop = log.scrollHeight;
+  try {
+    const res = await fetch('/api/icl_prompt', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({limit:8})});
+    const data = await res.json();
+    const sections = data.sections || {};
+    const text = `IRP corrections:\n${sections.irp || ''}\n\nEmotion corrections:\n${sections.emotion || ''}\n\nAll correction context used by coach:\n${sections.all_corrections || ''}`;
+    const pending = document.getElementById('icl-pending');
+    if (pending) pending.outerHTML = `<div class="qa-msg system"><b>ICL prompt context</b><div class="qa-icl">${esc(text)}</div></div>`;
+  } catch (e) {
+    const pending = document.getElementById('icl-pending');
+    if (pending) pending.outerHTML = `<div class="qa-msg system">Unable to load ICL context: ${esc(e.message)}</div>`;
+  } finally {
+    log.scrollTop = log.scrollHeight;
+  }
+}
+
+async function askQA(){
+  const input = document.getElementById('qa-input');
+  const btn = document.getElementById('qa-send');
+  const log = document.getElementById('qa-log');
+  const question = (input?.value || '').trim();
+  if (!question || !log) return;
+  log.insertAdjacentHTML('beforeend', `<div class="qa-msg user"><b>You</b><br>${esc(question)}</div>`);
+  input.value = '';
+  btn.disabled = true;
+  log.insertAdjacentHTML('beforeend', `<div class="qa-msg agent" id="qa-pending"><b>Coach</b><br>Thinking…</div>`);
+  log.scrollTop = log.scrollHeight;
+  try {
+    const res = await fetch('/api/qa', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        turns:S.turns, question, language:S.language, op_summaries:S.opSummaries,
+        final_outcome:S.finalOutcome, step_cache:S.stepCache,
+        role_names:S.roleNames, task_background:S.taskBackground
+      })
+    });
+    const data = await res.json();
+    const pending = document.getElementById('qa-pending');
+    if (pending) pending.outerHTML = `<div class="qa-msg agent"><b>Coach</b><br>${esc(data.answer || 'No answer returned.').replace(/\n/g,'<br>')}</div>`;
+  } catch(e) {
+    const pending = document.getElementById('qa-pending');
+    if (pending) pending.outerHTML = `<div class="qa-msg agent"><b>Coach</b><br>QA request failed: ${esc(e.message)}</div>`;
+  } finally {
+    btn.disabled = false;
+    log.scrollTop = log.scrollHeight;
+  }
+}
+
 function renderEmotionChips(emos){
   if (!emos || !Object.keys(emos).length) return '';
   return Object.entries(emos).filter(([k])=>k!=='valence').map(([k,v])=>{
@@ -332,13 +424,13 @@ function renderDialogueFeed(){
   if (!dialogueEl) return;
   dialogueEl.innerHTML = '';
   S.turns.forEach((t, idx) => {
-    const role = (t.speaker || 'Buyer').toLowerCase();
-    const irp = (t.meta && t.meta.irp_label ? String(t.meta.irp_label).toLowerCase() : classifyIRP(t.text));
+    const role = roleClass(t);
+    const irp = (t.meta && t.meta.irp_label ? String(t.meta.irp_label).toLowerCase() : (t.irp ? String(t.irp).toLowerCase() : classifyIRP(t.text)));
     const chips = renderEmotionChips(t.emotions || {});
     const wrap = document.createElement('div');
     wrap.className = `bubble-wrap ${role}`;
     wrap.innerHTML = `
-      <div class="bubble-label ${role}">${t.speaker} · Turn ${idx}<span class="irp-tag ${irp}">${(irp || 'interest').toUpperCase()}</span></div>
+      <div class="bubble-label ${role}">${esc(speakerLabel(t))} · Turn ${idx}<span class="irp-tag ${irp}">${(irp || 'interest').toUpperCase()}</span></div>
       <div class="bubble ${role}">
         ${esc(t.text)}
         ${S.language === 'CN' ? `<div class="translation-line">EN: ${esc(t.translation || '')}</div>` : ''}
@@ -358,6 +450,8 @@ async function exportEnriched() {
       method:'POST',headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         turns: S.turns, filename: S.filename, language: S.language,
+        issues: S.issues, preferences_complete: S.preferencesComplete,
+        role_names: S.roleNames, task_background: S.taskBackground,
         buyer_weights: S.bw, seller_weights: S.sw,
         op_summaries: S.opSummaries, final_outcome: S.finalOutcome,
         country: S.country, pre_justifications: S.preJustifications,
@@ -387,7 +481,7 @@ async function exportPDF() {
       method:'POST',headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         turns: S.turns, filename: S.filename,
-        language: S.language,
+        language: S.language, issues: S.issues, preferences_complete: S.preferencesComplete, role_names: S.roleNames, task_background: S.taskBackground,
         buyer_weights: S.bw, seller_weights: S.sw,
         pre_img: S.preImg, post_img: S.postImg,
         final_outcome: S.finalOutcome,
@@ -414,7 +508,7 @@ function toast(msg,err){
   t.textContent=msg; t.className=err?'err':'show';
   setTimeout(()=>t.className='',3500);
 }
-function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function esc(s){return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 init();
 </script>
 </body>
