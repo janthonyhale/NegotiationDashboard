@@ -9,6 +9,7 @@ from services.dashboard import (
     build_pdf_report,
     convert_arbitrary_transcript_response,
     enriched_export_buffer,
+    icl_prompt_response,
     post_summary_response,
     process_upload,
     qa_response,
@@ -87,6 +88,10 @@ def api_annotation_correction():
 @dashboard_bp.route('/api/qa', methods=['POST'])
 def api_qa():
     return jsonify(qa_response(request.json))
+
+@dashboard_bp.route('/api/icl_prompt', methods=['POST'])
+def api_icl_prompt():
+    return jsonify(icl_prompt_response(request.get_json(silent=True) or {}))
 
 @dashboard_bp.route('/api/export_pdf', methods=['POST'])
 def api_export_pdf():

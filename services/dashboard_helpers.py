@@ -527,14 +527,36 @@ def llm_emotion_scores(text):
     except Exception:
         return _unavailable_emotions()
 
+def _heuristic_agreement_signal(turns):
+    recent_turns = turns[-6:] if isinstance(turns, list) else []
+    if not recent_turns:
+        return None
+    recent_text = ' '.join(str(t.get('text', '')) for t in recent_turns).lower()
+    accept_patterns = [
+        r'\bok(?:ay)?\b.*\b(deal|agreed|accept|works?)\b',
+        r'\b(deal|agreed|agreement)\b',
+        r'\bi accept\b',
+        r'\bwe have a deal\b',
+        r'\bthat works for me\b',
+        r'\bthose terms work\b',
+        r'\bsettled\b',
+    ]
+    reject_patterns = [r'\bno deal\b', r'\bdo not accept\b', r"\bdon't accept\b", r'\bnot agreed\b']
+    if any(re.search(p, recent_text) for p in reject_patterns):
+        return None
+    if any(re.search(p, recent_text) for p in accept_patterns):
+        return {'agreed': True, 'deal_label': 'Agreement detected in closing turns'}
+    return None
+
 def llm_detect_agreement_last_two(turns):
     """Detect whether the latest turns form an agreement and extract issue terms via LLM."""
     recent_turns = turns[-6:] if isinstance(turns, list) else []
     if len(recent_turns) < 2:
         return None
+    heuristic = _heuristic_agreement_signal(turns)
     api_key = os.getenv('OPENAI_API_KEY')
     if not api_key:
-        return None
+        return heuristic
 
     excerpt = "\n".join(f"{t.get('speaker','Unknown')}: {t.get('text','')}" for t in recent_turns)
     payload = {
@@ -595,7 +617,7 @@ def llm_detect_agreement_last_two(turns):
         }
         return result
     except Exception:
-        return None
+        return heuristic
 
 
 def _irp_patterns(turns_so_far):

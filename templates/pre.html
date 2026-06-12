@@ -98,7 +98,7 @@ const DEFAULT_ISSUES = [
   {key:'seller_apology', label:'Seller Apologizes'},
   {key:'buyer_apology', label:'Buyer Apologizes'},
 ];
-let D=null, BW={}, SW={}, JUST={}, ISSUES=[];
+let D=null, BW={}, SW={}, JUST={}, ISSUES=[], ROLE_NAMES={role1:'Disputant 1',role2:'Disputant 2'};
 
 function issueKey(issue){return issue.key;}
 function issueLabel(issue){return issue.label || issue.key;}
@@ -124,7 +124,7 @@ function setSideValue(side, key, raw){
 function buildPrefTable(){
   const el=document.getElementById('pref-table');
   const bNorm = normalizedSide(BW), sNorm = normalizedSide(SW);
-  el.innerHTML = `<tr><th>Issue</th><th>Disputant 1 pref.</th><th>Disputant 2 pref.</th></tr>` + ISSUES.map(iss=>{
+  el.innerHTML = `<tr><th>Issue</th><th>${esc(ROLE_NAMES.role1 || 'Disputant 1')} pref.</th><th>${esc(ROLE_NAMES.role2 || 'Disputant 2')} pref.</th></tr>` + ISSUES.map(iss=>{
     const k=issueKey(iss);
     return `<tr><td>${esc(issueLabel(iss))}</td>
       <td><input class="pref-slider" type="range" min="0" max="100" step="1" value="${Number(BW[k]||0)}" oninput="setSideValue('buyer','${escAttr(k)}',this.value)"><div class="pref-num">${bNorm[k] || 0}% normalized</div></td>
@@ -153,7 +153,7 @@ function justEditor(issueKey, side){
 }
 function buildJustTable(){
   const el=document.getElementById('just-table');
-  el.innerHTML = `<tr><th>Issue</th><th>Disputant 1 justification</th><th>Disputant 2 justification</th></tr>` + ISSUES.map(iss=>{
+  el.innerHTML = `<tr><th>Issue</th><th>${esc(ROLE_NAMES.role1 || 'Disputant 1')} justification</th><th>${esc(ROLE_NAMES.role2 || 'Disputant 2')} justification</th></tr>` + ISSUES.map(iss=>{
     const k = issueKey(iss);
     return `<tr><td>${esc(issueLabel(iss))}</td><td>${justEditor(k,'buyer')}</td><td>${justEditor(k,'seller')}</td></tr>`;
   }).join('');
@@ -178,7 +178,7 @@ function renderSolutionSpace(outcomes, pareto){
 
   const dots=outcomes.map((o,i)=>{
     const deal=dealLabel(o);
-    const title = `${deal} | Disputant 1 utility ${o.buyer_util}, Disputant 2 utility ${o.seller_util}`;
+    const title = `${deal} | ${ROLE_NAMES.role1 || 'Disputant 1'} utility ${o.buyer_util}, ${ROLE_NAMES.role2 || 'Disputant 2'} utility ${o.seller_util}`;
     return `<circle class="deal-dot" data-i="${i}" data-deal="${escAttr(deal)}" data-bu="${o.buyer_util}" data-su="${o.seller_util}" cx="${x(o.buyer_util)}" cy="${y(o.seller_util)}" r="3.8" fill="#28466a" opacity="0.72" stroke="transparent" stroke-width="10"><title>${esc(title)}</title></circle>`;
   }).join('');
 
@@ -191,8 +191,8 @@ function renderSolutionSpace(outcomes, pareto){
     <line x1="${m.l}" y1="${m.t}" x2="${m.l}" y2="${h-m.b}" stroke="#4b607a"/>
     ${dots}<path d="${reservationPath}" fill="none" stroke="#f59e0b" stroke-dasharray="5 4"/>
     ${path?`<path d="${path}" fill="none" stroke="#22d3a5" stroke-width="2.4"/>`:''}${paretoPts}
-    <text x="${(m.l + w - m.r)/2 - 82}" y="${h-10}" fill="#94a3b8" font-size="11" font-family="var(--mono)">Disputant 1 utility →</text>
-    <text x="16" y="${m.t + 8}" fill="#94a3b8" font-size="11" font-family="var(--mono)">Disputant 2</text>
+    <text x="${(m.l + w - m.r)/2 - 82}" y="${h-10}" fill="#94a3b8" font-size="11" font-family="var(--mono)">${esc(ROLE_NAMES.role1 || 'Disputant 1')} utility →</text>
+    <text x="16" y="${m.t + 8}" fill="#94a3b8" font-size="11" font-family="var(--mono)">${esc(ROLE_NAMES.role2 || 'Disputant 2')}</text>
     <text x="16" y="${m.t + 22}" fill="#94a3b8" font-size="11" font-family="var(--mono)">utility ↑</text>
     <text x="${w-220}" y="18" fill="#22d3a5" font-size="12" font-family="var(--mono)">Pareto Frontier</text>
   </svg>`;
@@ -207,7 +207,7 @@ function renderSolutionSpace(outcomes, pareto){
       tip.style.display='block';
       tip.style.left=`${ev.clientX - rect.left + 12}px`;
       tip.style.top=`${ev.clientY - rect.top + 12}px`;
-      tip.innerHTML=`<div><b>Deal</b>: ${esc(c.dataset.deal)}</div><div>Disputant 1 utility: <b>${c.dataset.bu}</b> · Disputant 2 utility: <b>${c.dataset.su}</b></div>`;
+      tip.innerHTML=`<div><b>Deal</b>: ${esc(c.dataset.deal)}</div><div>${esc(ROLE_NAMES.role1 || 'Disputant 1')} utility: <b>${c.dataset.bu}</b> · ${esc(ROLE_NAMES.role2 || 'Disputant 2')} utility: <b>${c.dataset.su}</b></div>`;
     });
     c.addEventListener('pointerleave', ()=> { c.setAttribute('r','3.8'); c.setAttribute('opacity','0.72'); if (tip) tip.style.display='none'; });
   });
@@ -236,6 +236,7 @@ function refreshSolutionSpace(){
   if(!raw){ location.href='/'; return; }
   D=JSON.parse(raw);
   ISSUES=Array.isArray(D.issues)&&D.issues.length ? D.issues : DEFAULT_ISSUES;
+  ROLE_NAMES=D.role_names || {role1:'Disputant 1', role2:'Disputant 2'};
   BW={...(D.buyer_weights||{})};
   SW={...(D.seller_weights||{})};
   JUST=D.pre_justifications||{};

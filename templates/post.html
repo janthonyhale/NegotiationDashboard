@@ -86,6 +86,8 @@ nav{display:flex;align-items:center;padding:11px 22px;border-bottom:1px solid va
 .qa-card{background:linear-gradient(155deg,rgba(15,23,42,0.98),rgba(8,13,22,0.98));border:1px solid rgba(79,145,255,0.24);border-radius:14px;padding:12px;display:flex;flex-direction:column;min-height:0;flex:1;box-shadow:0 14px 30px rgba(0,0,0,0.22);}
 .qa-title{font-family:var(--mono);font-size:0.66rem;letter-spacing:1.4px;text-transform:uppercase;color:#b6cdf3;margin-bottom:4px;}
 .qa-sub{font-size:0.72rem;color:var(--text2);line-height:1.45;margin-bottom:10px;}
+.qa-tools{display:flex;justify-content:flex-end;margin:-2px 0 8px}.qa-tool{font-family:var(--mono);font-size:0.62rem;border:1px solid rgba(148,163,184,0.28);background:rgba(148,163,184,0.08);color:var(--text2);border-radius:7px;padding:5px 8px;cursor:pointer}.qa-tool:hover{border-color:var(--teal);color:var(--teal)}
+.qa-icl{white-space:pre-wrap;font-family:var(--mono);font-size:0.68rem;line-height:1.45;max-height:260px;overflow:auto}
 .qa-log{flex:1;min-height:180px;overflow-y:auto;border:1px solid rgba(148,163,184,0.16);border-radius:10px;background:rgba(7,9,15,0.45);padding:11px;margin-bottom:10px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
 .qa-msg{font-size:0.78rem;line-height:1.52;margin-bottom:10px;padding:9px 11px;border-radius:11px;max-width:92%;box-shadow:0 6px 14px rgba(0,0,0,0.16);}
 .qa-msg.user{margin-left:auto;background:rgba(79,145,255,0.14);border:1px solid rgba(79,145,255,0.32);color:#dbeafe;border-bottom-right-radius:3px;}
@@ -164,18 +166,6 @@ nav{display:flex;align-items:center;padding:11px 22px;border-bottom:1px solid va
 
       <div class="mid-col">
         <div id="outcome-section"></div>
-        <div class="qa-card">
-          <div class="qa-title">Negotiation QA Coach</div>
-          <div class="qa-sub">Ask short follow-up questions about the outcome, mediator moves, annotations, or what could have gone better.</div>
-          <div class="qa-log" id="qa-log"><div class="qa-msg system">I can use the dialogue, corrected annotations, outcome, and timeline. Try: “What was the missed opportunity?”</div></div>
-          <div class="qa-input-row">
-            <input class="qa-input" id="qa-input" placeholder="Ask about this negotiation…" onkeydown="if(event.key==='Enter') askQA()">
-            <button class="qa-send" id="qa-send" onclick="askQA()">Ask</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="right-col">
         <div class="plot-grid">
           <div class="plot-card">
             <div class="plot-head">Solution Space — Agreement Marked<span id="agree-badge" style="color:var(--teal)"></span></div>
@@ -187,6 +177,19 @@ nav{display:flex;align-items:center;padding:11px 22px;border-bottom:1px solid va
         <div class="qa-card">
           <div class="qa-title">Negotiation QA Coach</div>
           <div class="qa-log" id="qa-log"><div class="qa-msg agent">Ask what went wrong, which mediator move might have helped, or how annotations changed the diagnosis.</div></div>
+          <div class="qa-input-row">
+            <input class="qa-input" id="qa-input" placeholder="Ask about this negotiation…" onkeydown="if(event.key==='Enter') askQA()">
+            <button class="qa-send" id="qa-send" onclick="askQA()">Ask</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="right-col">
+        <div class="qa-card">
+          <div class="qa-title">Negotiation QA Coach</div>
+          <div class="qa-sub">Ask short follow-up questions about the outcome, mediator moves, annotations, or what could have gone better.</div>
+          <div class="qa-tools"><button class="qa-tool" onclick="showICLPrompt()">Show ICL context</button></div>
+          <div class="qa-log" id="qa-log"><div class="qa-msg system">I can use the dialogue, corrected annotations, outcome, and timeline. Try: “What was the missed opportunity?”</div></div>
           <div class="qa-input-row">
             <input class="qa-input" id="qa-input" placeholder="Ask about this negotiation…" onkeydown="if(event.key==='Enter') askQA()">
             <button class="qa-send" id="qa-send" onclick="askQA()">Ask</button>
@@ -287,14 +290,8 @@ function showContent(risk, finalOutcome) {
 
   const oEl = document.getElementById('outcome-section');
   if (finalOutcome) {
-    const issues = [
-      ['Refund', finalOutcome.refund_label],
-      ['Buyer Review Removed', finalOutcome.buyer_review ? 'Yes' : 'No'],
-      ['Seller Review Removed', finalOutcome.seller_review ? 'Yes' : 'No'],
-      ['Seller Apologizes', finalOutcome.seller_apology ? 'Yes' : 'No'],
-      ['Buyer Apologizes', finalOutcome.buyer_apology ? 'Yes' : 'No'],
-    ];
-    const chips = issues.map(([k,v])=>`<span class="issue-chip">${k}: ${v}</span>`).join('');
+    const label = dealLabel(finalOutcome);
+    const chips = label.split('; ').map(part=>`<span class="issue-chip">${esc(part)}</span>`).join('');
     oEl.innerHTML=`<div class="outcome-card"><div class="outcome-icon">🤝</div><div><div class="outcome-label">Detected Agreement</div><div class="outcome-issues">${chips}</div></div></div>`;
     document.getElementById('agree-badge').textContent = ' — Agreement marked';
   } else {
@@ -368,6 +365,26 @@ function renderPostSolutionSpace(outcomes, pareto, finalOutcome){
       if (tip) tip.style.display='none';
     });
   });
+}
+
+async function showICLPrompt(){
+  const log = document.getElementById('qa-log');
+  if (!log) return;
+  log.insertAdjacentHTML('beforeend', `<div class="qa-msg system" id="icl-pending">Loading ICL context…</div>`);
+  log.scrollTop = log.scrollHeight;
+  try {
+    const res = await fetch('/api/icl_prompt', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({limit:8})});
+    const data = await res.json();
+    const sections = data.sections || {};
+    const text = `IRP corrections:\n${sections.irp || ''}\n\nEmotion corrections:\n${sections.emotion || ''}\n\nAll correction context used by coach:\n${sections.all_corrections || ''}`;
+    const pending = document.getElementById('icl-pending');
+    if (pending) pending.outerHTML = `<div class="qa-msg system"><b>ICL prompt context</b><div class="qa-icl">${esc(text)}</div></div>`;
+  } catch (e) {
+    const pending = document.getElementById('icl-pending');
+    if (pending) pending.outerHTML = `<div class="qa-msg system">Unable to load ICL context: ${esc(e.message)}</div>`;
+  } finally {
+    log.scrollTop = log.scrollHeight;
+  }
 }
 
 async function askQA(){

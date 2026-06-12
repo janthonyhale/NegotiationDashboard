@@ -31,7 +31,7 @@ from services.kodis import (
     normalize_weights_to_100,
 )
 from services.parsing import extract_dialogue_language, parse_file
-from services.annotation_store import record_annotation_correction
+from services.annotation_store import format_corrections_for_prompt, record_annotation_correction
 from services.llm_client import openai_chat_text
 import json
 import os
@@ -374,12 +374,13 @@ def post_summary_response(data):
                       o.get('seller_apology') == final_outcome.get('seller_apology') and
                       o.get('buyer_apology') == final_outcome.get('buyer_apology')), None)
 
+    final_for_display = match or final_outcome
     post_img = make_pareto_plot(outcomes, pareto, match, title='Post-Negotiation: Solution Space') if preferences_complete else ''
     executive_brief = ''
     return {
         'risk': risk,
         'post_img': post_img,
-        'final_outcome': match,
+        'final_outcome': final_for_display,
         'outcomes': outcomes,
         'pareto': pareto,
         'preferences_complete': preferences_complete,
@@ -420,4 +421,20 @@ def qa_response(data):
             role_names=data.get('role_names'),
             task_background=data.get('task_background'),
         )
+    }
+
+
+
+def icl_prompt_response(data):
+    data = data or {}
+    try:
+        limit = max(1, min(int(data.get('limit', 8) or 8), 25))
+    except (TypeError, ValueError):
+        limit = 8
+    return {
+        'sections': {
+            'irp': format_corrections_for_prompt('irp', limit=limit),
+            'emotion': format_corrections_for_prompt('emotion', limit=limit),
+            'all_corrections': format_corrections_for_prompt(limit=max(limit, 12)),
+        }
     }
