@@ -10,6 +10,7 @@ from services.dashboard_helpers import (
     llm_failure_risk,
     llm_irp_label,
     llm_operational_summary,
+    llm_negotiation_qa,
     llm_translate_cn_to_en,
     make_cn_province_map,
     make_emotion_plot,
@@ -27,6 +28,7 @@ from services.kodis import (
     generate_all_outcomes,
 )
 from services.parsing import extract_dialogue_language, parse_file
+from services.annotation_store import record_annotation_correction
 
 
 def process_upload(path, ext, filename):
@@ -140,10 +142,13 @@ def step_response(data):
     cur['threat_signals'] = sum(1 for s in ['sue', 'lawyer', 'court', 'legal action'] if s in tl)
     turns_so_far = turns[:idx+1]
 
-    irp_label = llm_irp_label(turns_so_far, cur)
     cur.setdefault('meta', {})
-    cur['meta']['irp_label'] = irp_label
-    cur['irp'] = irp_label.lower()
+    if cur.get('meta', {}).get('irp_human_corrected'):
+        irp_label = cur.get('meta', {}).get('irp_label') or cur.get('irp') or 'Unavailable'
+    else:
+        irp_label = llm_irp_label(turns_so_far, cur)
+        cur['meta']['irp_label'] = irp_label
+    cur['irp'] = str(irp_label).lower()
 
     risk  = llm_failure_risk(turns_so_far)
     adv   = cur.get('advisor') or get_advisor(turns_so_far, cur)
@@ -209,4 +214,37 @@ def post_summary_response(data):
         'outcomes': outcomes,
         'pareto': pareto,
         'executive_brief': executive_brief,
+    }
+
+
+
+def annotation_correction_response(data):
+    data = data or {}
+    turns = data.get('turns') or []
+    idx = int(data.get('idx', -1))
+    annotation_type = str(data.get('annotation_type', '')).strip().lower()
+    if idx < 0 or idx >= len(turns):
+        raise ValueError('Invalid turn index')
+    if annotation_type not in {'irp', 'emotion'}:
+        raise ValueError('Invalid annotation type')
+    turn = turns[idx]
+    old_value = data.get('old_value')
+    new_value = data.get('new_value')
+    record = record_annotation_correction(
+        data.get('filename', ''), idx, turn.get('speaker', ''), turn.get('text', ''),
+        annotation_type, old_value, new_value,
+    )
+    return {'ok': True, 'record': record}
+
+
+def qa_response(data):
+    data = data or {}
+    return {
+        'answer': llm_negotiation_qa(
+            data.get('turns', []),
+            data.get('question', ''),
+            op_summaries=data.get('op_summaries', []),
+            final_outcome=data.get('final_outcome'),
+            language=str(data.get('language', 'EN')).upper(),
+        )
     }
