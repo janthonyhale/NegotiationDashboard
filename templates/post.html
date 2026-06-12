@@ -174,6 +174,14 @@ nav{display:flex;align-items:center;padding:11px 22px;border-bottom:1px solid va
             <div class="plot-ph" id="post-ph">Computing…</div>
           </div>
         </div>
+        <div class="qa-card">
+          <div class="qa-title">Negotiation QA Coach</div>
+          <div class="qa-log" id="qa-log"><div class="qa-msg agent">Ask what went wrong, which mediator move might have helped, or how annotations changed the diagnosis.</div></div>
+          <div class="qa-input-row">
+            <input class="qa-input" id="qa-input" placeholder="Ask about this negotiation…" onkeydown="if(event.key==='Enter') askQA()">
+            <button class="qa-send" id="qa-send" onclick="askQA()">Ask</button>
+          </div>
+        </div>
       </div>
 
       <div class="right-col">
