@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from predictor import RegionPredictor
 from services.llm_client import openai_chat_json, openai_chat_text
+from services.annotation_store import format_corrections_for_prompt
 
 NEG_SIGNALS = ['walkaway','walk away','final','no deal','reject','refuse','unacceptable','sue','lawyer','court','legal action','worst','scam']
 
@@ -473,11 +474,12 @@ def llm_emotion_scores(text):
             {"statement": "Thank you!", "emotion": {"joy": "1", "anger": "0", "fear": "0", "sadness": "0", "surprise": "0", "compassion": "0", "neutral": "0"}},
             {"statement": "I will report you to authorities for doing this.", "emotion": {"joy": "0", "anger": "1", "fear": "0", "sadness": "0", "surprise": "0", "compassion": "0", "neutral": "0" """
 
+    correction_examples = format_corrections_for_prompt('emotion', limit=8)
     payload = {
         "model": "gpt-4o",
         "messages": [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": f"This is the context: {text}. What is the emotion of the current speaker?"}
+            {"role": "user", "content": f"Prior human emotion corrections for in-context learning:\n{correction_examples}\n\nThis is the context: {text}. What is the emotion of the current speaker?"}
         ],
         "temperature": 0,
         "response_format": {"type": "json_object"}
@@ -684,15 +686,21 @@ def llm_irp_label(turns_so_far, current_turn):
     api_key = os.getenv('OPENAI_API_KEY')
     if not api_key:
         return 'Unavailable'
-    excerpt = "\n".join(f"{t.get('speaker','Unknown')}: {t.get('text','')}" for t in turns_so_far[-8:])
+    excerpt = "\n".join(
+        f"{t.get('speaker','Unknown')}: {t.get('text','')} | current_annotation={json.dumps({'irp': t.get('irp'), 'meta': t.get('meta', {})})}"
+        for t in turns_so_far[-8:]
+    )
+    correction_examples = format_corrections_for_prompt('irp', limit=8)
     payload = {
         "model": "gpt-4o",
         "messages": [
             {"role": "system", "content": "Classify negotiation utterances into Interest, Right, or Power. Respond in English JSON only."},
             {"role": "user", "content": (
                 "Label ONLY the final utterance in this context as one of: Interest, Right, Power. "
+                "Treat any current_annotation values as human-corrected when present, and learn from prior corrections. "
                 "Return JSON: {\"irp_label\":\"Interest|Right|Power\"}.\n\n"
-                f"{excerpt}"
+                f"Prior human corrections for in-context learning:\n{correction_examples}\n\n"
+                f"Dialogue context:\n{excerpt}"
             )}
         ],
         "temperature": 0,
@@ -909,9 +917,11 @@ def llm_intervention_assessment(turns_so_far, prior_intervention_turns=None):
         }
 
     transcript = '\n'.join(
-        f"Turn {i+1} - {t.get('speaker','Unknown')}: {t.get('text','')}"
+        f"Turn {i+1} - {t.get('speaker','Unknown')}: {t.get('text','')} | "
+        f"IRP={(t.get('meta', {}) or {}).get('irp_label') or t.get('irp')} | emotions={json.dumps(t.get('emotions', {}))}"
         for i, t in enumerate(turns_so_far)
     )
+    correction_examples = format_corrections_for_prompt(limit=10)
 
     def unavailable_assessment(reason):
         return {
@@ -932,8 +942,10 @@ def llm_intervention_assessment(turns_so_far, prior_intervention_turns=None):
 4. Unreasonable demands: If one party is making unreasonable demands that the other party can’t possibly meet.
 5. Invocation: If one party asks the mediator to interject.
 
-You will be given the conversation so far. Rate intervention urgency 1-5 (1=definitely don't intervene, 5=definitely intervene).
-Provide JSON with: rating, reason (from list above), statement (one sentence).
+You will be given the conversation so far, including current IRP and emotion annotations. Some annotations may be human-corrected; treat them as authoritative. Rate intervention urgency 1-5 (1=definitely don't intervene, 5=definitely intervene).
+Provide JSON with: rating, reason (from list above), statement.
+
+The statement must be expert mediator guidance written for a mediator in training. It should explain how the mediator can help the parties avoid impasse and move toward resolution, using the dialogue, emotion trajectory, and IRP pattern. Make it practical and specific in 2-3 sentences.
 
 You do not need to intervene every turn, and should consider how recently you've intervened before making a decision.
 
@@ -943,7 +955,7 @@ Return ENGLISH only."""
         "model": "gpt-4o",
         "messages": [
             {"role": "system", "content": prompt},
-            {"role": "user", "content": f"Conversation so far:\n{transcript}\n\nRecent intervention turns: {prior_intervention_turns}. Return JSON with fields rating, reason, statement."}
+            {"role": "user", "content": f"Prior human annotation corrections for in-context learning:\n{correction_examples}\n\nConversation so far:\n{transcript}\n\nRecent intervention turns: {prior_intervention_turns}. Return JSON with fields rating, reason, statement."}
         ],
         "temperature": 0,
         "response_format": {"type": "json_object"}
@@ -977,6 +989,53 @@ Return ENGLISH only."""
     except Exception:
         return unavailable_assessment('LLM intervention assessment unavailable (API request failed).')
 
+
+
+def llm_negotiation_qa(turns, question, op_summaries=None, final_outcome=None, language='EN'):
+    """Answer mediator QA using dialogue plus all current/corrected annotations."""
+    api_key = os.getenv('OPENAI_API_KEY')
+    if not api_key:
+        return 'QA unavailable (missing OPENAI_API_KEY).'
+    if not str(question or '').strip():
+        return 'Please enter a question about the negotiation.'
+
+    annotated_turns = []
+    for i, t in enumerate(turns or []):
+        annotated_turns.append({
+            'turn': i + 1,
+            'speaker': t.get('speaker', 'Unknown'),
+            'text': t.get('text', ''),
+            'translation': t.get('translation', ''),
+            'irp': (t.get('meta', {}) or {}).get('irp_label') or t.get('irp'),
+            'emotions': t.get('emotions', {}),
+            'advisor': t.get('advisor', {}),
+        })
+    correction_examples = format_corrections_for_prompt(limit=12)
+    payload = {
+        "model": "gpt-4o",
+        "messages": [
+            {"role": "system", "content": (
+                "You are an expert negotiation coach and mediator educator. Answer questions about a completed negotiation. "
+                "Use the dialogue and all annotations, including human-corrected annotations, as evidence. "
+                "Identify what may have gone wrong, missed opportunities, and concrete alternatives. Be candid but constructive."
+            )},
+            {"role": "user", "content": (
+                f"Language: {language}\n"
+                f"Final outcome: {json.dumps(final_outcome or {}, ensure_ascii=False)}\n"
+                f"Operational summaries: {json.dumps(op_summaries or [], ensure_ascii=False)}\n"
+                f"Prior annotation corrections available for in-context learning:\n{correction_examples}\n\n"
+                f"Annotated dialogue JSON:\n{json.dumps(annotated_turns, ensure_ascii=False)}\n\n"
+                f"Question: {question}\n\n"
+                "Answer in 2-5 concise paragraphs. If useful, include 2-4 bullet points."
+            )},
+        ],
+        "temperature": 0.2,
+        "max_tokens": 700,
+    }
+    try:
+        return openai_chat_text(payload, timeout=60, api_key=api_key)
+    except Exception:
+        return 'QA unavailable (API request failed).'
 
 def get_advisor(turns_so_far, current_turn):
     prior_intervention_turns = []
