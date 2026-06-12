@@ -375,11 +375,7 @@ def post_summary_response(data):
                       o.get('buyer_apology') == final_outcome.get('buyer_apology')), None)
 
     post_img = make_pareto_plot(outcomes, pareto, match, title='Post-Negotiation: Solution Space') if preferences_complete else ''
-    executive_brief = llm_executive_brief(
-        turns_enriched, op_summaries, match, pareto,
-        role_names=data.get('role_names'),
-        task_background=data.get('task_background'),
-    )
+    executive_brief = ''
     return {
         'risk': risk,
         'post_img': post_img,
