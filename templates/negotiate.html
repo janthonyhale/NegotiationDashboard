@@ -146,6 +146,25 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
 .reason{font-size:0.66rem;font-family:var(--mono);color:var(--amber);padding:1px 0;}
 .reason::before{content:'Reason: ';color:#e2e8f0;}
 .suggestion{font-size:0.7rem;color:var(--text2);line-height:1.55;padding:6px 9px;background:var(--surface);border-radius:5px;border-left:2px solid var(--accent);font-style:italic;margin-top:6px;}
+.annotation-controls{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;padding-top:8px;border-top:1px dashed rgba(148,163,184,0.22);align-items:center;}
+.ann-select,.ann-btn{font-family:var(--mono);font-size:0.58rem;border-radius:4px;border:1px solid var(--border);background:#09111d;color:var(--text2);padding:3px 6px;}
+.ann-btn{cursor:pointer;color:var(--teal);}
+.ann-btn:hover{border-color:var(--teal);}
+.ann-note{font-family:var(--mono);font-size:0.55rem;color:var(--muted);}
+.emo-modal-backdrop{position:fixed;inset:0;background:rgba(2,6,12,0.76);display:none;align-items:center;justify-content:center;z-index:500;padding:22px;}
+.emo-modal-backdrop.open{display:flex;}
+.emo-modal{width:min(560px,96vw);max-height:88vh;overflow:auto;background:linear-gradient(155deg,#0d1522,#080d15);border:1px solid rgba(79,145,255,0.35);border-radius:14px;box-shadow:0 24px 80px rgba(0,0,0,0.55);padding:16px;}
+.emo-modal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px;}
+.emo-modal-title{font-family:var(--mono);font-size:0.78rem;letter-spacing:1.2px;text-transform:uppercase;color:#c0d7ff;}
+.emo-modal-sub{font-size:0.7rem;line-height:1.45;color:var(--text2);margin-top:4px;}
+.emo-close{border:1px solid var(--border);background:var(--surface);color:var(--text2);border-radius:6px;padding:3px 8px;cursor:pointer;}
+.emo-slider-row{display:grid;grid-template-columns:96px 1fr 54px;gap:10px;align-items:center;margin:9px 0;}
+.emo-slider-label{font-family:var(--mono);font-size:0.68rem;color:#cbd5e1;text-transform:capitalize;}
+.emo-slider{width:100%;accent-color:var(--teal);}
+.emo-slider-val{font-family:var(--mono);font-size:0.68rem;color:var(--teal);text-align:right;}
+.emo-total{font-family:var(--mono);font-size:0.68rem;color:var(--text2);padding:8px 0;border-top:1px solid var(--border);margin-top:10px;}
+.emo-modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px;}
+.emo-modal-actions .btn{font-size:0.74rem;}
 
 /* Summary brief */
 .summary-card{background:linear-gradient(165deg,rgba(79,145,255,0.16),rgba(34,211,165,0.07));border:1px solid rgba(79,145,255,0.28);border-radius:10px;padding:12px 14px;box-shadow:0 12px 24px rgba(0,0,0,0.3);height:178px;display:flex;flex-direction:column;}
@@ -305,6 +324,24 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
   </div>
 </div>
 
+<div class="emo-modal-backdrop" id="emo-modal" onclick="if(event.target===this) closeEmotionModal()">
+  <div class="emo-modal" role="dialog" aria-modal="true" aria-labelledby="emo-modal-title">
+    <div class="emo-modal-head">
+      <div>
+        <div class="emo-modal-title" id="emo-modal-title">Correct emotion mix</div>
+        <div class="emo-modal-sub" id="emo-modal-sub">Drag sliders to assign multiple emotions. The scores automatically stay normalized to 1.00.</div>
+      </div>
+      <button class="emo-close" onclick="closeEmotionModal()">✕</button>
+    </div>
+    <div id="emo-slider-list"></div>
+    <div class="emo-total" id="emo-total">Total: 1.00</div>
+    <div class="emo-modal-actions">
+      <button class="btn" onclick="closeEmotionModal()">Cancel</button>
+      <button class="btn primary" onclick="saveEmotionMix()">Save emotion scores</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const COUNTRY_META = {
   US:{name:'United States', flag:'🇺🇸', coords:[38,-97]},
@@ -328,8 +365,10 @@ const CN_REGION_CODE_MAP = {
   'north':'north','central':'central','wu_min':'wu_min','xian_yue':'xian_yue',
   'north_china':'north','central_china':'central','wu-min':'wu_min','xian-yue':'xian_yue'
 };
-let S = { turns:[], currentIdx:-1, dim:'anger', mapRole:'buyer', currentMapDist:{}, country:null, lastCountry:null, bw:{}, sw:{}, activeMap:null, opSummaries:[], language:'EN', processing:false, runAll:false, stepCache:{} };
+let S = { turns:[], currentIdx:-1, dim:'anger', mapRole:'buyer', currentMapDist:{}, country:null, lastCountry:null, bw:{}, sw:{}, filename:'', roleNames:{role1:'Disputant 1',role2:'Disputant 2'}, taskBackground:'NO BACKGROUND INFO', activeMap:null, opSummaries:[], language:'EN', processing:false, runAll:false, stepCache:{} };
 const IRP_KEYS = ['interest','right','power'];
+const EMOTION_KEYS = ['joy','anger','fear','sadness','surprise','compassion','neutral'];
+let emotionEditor = {idx:null, values:{}};
 
 function getTurnIRP(turn){
   const raw = turn?.meta?.irp_label || turn?.irp_label || turn?.irp;
@@ -340,6 +379,21 @@ function getTurnIRP(turn){
     if (v.startsWith('power')) return 'power';
   }
   return null;
+}
+
+function roleClass(turn){
+  const key = turn?.role_key || turn?.meta?.role_key;
+  if (key === 'role1') return 'buyer';
+  if (key === 'role2') return 'seller';
+  const raw = String(turn?.speaker || '').toLowerCase();
+  if (raw === 'buyer') return 'buyer';
+  if (raw === 'seller') return 'seller';
+  if (raw === 'mediator') return 'mediator';
+  return 'mediator';
+}
+
+function speakerLabel(turn){
+  return turn?.display_speaker || turn?.meta?.display_speaker || turn?.speaker || 'Unknown';
 }
 
 function scrollDialogueToBottom(){
@@ -362,6 +416,9 @@ function init() {
   if (!raw) { location.href='/'; return; }
   const D = JSON.parse(raw);
   S.turns   = D.turns;
+  S.filename = D.filename || '';
+  S.roleNames = D.role_names || {role1:'Disputant 1', role2:'Disputant 2'};
+  S.taskBackground = D.task_background || 'NO BACKGROUND INFO';
   S.country = D.country;
   S.bw      = D.buyer_weights || {};
   S.sw      = D.seller_weights || {};
@@ -388,11 +445,12 @@ function renderTxList() {
   const el = document.getElementById('tx-list');
   if (!el) return;
   el.innerHTML = S.turns.map((t,i) => {
-    const role = t.speaker.toLowerCase();
+    const role = roleClass(t);
+    const label = speakerLabel(t);
     const preview = t.text.length > 55 ? t.text.slice(0,55)+'…' : t.text;
     return `<div class="turn ${role} future" id="t${i}" data-i="${i}">
       <div class="turn-meta">
-        <span class="turn-role ${role}">${t.speaker}</span>
+        <span class="turn-role ${role}">${esc(label)}</span>
         <span class="turn-idx">#${i}</span>
       </div>
       <div class="turn-preview">${esc(preview)}</div>
@@ -443,9 +501,151 @@ function persistSessionState(){
   if (!raw) return;
   const base = JSON.parse(raw);
   base.turns = S.turns;
+  base.role_names = S.roleNames;
+  base.task_background = S.taskBackground;
   base.op_summaries = S.opSummaries;
   base.step_cache = S.stepCache;
   sessionStorage.setItem('nd', JSON.stringify(base));
+}
+
+function dominantEmotion(emotions){
+  const entries = Object.entries(emotions || {}).filter(([k])=>k !== 'valence');
+  if (!entries.length) return 'neutral';
+  return entries.sort((a,b)=>Number(b[1]||0)-Number(a[1]||0))[0][0] || 'neutral';
+}
+
+function normalizeEmotionScores(raw){
+  const vals = {};
+  let total = 0;
+  EMOTION_KEYS.forEach(k => {
+    const v = Math.max(0, Math.min(1, Number(raw?.[k] || 0)));
+    vals[k] = v;
+    total += v;
+  });
+  if (total <= 0) {
+    EMOTION_KEYS.forEach(k => vals[k] = k === 'neutral' ? 1 : 0);
+  } else {
+    EMOTION_KEYS.forEach(k => vals[k] = vals[k] / total);
+  }
+  const rounded = {};
+  let running = 0;
+  EMOTION_KEYS.forEach((k, i) => {
+    if (i === EMOTION_KEYS.length - 1) {
+      rounded[k] = Math.max(0, Number((1 - running).toFixed(3)));
+    } else {
+      rounded[k] = Number(vals[k].toFixed(3));
+      running += rounded[k];
+    }
+  });
+  const pos = rounded.joy + rounded.compassion;
+  const neg = rounded.anger + rounded.fear + rounded.sadness;
+  rounded.valence = Number(Math.max(-1, Math.min(1, pos - neg)).toFixed(3));
+  return rounded;
+}
+
+async function saveAnnotationCorrection(idx, annotationType, oldValue, newValue){
+  await fetch('/api/annotation_correction', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      filename:S.filename, idx, turns:S.turns, annotation_type:annotationType,
+      old_value:oldValue, new_value: newValue
+    })
+  });
+}
+
+async function correctIRP(idx, value){
+  const oldValue = S.turns[idx]?.irp || null;
+  S.turns[idx].irp = value;
+  S.turns[idx].meta = {...(S.turns[idx].meta || {}), irp_label: value.charAt(0).toUpperCase()+value.slice(1), irp_human_corrected: true};
+  await saveAnnotationCorrection(idx, 'irp', oldValue, S.turns[idx].meta.irp_label);
+  invalidateStepCacheFrom(idx);
+  persistSessionState();
+  renderDialogueUpTo(S.currentIdx);
+  updateEmoChart();
+}
+
+async function applyEmotionCorrection(idx, scores){
+  const oldValue = S.turns[idx]?.emotions || {};
+  S.turns[idx].emotions = normalizeEmotionScores(scores);
+  S.turns[idx].meta = {...(S.turns[idx].meta || {}), emotion_human_corrected: true};
+  await saveAnnotationCorrection(idx, 'emotion', oldValue, S.turns[idx].emotions);
+  invalidateStepCacheFrom(idx);
+  persistSessionState();
+  renderDialogueUpTo(S.currentIdx);
+  updateEmoChart();
+}
+
+function openEmotionModal(idx){
+  const turn = S.turns[idx] || {};
+  emotionEditor.idx = idx;
+  emotionEditor.values = normalizeEmotionScores(turn.emotions || {neutral:1});
+  const sub = document.getElementById('emo-modal-sub');
+  if (sub) sub.textContent = `Turn ${idx} · ${speakerLabel(turn)} — drag sliders to assign multiple emotions. Scores stay normalized to 1.00.`;
+  renderEmotionSliders();
+  document.getElementById('emo-modal')?.classList.add('open');
+}
+
+function closeEmotionModal(){
+  document.getElementById('emo-modal')?.classList.remove('open');
+}
+
+function renderEmotionSliders(){
+  const host = document.getElementById('emo-slider-list');
+  if (!host) return;
+  host.innerHTML = EMOTION_KEYS.map(k => `
+    <div class="emo-slider-row">
+      <div class="emo-slider-label">${k}</div>
+      <input class="emo-slider" id="emo-slider-${k}" type="range" min="0" max="100" step="1" value="${Math.round((emotionEditor.values[k] || 0) * 100)}" oninput="setEmotionSlider('${k}', this.value)">
+      <div class="emo-slider-val" id="emo-val-${k}">${(emotionEditor.values[k] || 0).toFixed(2)}</div>
+    </div>`).join('');
+  updateEmotionSliderReadout();
+}
+
+function setEmotionSlider(changedKey, rawValue){
+  const newVal = Math.max(0, Math.min(1, Number(rawValue || 0) / 100));
+  const otherKeys = EMOTION_KEYS.filter(k => k !== changedKey);
+  const oldOtherTotal = otherKeys.reduce((sum, k) => sum + Number(emotionEditor.values[k] || 0), 0);
+  const remaining = Math.max(0, 1 - newVal);
+  emotionEditor.values[changedKey] = newVal;
+  if (oldOtherTotal <= 0) {
+    const even = remaining / otherKeys.length;
+    otherKeys.forEach(k => emotionEditor.values[k] = even);
+  } else {
+    otherKeys.forEach(k => emotionEditor.values[k] = (Number(emotionEditor.values[k] || 0) / oldOtherTotal) * remaining);
+  }
+  emotionEditor.values = normalizeEmotionScores(emotionEditor.values);
+  updateEmotionSliderControls();
+}
+
+function updateEmotionSliderControls(){
+  EMOTION_KEYS.forEach(k => {
+    const slider = document.getElementById(`emo-slider-${k}`);
+    if (slider) slider.value = String(Math.round((emotionEditor.values[k] || 0) * 100));
+  });
+  updateEmotionSliderReadout();
+}
+
+function updateEmotionSliderReadout(){
+  let total = 0;
+  EMOTION_KEYS.forEach(k => {
+    const val = Number(emotionEditor.values[k] || 0);
+    total += val;
+    const el = document.getElementById(`emo-val-${k}`);
+    if (el) el.textContent = val.toFixed(2);
+  });
+  const totalEl = document.getElementById('emo-total');
+  if (totalEl) totalEl.textContent = `Total: ${total.toFixed(2)} · Saved values include valence automatically`;
+}
+
+async function saveEmotionMix(){
+  if (emotionEditor.idx === null) return;
+  await applyEmotionCorrection(emotionEditor.idx, emotionEditor.values);
+  closeEmotionModal();
+}
+
+function invalidateStepCacheFrom(idx){
+  Object.keys(S.stepCache || {}).forEach(k => { if (Number(k) >= Number(idx)) delete S.stepCache[k]; });
+  S.opSummaries = S.opSummaries.filter(item => Number(item.idx) < Number(idx));
 }
 
 async function ensureStepData(idx) {
@@ -460,7 +660,7 @@ async function ensureStepData(idx) {
 
   const res = await fetch('/api/step',{
     method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({idx, turns:S.turns, emotion_dim:S.dim, buyer_weights:S.bw, seller_weights:S.sw, language:S.language}),
+    body: JSON.stringify({idx, turns:S.turns, emotion_dim:S.dim, buyer_weights:S.bw, seller_weights:S.sw, language:S.language, role_names:S.roleNames, task_background:S.taskBackground}),
   });
   const data = await res.json();
 
@@ -607,17 +807,26 @@ function syncBubbleEmotions(idx){
 function addBubble(t, idx, skipScroll=false) {
   const ph = document.getElementById('dial-placeholder');
   if (ph) ph.remove();
-  const role = t.speaker.toLowerCase();
+  const role = roleClass(t);
+  const label = speakerLabel(t);
   const chips = renderEmotionChips(t.emotions || {});
+  const irpNow = t.irp || 'interest';
   const wrap = document.createElement('div');
   wrap.className = `bubble-wrap ${role}`;
   wrap.id = `bubble-${idx}`;
   wrap.innerHTML = `
-    <div class="bubble-label ${role}">${t.speaker} · Turn ${idx}${t.irp ? `<span class="irp-tag ${t.irp}">${t.irp.toUpperCase()}</span>` : ''}</div>
+    <div class="bubble-label ${role}">${esc(label)} · Turn ${idx}${t.irp ? `<span class="irp-tag ${t.irp}">${t.irp.toUpperCase()}</span>` : ''}</div>
     <div class="bubble ${role} current">
       ${esc(t.text)}
       ${S.language === 'CN' ? `<div class="translation-line">EN: ${esc(t.translation || 'Translating...')}</div>` : ''}
       <div class="bubble-emos">${chips}</div>
+      <div class="annotation-controls">
+        <span class="ann-note">Correct:</span>
+        <select class="ann-select" onchange="correctIRP(${idx}, this.value)">
+          ${IRP_KEYS.map(k=>`<option value="${k}" ${k===irpNow?'selected':''}>IRP: ${k}</option>`).join('')}
+        </select>
+        <button type="button" class="ann-btn" onclick="openEmotionModal(${idx})">Edit emotion mix</button>
+      </div>
     </div>`;
   // Remove 'current' from previous bubble
   document.querySelectorAll('.bubble.current').forEach(b=>b.classList.remove('current'));
@@ -640,7 +849,7 @@ function renderIRPChart(){
   const recentByRole = {buyer:null, seller:null};
   const recentTurnByRole = {buyer:-1, seller:-1};
   for (let i = upto.length - 1; i >= 0; i -= 1) {
-    const role = String(upto[i].speaker || '').toLowerCase();
+    const role = roleClass(upto[i]);
     if (!recentByRole[role]) {
       const raw = String(upto[i].irp || '').toLowerCase();
       recentByRole[role] = IRP_KEYS.includes(raw) ? raw : 'na';
@@ -649,13 +858,13 @@ function renderIRPChart(){
   }
 
   const rowHtml = (roleName) => {
-    const label = roleName === 'buyer' ? 'Buyer' : 'Seller';
+    const label = roleName === 'buyer' ? (S.roleNames.role1 || 'Disputant 1') : (S.roleNames.role2 || 'Disputant 2');
     const roleTurns = upto
       .map((turn, idx)=>({turn, idx}))
-      .filter(({turn}) => String(turn.speaker || '').toLowerCase() === roleName);
+      .filter(({turn}) => roleClass(turn) === roleName);
 
     const timeline = roleTurns.map(({turn, idx}) => {
-      const turnRole = String(turn.speaker || '').toLowerCase();
+      const turnRole = roleClass(turn);
       let key = 'na';
       if (turnRole === roleName) {
         const raw = String(turn.irp || '').toLowerCase();
@@ -707,7 +916,7 @@ function updateEmoChart() {
   const buyerSeries = [];
   const sellerSeries = [];
   upto.forEach((t, i) => {
-    const role = (t.speaker || '').toLowerCase();
+    const role = roleClass(t);
     const hasVal = t.emotions && typeof t.emotions[S.dim] === 'number';
     if (role === 'buyer' && hasVal) buyerSeries.push({x:i, y:t.emotions[S.dim]});
     if (role === 'seller' && hasVal) sellerSeries.push({x:i, y:t.emotions[S.dim]});
@@ -1127,7 +1336,7 @@ function switchEmo(dim, btn) {
   updateEmoChart();
 }
 
-function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function esc(s){return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 init();
 </script>
 </body>
