@@ -151,6 +151,20 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
 .ann-btn{cursor:pointer;color:var(--teal);}
 .ann-btn:hover{border-color:var(--teal);}
 .ann-note{font-family:var(--mono);font-size:0.55rem;color:var(--muted);}
+.emo-modal-backdrop{position:fixed;inset:0;background:rgba(2,6,12,0.76);display:none;align-items:center;justify-content:center;z-index:500;padding:22px;}
+.emo-modal-backdrop.open{display:flex;}
+.emo-modal{width:min(560px,96vw);max-height:88vh;overflow:auto;background:linear-gradient(155deg,#0d1522,#080d15);border:1px solid rgba(79,145,255,0.35);border-radius:14px;box-shadow:0 24px 80px rgba(0,0,0,0.55);padding:16px;}
+.emo-modal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px;}
+.emo-modal-title{font-family:var(--mono);font-size:0.78rem;letter-spacing:1.2px;text-transform:uppercase;color:#c0d7ff;}
+.emo-modal-sub{font-size:0.7rem;line-height:1.45;color:var(--text2);margin-top:4px;}
+.emo-close{border:1px solid var(--border);background:var(--surface);color:var(--text2);border-radius:6px;padding:3px 8px;cursor:pointer;}
+.emo-slider-row{display:grid;grid-template-columns:96px 1fr 54px;gap:10px;align-items:center;margin:9px 0;}
+.emo-slider-label{font-family:var(--mono);font-size:0.68rem;color:#cbd5e1;text-transform:capitalize;}
+.emo-slider{width:100%;accent-color:var(--teal);}
+.emo-slider-val{font-family:var(--mono);font-size:0.68rem;color:var(--teal);text-align:right;}
+.emo-total{font-family:var(--mono);font-size:0.68rem;color:var(--text2);padding:8px 0;border-top:1px solid var(--border);margin-top:10px;}
+.emo-modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px;}
+.emo-modal-actions .btn{font-size:0.74rem;}
 
 /* Summary brief */
 .summary-card{background:linear-gradient(165deg,rgba(79,145,255,0.16),rgba(34,211,165,0.07));border:1px solid rgba(79,145,255,0.28);border-radius:10px;padding:12px 14px;box-shadow:0 12px 24px rgba(0,0,0,0.3);height:178px;display:flex;flex-direction:column;}
@@ -310,6 +324,24 @@ nav{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid va
   </div>
 </div>
 
+<div class="emo-modal-backdrop" id="emo-modal" onclick="if(event.target===this) closeEmotionModal()">
+  <div class="emo-modal" role="dialog" aria-modal="true" aria-labelledby="emo-modal-title">
+    <div class="emo-modal-head">
+      <div>
+        <div class="emo-modal-title" id="emo-modal-title">Correct emotion mix</div>
+        <div class="emo-modal-sub" id="emo-modal-sub">Drag sliders to assign multiple emotions. The scores automatically stay normalized to 1.00.</div>
+      </div>
+      <button class="emo-close" onclick="closeEmotionModal()">✕</button>
+    </div>
+    <div id="emo-slider-list"></div>
+    <div class="emo-total" id="emo-total">Total: 1.00</div>
+    <div class="emo-modal-actions">
+      <button class="btn" onclick="closeEmotionModal()">Cancel</button>
+      <button class="btn primary" onclick="saveEmotionMix()">Save emotion scores</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const COUNTRY_META = {
   US:{name:'United States', flag:'🇺🇸', coords:[38,-97]},
@@ -335,6 +367,8 @@ const CN_REGION_CODE_MAP = {
 };
 let S = { turns:[], currentIdx:-1, dim:'anger', mapRole:'buyer', currentMapDist:{}, country:null, lastCountry:null, bw:{}, sw:{}, filename:'', activeMap:null, opSummaries:[], language:'EN', processing:false, runAll:false, stepCache:{} };
 const IRP_KEYS = ['interest','right','power'];
+const EMOTION_KEYS = ['joy','anger','fear','sadness','surprise','compassion','neutral'];
+let emotionEditor = {idx:null, values:{}};
 
 function getTurnIRP(turn){
   const raw = turn?.meta?.irp_label || turn?.irp_label || turn?.irp;
@@ -460,12 +494,33 @@ function dominantEmotion(emotions){
   return entries.sort((a,b)=>Number(b[1]||0)-Number(a[1]||0))[0][0] || 'neutral';
 }
 
-function oneHotEmotion(label){
-  const keys = ['joy','anger','fear','sadness','surprise','compassion','neutral'];
-  const out = {};
-  keys.forEach(k => out[k] = k === label ? 1.0 : 0.0);
-  out.valence = label === 'joy' || label === 'compassion' ? 1.0 : (['anger','fear','sadness'].includes(label) ? -1.0 : 0.0);
-  return out;
+function normalizeEmotionScores(raw){
+  const vals = {};
+  let total = 0;
+  EMOTION_KEYS.forEach(k => {
+    const v = Math.max(0, Math.min(1, Number(raw?.[k] || 0)));
+    vals[k] = v;
+    total += v;
+  });
+  if (total <= 0) {
+    EMOTION_KEYS.forEach(k => vals[k] = k === 'neutral' ? 1 : 0);
+  } else {
+    EMOTION_KEYS.forEach(k => vals[k] = vals[k] / total);
+  }
+  const rounded = {};
+  let running = 0;
+  EMOTION_KEYS.forEach((k, i) => {
+    if (i === EMOTION_KEYS.length - 1) {
+      rounded[k] = Math.max(0, Number((1 - running).toFixed(3)));
+    } else {
+      rounded[k] = Number(vals[k].toFixed(3));
+      running += rounded[k];
+    }
+  });
+  const pos = rounded.joy + rounded.compassion;
+  const neg = rounded.anger + rounded.fear + rounded.sadness;
+  rounded.valence = Number(Math.max(-1, Math.min(1, pos - neg)).toFixed(3));
+  return rounded;
 }
 
 async function saveAnnotationCorrection(idx, annotationType, oldValue, newValue){
@@ -489,15 +544,83 @@ async function correctIRP(idx, value){
   updateEmoChart();
 }
 
-async function correctEmotion(idx, label){
+async function applyEmotionCorrection(idx, scores){
   const oldValue = S.turns[idx]?.emotions || {};
-  S.turns[idx].emotions = oneHotEmotion(label);
+  S.turns[idx].emotions = normalizeEmotionScores(scores);
   S.turns[idx].meta = {...(S.turns[idx].meta || {}), emotion_human_corrected: true};
   await saveAnnotationCorrection(idx, 'emotion', oldValue, S.turns[idx].emotions);
   invalidateStepCacheFrom(idx);
   persistSessionState();
   renderDialogueUpTo(S.currentIdx);
   updateEmoChart();
+}
+
+function openEmotionModal(idx){
+  const turn = S.turns[idx] || {};
+  emotionEditor.idx = idx;
+  emotionEditor.values = normalizeEmotionScores(turn.emotions || {neutral:1});
+  const sub = document.getElementById('emo-modal-sub');
+  if (sub) sub.textContent = `Turn ${idx} · ${turn.speaker || 'Unknown'} — drag sliders to assign multiple emotions. Scores stay normalized to 1.00.`;
+  renderEmotionSliders();
+  document.getElementById('emo-modal')?.classList.add('open');
+}
+
+function closeEmotionModal(){
+  document.getElementById('emo-modal')?.classList.remove('open');
+}
+
+function renderEmotionSliders(){
+  const host = document.getElementById('emo-slider-list');
+  if (!host) return;
+  host.innerHTML = EMOTION_KEYS.map(k => `
+    <div class="emo-slider-row">
+      <div class="emo-slider-label">${k}</div>
+      <input class="emo-slider" id="emo-slider-${k}" type="range" min="0" max="100" step="1" value="${Math.round((emotionEditor.values[k] || 0) * 100)}" oninput="setEmotionSlider('${k}', this.value)">
+      <div class="emo-slider-val" id="emo-val-${k}">${(emotionEditor.values[k] || 0).toFixed(2)}</div>
+    </div>`).join('');
+  updateEmotionSliderReadout();
+}
+
+function setEmotionSlider(changedKey, rawValue){
+  const newVal = Math.max(0, Math.min(1, Number(rawValue || 0) / 100));
+  const otherKeys = EMOTION_KEYS.filter(k => k !== changedKey);
+  const oldOtherTotal = otherKeys.reduce((sum, k) => sum + Number(emotionEditor.values[k] || 0), 0);
+  const remaining = Math.max(0, 1 - newVal);
+  emotionEditor.values[changedKey] = newVal;
+  if (oldOtherTotal <= 0) {
+    const even = remaining / otherKeys.length;
+    otherKeys.forEach(k => emotionEditor.values[k] = even);
+  } else {
+    otherKeys.forEach(k => emotionEditor.values[k] = (Number(emotionEditor.values[k] || 0) / oldOtherTotal) * remaining);
+  }
+  emotionEditor.values = normalizeEmotionScores(emotionEditor.values);
+  updateEmotionSliderControls();
+}
+
+function updateEmotionSliderControls(){
+  EMOTION_KEYS.forEach(k => {
+    const slider = document.getElementById(`emo-slider-${k}`);
+    if (slider) slider.value = String(Math.round((emotionEditor.values[k] || 0) * 100));
+  });
+  updateEmotionSliderReadout();
+}
+
+function updateEmotionSliderReadout(){
+  let total = 0;
+  EMOTION_KEYS.forEach(k => {
+    const val = Number(emotionEditor.values[k] || 0);
+    total += val;
+    const el = document.getElementById(`emo-val-${k}`);
+    if (el) el.textContent = val.toFixed(2);
+  });
+  const totalEl = document.getElementById('emo-total');
+  if (totalEl) totalEl.textContent = `Total: ${total.toFixed(2)} · Saved values include valence automatically`;
+}
+
+async function saveEmotionMix(){
+  if (emotionEditor.idx === null) return;
+  await applyEmotionCorrection(emotionEditor.idx, emotionEditor.values);
+  closeEmotionModal();
 }
 
 function invalidateStepCacheFrom(idx){
@@ -666,7 +789,6 @@ function addBubble(t, idx, skipScroll=false) {
   if (ph) ph.remove();
   const role = t.speaker.toLowerCase();
   const chips = renderEmotionChips(t.emotions || {});
-  const emoNow = dominantEmotion(t.emotions || {});
   const irpNow = t.irp || 'interest';
   const wrap = document.createElement('div');
   wrap.className = `bubble-wrap ${role}`;
@@ -682,9 +804,7 @@ function addBubble(t, idx, skipScroll=false) {
         <select class="ann-select" onchange="correctIRP(${idx}, this.value)">
           ${IRP_KEYS.map(k=>`<option value="${k}" ${k===irpNow?'selected':''}>IRP: ${k}</option>`).join('')}
         </select>
-        <select class="ann-select" onchange="correctEmotion(${idx}, this.value)">
-          ${['joy','anger','fear','sadness','surprise','compassion','neutral'].map(k=>`<option value="${k}" ${k===emoNow?'selected':''}>Emotion: ${k}</option>`).join('')}
-        </select>
+        <button type="button" class="ann-btn" onclick="openEmotionModal(${idx})">Edit emotion mix</button>
       </div>
     </div>`;
   // Remove 'current' from previous bubble
