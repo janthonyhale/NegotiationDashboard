@@ -188,7 +188,7 @@ nav{display:flex;align-items:center;padding:11px 22px;border-bottom:1px solid va
 <div id="toast"></div>
 
 <script>
-let S = { turns:[], bw:{}, sw:{}, filename:'', preImg:'', postImg:'', finalOutcome:null, opSummaries:[], outcomes:[], pareto:[], language:'EN', country:null, preJustifications:{}, stepCache:{}, executiveBrief:'', roleNames:{role1:'Disputant 1',role2:'Disputant 2'}, taskBackground:'NO BACKGROUND INFO' };
+let S = { turns:[], bw:{}, sw:{}, filename:'', preImg:'', postImg:'', finalOutcome:null, opSummaries:[], outcomes:[], pareto:[], issues:[], preferencesComplete:false, language:'EN', country:null, preJustifications:{}, stepCache:{}, executiveBrief:'', roleNames:{role1:'Disputant 1',role2:'Disputant 2'}, taskBackground:'NO BACKGROUND INFO' };
 const IRP_KEYS = ['interest','right','power'];
 
 function classifyIRP(text=''){
@@ -216,6 +216,8 @@ async function init() {
   S.country = D.country || null;
   S.preJustifications = D.pre_justifications || {};
   S.stepCache = D.step_cache || {};
+  S.issues = D.issues || [];
+  S.preferencesComplete = !!D.preferences_complete;
   S.roleNames = D.role_names || {role1:'Disputant 1', role2:'Disputant 2'};
   S.taskBackground = D.task_background || 'NO BACKGROUND INFO';
 
@@ -230,6 +232,7 @@ async function init() {
         seller_weights: S.sw,
         language: S.language,
         op_summaries: S.opSummaries,
+        issues: S.issues, preferences_complete: S.preferencesComplete,
         role_names: S.roleNames,
         task_background: S.taskBackground
       })
@@ -241,6 +244,8 @@ async function init() {
     S.finalOutcome = data.final_outcome || null;
     S.outcomes = Array.isArray(data.outcomes) ? data.outcomes : [];
     S.pareto = Array.isArray(data.pareto) ? data.pareto : [];
+    S.preferencesComplete = !!data.preferences_complete;
+    S.issues = data.issues || S.issues;
 
     showContent(data.risk, S.finalOutcome);
     document.getElementById('btn-pdf').disabled = false;
@@ -296,27 +301,37 @@ function showContent(risk, finalOutcome) {
     oEl.innerHTML=`<div class="no-outcome">No clear final agreement detected in the transcript. The Pareto frontier is shown without an agreement marker.</div>`;
   }
 
-  document.getElementById('post-ph').style.display  = 'none';
+  if (S.preferencesComplete) document.getElementById('post-ph').style.display = 'none';
   renderPostSolutionSpace(S.outcomes, S.pareto, finalOutcome);
 }
 
+function dealLabel(o){
+  if (o.deal_label) return o.deal_label;
+  return `Refund ${o.refund_label || '—'}; Buyer review removed ${o.buyer_review?'Yes':'No'}; Seller review removed ${o.seller_review?'Yes':'No'}; Seller apology ${o.seller_apology?'Yes':'No'}; Buyer apology ${o.buyer_apology?'Yes':'No'}`;
+}
 function renderPostSolutionSpace(outcomes, pareto, finalOutcome){
   const host = document.getElementById('post-chart');
   const tip = document.getElementById('post-tip');
-  if (!host || !outcomes?.length) return;
+  const ph = document.getElementById('post-ph');
+  if (!host) return;
+  if (!outcomes?.length) {
+    host.innerHTML = '';
+    if (ph) { ph.style.display='block'; ph.textContent='Preference weights are unknown. Add preferences on the pre-analysis page to generate the solution-space figure.'; }
+    return;
+  }
   const w = host.clientWidth || 520;
   const h = host.clientHeight || 330;
   const m = {l:42,r:14,t:16,b:34};
   const x=v=>m.l+(v/100)*(w-m.l-m.r), y=v=>h-m.b-(v/100)*(h-m.t-m.b);
   const dots = outcomes.map((o, i)=>{
-    const deal = `Refund ${o.refund_label}; Buyer review removed ${o.buyer_review?'Yes':'No'}; Seller review removed ${o.seller_review?'Yes':'No'}; Seller apology ${o.seller_apology?'Yes':'No'}; Buyer apology ${o.buyer_apology?'Yes':'No'}`;
+    const deal = dealLabel(o);
     return `<circle data-i="${i}" data-deal="${deal.replace(/"/g,'&quot;')}" data-bu="${o.buyer_util}" data-su="${o.seller_util}" cx="${x(o.buyer_util)}" cy="${y(o.seller_util)}" r="2.6" fill="#2f4b6f" opacity="0.65"/>`;
   }).join('');
   const px = [...(pareto || [])].sort((a,b)=>a.buyer_util-b.buyer_util);
   const path = px.map((p,i)=>`${i?'L':'M'} ${x(p.buyer_util).toFixed(1)} ${y(p.seller_util).toFixed(1)}`).join(' ');
   let marker='';
   if (finalOutcome) {
-    const deal = `Refund ${finalOutcome.refund_label}; Buyer review removed ${finalOutcome.buyer_review?'Yes':'No'}; Seller review removed ${finalOutcome.seller_review?'Yes':'No'}; Seller apology ${finalOutcome.seller_apology?'Yes':'No'}; Buyer apology ${finalOutcome.buyer_apology?'Yes':'No'}`;
+    const deal = dealLabel(finalOutcome);
     marker = `<g data-point="agreement" data-deal="${deal.replace(/"/g,'&quot;')}" data-bu="${finalOutcome.buyer_util}" data-su="${finalOutcome.seller_util}">
       <circle cx="${x(finalOutcome.buyer_util)}" cy="${y(finalOutcome.seller_util)}" r="6" fill="none" stroke="#22d3a5" stroke-width="2.2"/>
       <circle cx="${x(finalOutcome.buyer_util)}" cy="${y(finalOutcome.seller_util)}" r="2.8" fill="#22d3a5"/>
@@ -426,6 +441,7 @@ async function exportEnriched() {
       method:'POST',headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         turns: S.turns, filename: S.filename, language: S.language,
+        issues: S.issues, preferences_complete: S.preferencesComplete,
         role_names: S.roleNames, task_background: S.taskBackground,
         buyer_weights: S.bw, seller_weights: S.sw,
         op_summaries: S.opSummaries, final_outcome: S.finalOutcome,
@@ -456,7 +472,7 @@ async function exportPDF() {
       method:'POST',headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         turns: S.turns, filename: S.filename,
-        language: S.language, role_names: S.roleNames, task_background: S.taskBackground,
+        language: S.language, issues: S.issues, preferences_complete: S.preferencesComplete, role_names: S.roleNames, task_background: S.taskBackground,
         buyer_weights: S.bw, seller_weights: S.sw,
         pre_img: S.preImg, post_img: S.postImg,
         final_outcome: S.finalOutcome,

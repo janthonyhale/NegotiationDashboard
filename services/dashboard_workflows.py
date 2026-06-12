@@ -23,9 +23,12 @@ from services.kodis import (
     DEFAULT_BUYER_WEIGHTS,
     DEFAULT_SELLER_WEIGHTS,
     compute_pareto,
+    extract_issue_definitions,
     extract_pre_dispute_justifications,
     extract_preference_weights,
     generate_all_outcomes,
+    has_complete_preferences,
+    normalize_weights_to_100,
 )
 from services.parsing import extract_dialogue_language, parse_file
 from services.annotation_store import record_annotation_correction
@@ -118,12 +121,19 @@ def process_upload(path, ext, filename):
                 txt = vals.get(side)
                 if isinstance(txt, str) and txt.strip():
                     vals[side] = llm_translate_cn_to_en(txt.strip())
+    issues = extract_issue_definitions(path, ext)
     bw, sw = extract_preference_weights(path, ext)
-    calc_bw = {**DEFAULT_BUYER_WEIGHTS, **bw}
-    calc_sw = {**DEFAULT_SELLER_WEIGHTS, **sw}
-    outcomes = generate_all_outcomes(calc_bw, calc_sw)
-    pareto   = compute_pareto(outcomes)
-    pareto_img = make_pareto_plot(outcomes, pareto, title='Pre-Negotiation: KODIS Solution Space')
+    preferences_complete = has_complete_preferences(bw, sw, issues)
+    if preferences_complete:
+        bw = normalize_weights_to_100(bw, issues)
+        sw = normalize_weights_to_100(sw, issues)
+        outcomes = generate_all_outcomes(bw, sw, issues)
+        pareto = compute_pareto(outcomes)
+        pareto_img = make_pareto_plot(outcomes, pareto, title='Pre-Negotiation: Solution Space')
+    else:
+        outcomes = []
+        pareto = []
+        pareto_img = ''
 
     imported_country = bundle_meta.get('country') if isinstance(bundle_meta, dict) else None
     has_imported_country = (
@@ -153,6 +163,8 @@ def process_upload(path, ext, filename):
         'turns':turns,'filename':filename,
         'language': language,
         'buyer_weights':bw,'seller_weights':sw,
+        'issues': issues,
+        'preferences_complete': preferences_complete,
         'outcomes':outcomes,'pareto':pareto,
         'pareto_img':pareto_img,
         'country':{'buyer':buyer_c,'seller':seller_c},
@@ -199,8 +211,10 @@ def convert_arbitrary_transcript_response(file_storage):
     if os.getenv('OPENAI_API_KEY'):
         prompt = (
             'Convert this negotiation/dispute transcript into strict JSON only with fields: '
-            'language (EN or CN), role_names {role1, role2}, task_background string, turns array. '
-            'Each turn must have speaker and text. Preserve the participants names as role_names when available. '
+            'language (EN or CN), role_names {role1, role2}, task_background string, issues array, turns array, and optional buyer_weights/seller_weights. '
+            'Each turn must have speaker and text. Preserve participant names as role_names when available. '
+            'For issues, include negotiated issues only when explicit. For each issue include key, label, and options with label plus role1_value/role2_value from 0 to 1 when clear. '
+            'Only include buyer_weights/seller_weights if preferences are explicitly stated in the input; do not infer or invent weights. '
             'If role names are missing use Disputant 1 and Disputant 2. If background is missing use NO BACKGROUND INFO. '
             'Do not invent dialogue.\n\nTranscript:\n' + raw[:24000]
         )
@@ -239,16 +253,28 @@ def convert_arbitrary_transcript_response(file_storage):
         'role_names': converted.get('role_names') if isinstance(converted.get('role_names'), dict) else {'role1': 'Disputant 1', 'role2': 'Disputant 2'},
         'task_background': converted.get('task_background') if isinstance(converted.get('task_background'), str) and converted.get('task_background').strip() else 'NO BACKGROUND INFO',
     }
+    if converted.get('issues'):
+        header['issues'] = converted.get('issues')
+    if isinstance(converted.get('buyer_weights'), dict):
+        header['buyer_weights'] = converted.get('buyer_weights')
+    if isinstance(converted.get('seller_weights'), dict):
+        header['seller_weights'] = converted.get('seller_weights')
     jsonl = '\n'.join([json.dumps(header, ensure_ascii=False)] + [json.dumps(t, ensure_ascii=False) for t in turns]) + '\n'
     return {'filename': 'converted_dispute.jsonl', 'jsonl': jsonl, 'turn_count': len(turns), 'role_names': header['role_names'], 'task_background': header['task_background']}
 
 def update_weights_response(data):
-    bw   = data.get('buyer_weights', DEFAULT_BUYER_WEIGHTS)
-    sw   = data.get('seller_weights', DEFAULT_SELLER_WEIGHTS)
-    outcomes = generate_all_outcomes(bw, sw)
-    pareto   = compute_pareto(outcomes)
-    pareto_img = make_pareto_plot(outcomes, pareto, title='Pre-Negotiation: KODIS Solution Space')
-    return {'outcomes':outcomes,'pareto':pareto,'pareto_img':pareto_img}
+    data = data or {}
+    issues = data.get('issues') or extract_issue_definitions('', '')
+    bw = data.get('buyer_weights') or {}
+    sw = data.get('seller_weights') or {}
+    if not has_complete_preferences(bw, sw, issues):
+        return {'outcomes': [], 'pareto': [], 'pareto_img': '', 'preferences_complete': False}
+    bw = normalize_weights_to_100(bw, issues)
+    sw = normalize_weights_to_100(sw, issues)
+    outcomes = generate_all_outcomes(bw, sw, issues)
+    pareto = compute_pareto(outcomes)
+    pareto_img = make_pareto_plot(outcomes, pareto, title='Pre-Negotiation: Solution Space')
+    return {'outcomes': outcomes, 'pareto': pareto, 'pareto_img': pareto_img, 'buyer_weights': bw, 'seller_weights': sw, 'preferences_complete': True}
 
 
 def step_response(data):
@@ -318,15 +344,23 @@ def post_summary_response(data):
     data = data or {}
     turns = data.get('turns', [])
     language = str(data.get('language', 'EN')).upper()
-    bw    = data.get('buyer_weights', DEFAULT_BUYER_WEIGHTS)
-    sw    = data.get('seller_weights', DEFAULT_SELLER_WEIGHTS)
+    issues = data.get('issues') or extract_issue_definitions('', '')
+    bw    = data.get('buyer_weights') or {}
+    sw    = data.get('seller_weights') or {}
     op_summaries = data.get('op_summaries', [])
     provided_final_outcome = data.get('final_outcome')
 
     turns_enriched = turns
     risk = llm_failure_risk(turns_enriched)
-    outcomes = generate_all_outcomes(bw, sw)
-    pareto = compute_pareto(outcomes)
+    preferences_complete = has_complete_preferences(bw, sw, issues)
+    if preferences_complete:
+        bw = normalize_weights_to_100(bw, issues)
+        sw = normalize_weights_to_100(sw, issues)
+        outcomes = generate_all_outcomes(bw, sw, issues)
+        pareto = compute_pareto(outcomes)
+    else:
+        outcomes = []
+        pareto = []
 
     # Prefer LLM-based agreement detection using only the final two turns.
     final_outcome = llm_detect_agreement_last_two(turns_enriched) or provided_final_outcome
@@ -334,13 +368,13 @@ def post_summary_response(data):
     match = None
     if final_outcome:
         match = next((o for o in outcomes if
-                      o['refund_label']   == final_outcome.get('refund_label') and
-                      o['buyer_review']   == final_outcome.get('buyer_review') and
-                      o['seller_review']  == final_outcome.get('seller_review') and
-                      o['seller_apology'] == final_outcome.get('seller_apology') and
-                      o['buyer_apology']  == final_outcome.get('buyer_apology')), None)
+                      o.get('refund_label') == final_outcome.get('refund_label') and
+                      o.get('buyer_review') == final_outcome.get('buyer_review') and
+                      o.get('seller_review') == final_outcome.get('seller_review') and
+                      o.get('seller_apology') == final_outcome.get('seller_apology') and
+                      o.get('buyer_apology') == final_outcome.get('buyer_apology')), None)
 
-    post_img = make_pareto_plot(outcomes, pareto, match, title='Post-Negotiation: Solution Space')
+    post_img = make_pareto_plot(outcomes, pareto, match, title='Post-Negotiation: Solution Space') if preferences_complete else ''
     executive_brief = llm_executive_brief(
         turns_enriched, op_summaries, match, pareto,
         role_names=data.get('role_names'),
@@ -352,6 +386,8 @@ def post_summary_response(data):
         'final_outcome': match,
         'outcomes': outcomes,
         'pareto': pareto,
+        'preferences_complete': preferences_complete,
+        'issues': issues,
         'executive_brief': executive_brief,
     }
 

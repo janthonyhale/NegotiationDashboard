@@ -14,7 +14,7 @@ from services.dashboard_helpers import (
     make_all_emotions_plot,
     make_pareto_plot,
 )
-from services.kodis import DEFAULT_BUYER_WEIGHTS, DEFAULT_SELLER_WEIGHTS, compute_pareto, generate_all_outcomes
+from services.kodis import DEFAULT_BUYER_WEIGHTS, DEFAULT_SELLER_WEIGHTS, compute_pareto, generate_all_outcomes, has_complete_preferences
 
 
 def build_pdf_report(data):
@@ -26,21 +26,23 @@ def build_pdf_report(data):
     emo_b64      = data.get('emotion_img','')
     post_b64     = data.get('post_img','')
     final_outcome= data.get('final_outcome', None)
-    bw           = data.get('buyer_weights', DEFAULT_BUYER_WEIGHTS)
-    sw           = data.get('seller_weights', DEFAULT_SELLER_WEIGHTS)
+    bw           = data.get('buyer_weights') or {}
+    sw           = data.get('seller_weights') or {}
+    issues       = data.get('issues') or []
     op_summaries = data.get('op_summaries', [])
 
-    # Generate post-negotiation pareto if not provided
-    outcomes = generate_all_outcomes(bw, sw)
+    # Generate post-negotiation pareto only when preferences are available.
+    preferences_complete = has_complete_preferences(bw, sw, issues)
+    outcomes = generate_all_outcomes(bw, sw, issues) if preferences_complete else []
     if final_outcome and ('buyer_util' not in final_outcome or 'seller_util' not in final_outcome):
         final_outcome = next((o for o in outcomes if
-                              o['refund_label']   == final_outcome.get('refund_label') and
-                              o['buyer_review']   == final_outcome.get('buyer_review') and
-                              o['seller_review']  == final_outcome.get('seller_review') and
-                              o['seller_apology'] == final_outcome.get('seller_apology') and
-                              o['buyer_apology']  == final_outcome.get('buyer_apology')), final_outcome)
+                              o.get('refund_label')   == final_outcome.get('refund_label') and
+                              o.get('buyer_review')   == final_outcome.get('buyer_review') and
+                              o.get('seller_review')  == final_outcome.get('seller_review') and
+                              o.get('seller_apology') == final_outcome.get('seller_apology') and
+                              o.get('buyer_apology')  == final_outcome.get('buyer_apology')), final_outcome)
 
-    if not post_b64:
+    if not post_b64 and preferences_complete:
         pareto   = compute_pareto(outcomes)
         fo_dict  = final_outcome if final_outcome else None
         post_b64 = make_pareto_plot(outcomes, pareto, fo_dict, title='Post-Negotiation Solution Space')
@@ -168,8 +170,10 @@ def enriched_export_buffer(data):
         'language': str(data.get('language', 'EN')).upper() if data.get('language') else 'EN',
         'role_names': data.get('role_names', {'role1': 'Disputant 1', 'role2': 'Disputant 2'}),
         'task_background': data.get('task_background', 'NO BACKGROUND INFO'),
-        'buyer_weights': data.get('buyer_weights', DEFAULT_BUYER_WEIGHTS),
-        'seller_weights': data.get('seller_weights', DEFAULT_SELLER_WEIGHTS),
+        'issues': data.get('issues', []),
+        'preferences_complete': data.get('preferences_complete', False),
+        'buyer_weights': data.get('buyer_weights', {}),
+        'seller_weights': data.get('seller_weights', {}),
         'pre_dispute_justifications': data.get('pre_justifications', {}),
         'turns': turns,
         'op_summaries': data.get('op_summaries', []),
