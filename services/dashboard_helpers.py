@@ -605,6 +605,7 @@ def _irp_patterns(turns_so_far):
     timeline = []
     for t in turns_so_far or []:
         speaker = str(t.get('speaker', '')).strip().lower()
+        role_key = t.get('role_key') or (t.get('meta', {}) or {}).get('role_key')
         raw = (t.get('meta', {}) or {}).get('irp_label') or t.get('irp') or 'Unavailable'
         v = str(raw).strip().lower()
         label = 'Unavailable'
@@ -615,9 +616,9 @@ def _irp_patterns(turns_so_far):
         elif v.startswith('power'):
             label = 'Power'
         total[label] += 1
-        if speaker == 'buyer':
+        if speaker == 'buyer' or role_key == 'role1':
             by_speaker['buyer'][label] += 1
-        elif speaker == 'seller':
+        elif speaker == 'seller' or role_key == 'role2':
             by_speaker['seller'][label] += 1
         timeline.append(label)
     return {
@@ -758,14 +759,14 @@ def llm_evolution_summary(op_summaries):
     except Exception:
         return 'LLM evolution summary unavailable (API request failed).'
 
-def llm_executive_brief(turns, op_summaries, final_outcome, pareto):
-    """Draft a two-paragraph executive brief using GPT-5.2 when available."""
+def llm_executive_brief(turns, op_summaries, final_outcome, pareto, role_names=None, task_background=None):
+    """Draft a short conversational coach overview for the final page."""
     turns = turns or []
     op_summaries = op_summaries or []
     api_key = os.getenv('OPENAI_API_KEY')
 
     dialogue_excerpt = "\n".join(
-        f"{t.get('speaker', 'Unknown')}: {t.get('text', '')}"
+        f"{t.get('display_speaker') or t.get('speaker', 'Unknown')}: {t.get('text', '')} | IRP={(t.get('meta', {}) or {}).get('irp_label') or t.get('irp')} | emotions={json.dumps(t.get('emotions', {}))}"
         for t in turns[-60:]
     )
     timeline_excerpt = "\n".join(
@@ -797,29 +798,28 @@ def llm_executive_brief(turns, op_summaries, final_outcome, pareto):
 
 
     if not api_key:
-        return 'LLM executive brief unavailable (missing OPENAI_API_KEY).'
+        return 'LLM coach overview unavailable (missing OPENAI_API_KEY).'
 
     prompt = (
-        "Write exactly two paragraphs for an executive brief.\n"
-        "Paragraph 1: summarize the dispute, how it evolved, and how it ended.\n"
-        "Paragraph 2: explain how it could have gone better, including mediator actions, buyer/seller alternatives, and whether the solution was Pareto efficient.\n"
-        "Make the analysis insightful and specific, not generic. Use concrete dynamics from the timeline and dialogue.\n"
-        "Target roughly 4-6 sentences per paragraph.\n"
-        "Keep a neutral, executive tone focused on decision-relevant insights.\n"
+        "Write a short LLM coach overview for a mediator reviewing this negotiation.\n"
+        "Be conversational, not executive-formal. Use dialogue and annotations.\n"
+        "Keep it to 3-5 short sentences total: what happened, outcome/impasse status, and one coaching hook for follow-up.\n"
+        f"Role names: {json.dumps(role_names or {}, ensure_ascii=False)}\n"
+        f"Task background: {task_background or 'NO BACKGROUND INFO'}\n"
         f"Detected final outcome: {json.dumps(final_outcome)}\n"
         f"Pareto efficient under configured utility model: {is_pareto_efficient}\n"
         f"Operational summaries over time:\n{timeline_excerpt or '[none]'}\n\n"
-        f"Dialogue excerpt:\n{dialogue_excerpt or '[none]'}"
+        f"Annotated dialogue excerpt:\n{dialogue_excerpt or '[none]'}"
     )
 
     payload = {
         "model": "gpt-5.2",
         "messages": [
-            {"role": "system", "content": "You draft executive mediation briefs for negotiation outcomes."},
+            {"role": "system", "content": "You are a concise, conversational negotiation coach."},
             {"role": "user", "content": prompt},
         ],
         "temperature": 0.2,
-        "max_tokens": 450
+        "max_tokens": 220
     }
     req = urllib.request.Request(
         'https://api.openai.com/v1/chat/completions',
@@ -834,9 +834,9 @@ def llm_executive_brief(turns, op_summaries, final_outcome, pareto):
         with urllib.request.urlopen(req, timeout=60) as resp:
             data = json.loads(resp.read().decode('utf-8'))
         content = (data['choices'][0]['message']['content'] or '').strip()
-        return content or 'LLM executive brief unavailable (empty API response).'
+        return content or 'LLM coach overview unavailable (empty API response).'
     except Exception:
-        return 'LLM executive brief unavailable (API request failed).'
+        return 'LLM coach overview unavailable (API request failed).'
 
 
 def _unavailable_risk(reason):
@@ -991,7 +991,7 @@ Return ENGLISH only."""
 
 
 
-def llm_negotiation_qa(turns, question, op_summaries=None, final_outcome=None, language='EN'):
+def llm_negotiation_qa(turns, question, op_summaries=None, final_outcome=None, language='EN', role_names=None, task_background=None):
     """Answer mediator QA using dialogue plus all current/corrected annotations."""
     api_key = os.getenv('OPENAI_API_KEY')
     if not api_key:
@@ -1003,7 +1003,7 @@ def llm_negotiation_qa(turns, question, op_summaries=None, final_outcome=None, l
     for i, t in enumerate(turns or []):
         annotated_turns.append({
             'turn': i + 1,
-            'speaker': t.get('speaker', 'Unknown'),
+            'speaker': t.get('display_speaker') or t.get('speaker', 'Unknown'),
             'text': t.get('text', ''),
             'translation': t.get('translation', ''),
             'irp': (t.get('meta', {}) or {}).get('irp_label') or t.get('irp'),
@@ -1015,22 +1015,24 @@ def llm_negotiation_qa(turns, question, op_summaries=None, final_outcome=None, l
         "model": "gpt-4o",
         "messages": [
             {"role": "system", "content": (
-                "You are an expert negotiation coach and mediator educator. Answer questions about a completed negotiation. "
-                "Use the dialogue and all annotations, including human-corrected annotations, as evidence. "
-                "Identify what may have gone wrong, missed opportunities, and concrete alternatives. Be candid but constructive."
+                "You are a concise, conversational negotiation coach. "
+                "Answer using the dialogue, task background, outcome, and corrected annotations as evidence. "
+                "Keep replies short, practical, and invite follow-up questions."
             )},
             {"role": "user", "content": (
                 f"Language: {language}\n"
+                f"Role names: {json.dumps(role_names or {}, ensure_ascii=False)}\n"
+                f"Task background: {task_background or 'NO BACKGROUND INFO'}\n"
                 f"Final outcome: {json.dumps(final_outcome or {}, ensure_ascii=False)}\n"
                 f"Operational summaries: {json.dumps(op_summaries or [], ensure_ascii=False)}\n"
                 f"Prior annotation corrections available for in-context learning:\n{correction_examples}\n\n"
                 f"Annotated dialogue JSON:\n{json.dumps(annotated_turns, ensure_ascii=False)}\n\n"
                 f"Question: {question}\n\n"
-                "Answer in 2-5 concise paragraphs. If useful, include 2-4 bullet points."
+                "Answer in 1-2 short paragraphs or at most 3 bullets. Be conversational and specific."
             )},
         ],
         "temperature": 0.2,
-        "max_tokens": 700,
+        "max_tokens": 280,
     }
     try:
         return openai_chat_text(payload, timeout=60, api_key=api_key)
@@ -1116,7 +1118,11 @@ def _to_geo_payload(label, confidence, probabilities=None):
     }
 
 def predict_country_with_model(turns, role):
-    role_turns = [t.get('text', '').strip() for t in turns if t.get('speaker') == role and t.get('text', '').strip()]
+    role_key = 'role1' if str(role).lower() == 'buyer' else ('role2' if str(role).lower() == 'seller' else None)
+    role_turns = [
+        t.get('text', '').strip() for t in turns
+        if t.get('text', '').strip() and (t.get('speaker') == role or t.get('role_key') == role_key or (t.get('meta', {}) or {}).get('role_key') == role_key)
+    ]
     if not role_turns:
         return _to_geo_payload('Unavailable', 0.0, {})
     try:
@@ -1147,8 +1153,13 @@ def predict_country_with_model(turns, role):
 
 
 def predict_cn_region_with_model(turns, role):
-    role_turns = [t.get('text', '').strip() for t in turns if t.get('speaker') == role and t.get('text', '').strip()]
-    base_province_probs = constrain_cn_probs_to_model_scope(infer_cn_province_distribution(turns, role))
+    role_key = 'role1' if str(role).lower() == 'buyer' else ('role2' if str(role).lower() == 'seller' else None)
+    role_turns = [
+        t.get('text', '').strip() for t in turns
+        if t.get('text', '').strip() and (t.get('speaker') == role or t.get('role_key') == role_key or (t.get('meta', {}) or {}).get('role_key') == role_key)
+    ]
+    scoped_turns = [t for t in turns if t.get('speaker') == role or t.get('role_key') == role_key or (t.get('meta', {}) or {}).get('role_key') == role_key]
+    base_province_probs = constrain_cn_probs_to_model_scope(infer_cn_province_distribution(scoped_turns or turns, role))
     if not role_turns:
         return {
             'country': 'China',
@@ -1294,22 +1305,46 @@ def make_all_emotions_plot(turns):
 
 def extract_uploaded_bundle_metadata(path, ext):
     meta = {}
-    if ext != 'json':
-        return meta
+
+    def absorb(data):
+        if not isinstance(data, dict):
+            return
+        if isinstance(data.get('op_summaries'), list):
+            meta['op_summaries'] = data.get('op_summaries')
+        if isinstance(data.get('step_cache'), dict):
+            meta['step_cache'] = data.get('step_cache')
+        if isinstance(data.get('country'), dict):
+            meta['country'] = data.get('country')
+        if isinstance(data.get('language'), str):
+            val = data.get('language', '').strip().upper()
+            if val in {'EN', 'CN'}:
+                meta['language'] = val
+        roles = data.get('role_names') or data.get('roles') or data.get('participants') or data.get('parties')
+        if isinstance(roles, dict):
+            meta['role_names'] = roles
+        elif isinstance(roles, list) and roles:
+            meta['role_names'] = {
+                'role1': str(roles[0]) if len(roles) > 0 else 'Disputant 1',
+                'role2': str(roles[1]) if len(roles) > 1 else 'Disputant 2',
+            }
+        background = data.get('task_background') or data.get('background') or data.get('context') or data.get('task')
+        if isinstance(background, str) and background.strip():
+            meta['task_background'] = background.strip()
+
     try:
-        with open(path, encoding='utf-8-sig', errors='replace') as f:
-            data = json.load(f)
-        if isinstance(data, dict):
-            if isinstance(data.get('op_summaries'), list):
-                meta['op_summaries'] = data.get('op_summaries')
-            if isinstance(data.get('step_cache'), dict):
-                meta['step_cache'] = data.get('step_cache')
-            if isinstance(data.get('country'), dict):
-                meta['country'] = data.get('country')
-            if isinstance(data.get('language'), str):
-                val = data.get('language', '').strip().upper()
-                if val in {'EN', 'CN'}:
-                    meta['language'] = val
+        if ext == 'json':
+            with open(path, encoding='utf-8-sig', errors='replace') as f:
+                absorb(json.load(f))
+        elif ext == 'jsonl':
+            with open(path, encoding='utf-8-sig', errors='replace') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    obj = json.loads(line)
+                    if isinstance(obj, dict) and not (obj.get('speaker') or obj.get('text')):
+                        absorb(obj)
+                    break
     except Exception:
         return meta
     return meta

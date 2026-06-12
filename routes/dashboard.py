@@ -7,6 +7,7 @@ from services.dashboard import (
     allowed,
     annotation_correction_response,
     build_pdf_report,
+    convert_arbitrary_transcript_response,
     enriched_export_buffer,
     post_summary_response,
     process_upload,
@@ -31,6 +32,18 @@ def negotiate(): return render_template('negotiate.html')
 
 @dashboard_bp.route('/post')
 def post(): return render_template('post.html')
+
+@dashboard_bp.route('/api/convert_upload', methods=['POST'])
+def api_convert_upload():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file'}), 400
+    try:
+        return jsonify(convert_arbitrary_transcript_response(request.files['file']))
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
 @dashboard_bp.route('/api/upload', methods=['POST'])
 def api_upload():

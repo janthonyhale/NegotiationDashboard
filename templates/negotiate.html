@@ -365,7 +365,7 @@ const CN_REGION_CODE_MAP = {
   'north':'north','central':'central','wu_min':'wu_min','xian_yue':'xian_yue',
   'north_china':'north','central_china':'central','wu-min':'wu_min','xian-yue':'xian_yue'
 };
-let S = { turns:[], currentIdx:-1, dim:'anger', mapRole:'buyer', currentMapDist:{}, country:null, lastCountry:null, bw:{}, sw:{}, filename:'', activeMap:null, opSummaries:[], language:'EN', processing:false, runAll:false, stepCache:{} };
+let S = { turns:[], currentIdx:-1, dim:'anger', mapRole:'buyer', currentMapDist:{}, country:null, lastCountry:null, bw:{}, sw:{}, filename:'', roleNames:{role1:'Disputant 1',role2:'Disputant 2'}, taskBackground:'NO BACKGROUND INFO', activeMap:null, opSummaries:[], language:'EN', processing:false, runAll:false, stepCache:{} };
 const IRP_KEYS = ['interest','right','power'];
 const EMOTION_KEYS = ['joy','anger','fear','sadness','surprise','compassion','neutral'];
 let emotionEditor = {idx:null, values:{}};
@@ -379,6 +379,21 @@ function getTurnIRP(turn){
     if (v.startsWith('power')) return 'power';
   }
   return null;
+}
+
+function roleClass(turn){
+  const key = turn?.role_key || turn?.meta?.role_key;
+  if (key === 'role1') return 'buyer';
+  if (key === 'role2') return 'seller';
+  const raw = String(turn?.speaker || '').toLowerCase();
+  if (raw === 'buyer') return 'buyer';
+  if (raw === 'seller') return 'seller';
+  if (raw === 'mediator') return 'mediator';
+  return 'mediator';
+}
+
+function speakerLabel(turn){
+  return turn?.display_speaker || turn?.meta?.display_speaker || turn?.speaker || 'Unknown';
 }
 
 function scrollDialogueToBottom(){
@@ -402,6 +417,8 @@ function init() {
   const D = JSON.parse(raw);
   S.turns   = D.turns;
   S.filename = D.filename || '';
+  S.roleNames = D.role_names || {role1:'Disputant 1', role2:'Disputant 2'};
+  S.taskBackground = D.task_background || 'NO BACKGROUND INFO';
   S.country = D.country;
   S.bw      = D.buyer_weights || {};
   S.sw      = D.seller_weights || {};
@@ -428,11 +445,12 @@ function renderTxList() {
   const el = document.getElementById('tx-list');
   if (!el) return;
   el.innerHTML = S.turns.map((t,i) => {
-    const role = t.speaker.toLowerCase();
+    const role = roleClass(t);
+    const label = speakerLabel(t);
     const preview = t.text.length > 55 ? t.text.slice(0,55)+'…' : t.text;
     return `<div class="turn ${role} future" id="t${i}" data-i="${i}">
       <div class="turn-meta">
-        <span class="turn-role ${role}">${t.speaker}</span>
+        <span class="turn-role ${role}">${esc(label)}</span>
         <span class="turn-idx">#${i}</span>
       </div>
       <div class="turn-preview">${esc(preview)}</div>
@@ -483,6 +501,8 @@ function persistSessionState(){
   if (!raw) return;
   const base = JSON.parse(raw);
   base.turns = S.turns;
+  base.role_names = S.roleNames;
+  base.task_background = S.taskBackground;
   base.op_summaries = S.opSummaries;
   base.step_cache = S.stepCache;
   sessionStorage.setItem('nd', JSON.stringify(base));
@@ -560,7 +580,7 @@ function openEmotionModal(idx){
   emotionEditor.idx = idx;
   emotionEditor.values = normalizeEmotionScores(turn.emotions || {neutral:1});
   const sub = document.getElementById('emo-modal-sub');
-  if (sub) sub.textContent = `Turn ${idx} · ${turn.speaker || 'Unknown'} — drag sliders to assign multiple emotions. Scores stay normalized to 1.00.`;
+  if (sub) sub.textContent = `Turn ${idx} · ${speakerLabel(turn)} — drag sliders to assign multiple emotions. Scores stay normalized to 1.00.`;
   renderEmotionSliders();
   document.getElementById('emo-modal')?.classList.add('open');
 }
@@ -640,7 +660,7 @@ async function ensureStepData(idx) {
 
   const res = await fetch('/api/step',{
     method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({idx, turns:S.turns, emotion_dim:S.dim, buyer_weights:S.bw, seller_weights:S.sw, language:S.language}),
+    body: JSON.stringify({idx, turns:S.turns, emotion_dim:S.dim, buyer_weights:S.bw, seller_weights:S.sw, language:S.language, role_names:S.roleNames, task_background:S.taskBackground}),
   });
   const data = await res.json();
 
@@ -787,14 +807,15 @@ function syncBubbleEmotions(idx){
 function addBubble(t, idx, skipScroll=false) {
   const ph = document.getElementById('dial-placeholder');
   if (ph) ph.remove();
-  const role = t.speaker.toLowerCase();
+  const role = roleClass(t);
+  const label = speakerLabel(t);
   const chips = renderEmotionChips(t.emotions || {});
   const irpNow = t.irp || 'interest';
   const wrap = document.createElement('div');
   wrap.className = `bubble-wrap ${role}`;
   wrap.id = `bubble-${idx}`;
   wrap.innerHTML = `
-    <div class="bubble-label ${role}">${t.speaker} · Turn ${idx}${t.irp ? `<span class="irp-tag ${t.irp}">${t.irp.toUpperCase()}</span>` : ''}</div>
+    <div class="bubble-label ${role}">${esc(label)} · Turn ${idx}${t.irp ? `<span class="irp-tag ${t.irp}">${t.irp.toUpperCase()}</span>` : ''}</div>
     <div class="bubble ${role} current">
       ${esc(t.text)}
       ${S.language === 'CN' ? `<div class="translation-line">EN: ${esc(t.translation || 'Translating...')}</div>` : ''}
@@ -828,7 +849,7 @@ function renderIRPChart(){
   const recentByRole = {buyer:null, seller:null};
   const recentTurnByRole = {buyer:-1, seller:-1};
   for (let i = upto.length - 1; i >= 0; i -= 1) {
-    const role = String(upto[i].speaker || '').toLowerCase();
+    const role = roleClass(upto[i]);
     if (!recentByRole[role]) {
       const raw = String(upto[i].irp || '').toLowerCase();
       recentByRole[role] = IRP_KEYS.includes(raw) ? raw : 'na';
@@ -837,13 +858,13 @@ function renderIRPChart(){
   }
 
   const rowHtml = (roleName) => {
-    const label = roleName === 'buyer' ? 'Buyer' : 'Seller';
+    const label = roleName === 'buyer' ? (S.roleNames.role1 || 'Disputant 1') : (S.roleNames.role2 || 'Disputant 2');
     const roleTurns = upto
       .map((turn, idx)=>({turn, idx}))
-      .filter(({turn}) => String(turn.speaker || '').toLowerCase() === roleName);
+      .filter(({turn}) => roleClass(turn) === roleName);
 
     const timeline = roleTurns.map(({turn, idx}) => {
-      const turnRole = String(turn.speaker || '').toLowerCase();
+      const turnRole = roleClass(turn);
       let key = 'na';
       if (turnRole === roleName) {
         const raw = String(turn.irp || '').toLowerCase();
@@ -895,7 +916,7 @@ function updateEmoChart() {
   const buyerSeries = [];
   const sellerSeries = [];
   upto.forEach((t, i) => {
-    const role = (t.speaker || '').toLowerCase();
+    const role = roleClass(t);
     const hasVal = t.emotions && typeof t.emotions[S.dim] === 'number';
     if (role === 'buyer' && hasVal) buyerSeries.push({x:i, y:t.emotions[S.dim]});
     if (role === 'seller' && hasVal) sellerSeries.push({x:i, y:t.emotions[S.dim]});

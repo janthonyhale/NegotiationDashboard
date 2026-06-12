@@ -1,3 +1,7 @@
 flask
 matplotlib
 reportlab
+joblib
+numpy
+scikit-learn
+sentence-transformers

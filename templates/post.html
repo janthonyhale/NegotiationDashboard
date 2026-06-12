@@ -160,7 +160,7 @@ nav{display:flex;align-items:center;padding:11px 22px;border-bottom:1px solid va
       <div class="mid-col">
         <!-- KODIS outcome -->
         <div id="outcome-section"></div>
-        <div class="brief-card" id="exec-brief"><div class="brief-title">Executive Brief</div><div class="brief-text">Preparing dispute summary…</div></div>
+        <div class="brief-card" id="exec-brief"><div class="brief-title">LLM Coach Overview</div><div class="brief-text">Preparing dispute summary…</div></div>
       </div>
 
       <div class="right-col">
@@ -188,7 +188,7 @@ nav{display:flex;align-items:center;padding:11px 22px;border-bottom:1px solid va
 <div id="toast"></div>
 
 <script>
-let S = { turns:[], bw:{}, sw:{}, filename:'', preImg:'', postImg:'', finalOutcome:null, opSummaries:[], outcomes:[], pareto:[], language:'EN', country:null, preJustifications:{}, stepCache:{}, executiveBrief:'' };
+let S = { turns:[], bw:{}, sw:{}, filename:'', preImg:'', postImg:'', finalOutcome:null, opSummaries:[], outcomes:[], pareto:[], language:'EN', country:null, preJustifications:{}, stepCache:{}, executiveBrief:'', roleNames:{role1:'Disputant 1',role2:'Disputant 2'}, taskBackground:'NO BACKGROUND INFO' };
 const IRP_KEYS = ['interest','right','power'];
 
 function classifyIRP(text=''){
@@ -216,6 +216,8 @@ async function init() {
   S.country = D.country || null;
   S.preJustifications = D.pre_justifications || {};
   S.stepCache = D.step_cache || {};
+  S.roleNames = D.role_names || {role1:'Disputant 1', role2:'Disputant 2'};
+  S.taskBackground = D.task_background || 'NO BACKGROUND INFO';
 
   renderDialogueFeed();
 
@@ -227,7 +229,9 @@ async function init() {
         buyer_weights: S.bw,
         seller_weights: S.sw,
         language: S.language,
-        op_summaries: S.opSummaries
+        op_summaries: S.opSummaries,
+        role_names: S.roleNames,
+        task_background: S.taskBackground
       })
     });
     if (!res.ok) throw new Error('Failed to compute summary');
@@ -246,12 +250,27 @@ async function init() {
   }
 }
 
+function roleClass(turn){
+  const key = turn?.role_key || turn?.meta?.role_key;
+  if (key === 'role1') return 'buyer';
+  if (key === 'role2') return 'seller';
+  const raw = String(turn?.speaker || '').toLowerCase();
+  if (raw === 'buyer') return 'buyer';
+  if (raw === 'seller') return 'seller';
+  if (raw === 'mediator') return 'mediator';
+  return 'mediator';
+}
+
+function speakerLabel(turn){
+  return turn?.display_speaker || turn?.meta?.display_speaker || turn?.speaker || 'Unknown';
+}
+
 function showContent(risk, finalOutcome) {
   document.getElementById('loading-box').style.display='none';
   document.getElementById('content').style.display='block';
 
   const agreementState = finalOutcome ? 'Agreement detected in closing turns.' : 'No definitive agreement signature detected in closing turns.';
-  const briefHtml = `<div class="brief-title">Executive Brief</div>
+  const briefHtml = `<div class="brief-title">LLM Coach Overview</div>
     <div class="brief-text">${esc(S.executiveBrief).replace(/\n/g,'<br><br>')}</div>
     <div class="brief-points">
       <span class="brief-chip">Turns: ${S.turns.length}</span>
@@ -352,7 +371,8 @@ async function askQA(){
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         turns:S.turns, question, language:S.language, op_summaries:S.opSummaries,
-        final_outcome:S.finalOutcome, step_cache:S.stepCache
+        final_outcome:S.finalOutcome, step_cache:S.stepCache,
+        role_names:S.roleNames, task_background:S.taskBackground
       })
     });
     const data = await res.json();
@@ -380,13 +400,13 @@ function renderDialogueFeed(){
   if (!dialogueEl) return;
   dialogueEl.innerHTML = '';
   S.turns.forEach((t, idx) => {
-    const role = (t.speaker || 'Buyer').toLowerCase();
+    const role = roleClass(t);
     const irp = (t.meta && t.meta.irp_label ? String(t.meta.irp_label).toLowerCase() : (t.irp ? String(t.irp).toLowerCase() : classifyIRP(t.text)));
     const chips = renderEmotionChips(t.emotions || {});
     const wrap = document.createElement('div');
     wrap.className = `bubble-wrap ${role}`;
     wrap.innerHTML = `
-      <div class="bubble-label ${role}">${t.speaker} · Turn ${idx}<span class="irp-tag ${irp}">${(irp || 'interest').toUpperCase()}</span></div>
+      <div class="bubble-label ${role}">${esc(speakerLabel(t))} · Turn ${idx}<span class="irp-tag ${irp}">${(irp || 'interest').toUpperCase()}</span></div>
       <div class="bubble ${role}">
         ${esc(t.text)}
         ${S.language === 'CN' ? `<div class="translation-line">EN: ${esc(t.translation || '')}</div>` : ''}
@@ -406,6 +426,7 @@ async function exportEnriched() {
       method:'POST',headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         turns: S.turns, filename: S.filename, language: S.language,
+        role_names: S.roleNames, task_background: S.taskBackground,
         buyer_weights: S.bw, seller_weights: S.sw,
         op_summaries: S.opSummaries, final_outcome: S.finalOutcome,
         country: S.country, pre_justifications: S.preJustifications,
@@ -435,7 +456,7 @@ async function exportPDF() {
       method:'POST',headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         turns: S.turns, filename: S.filename,
-        language: S.language,
+        language: S.language, role_names: S.roleNames, task_background: S.taskBackground,
         buyer_weights: S.bw, seller_weights: S.sw,
         pre_img: S.preImg, post_img: S.postImg,
         final_outcome: S.finalOutcome,
